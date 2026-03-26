@@ -1,0 +1,185 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isSystemAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'systemAdmin';
+    }
+
+    function isTeamAdmin(teamId) {
+      return isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.admins;
+    }
+
+    function isTeamMember(teamId) {
+      let t = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      return isSignedIn() &&
+        (request.auth.uid in t.players || request.auth.uid in t.admins);
+    }
+
+    // ── users ───────────────────────────────────────────────────────────────
+    // Players read/write own profile only.
+    // System admin reads all profiles.
+    // GDPR/PIPEDA: deletion handled by Cloud Function cascade.
+
+    match /users/{userId} {
+      // Any signed-in user can read profiles — needed to resolve player names
+      // in drop-in lists, availability views, and roster displays.
+      // Sensitive data (rankings, notes) is in a separate protected subcollection.
+      allow read: if isSignedIn();
+      allow create: if isSelf(userId);
+      allow update: if isSelf(userId) || isSystemAdmin() ||
+        // Team admins need to update a player's teams array on approve/remove
+        (isSignedIn() &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teams']));
+      allow delete: if isSelf(userId) || isSystemAdmin();
+
+      // Note: availability is stored under events/{eventId}/availability/{userId}
+      // NOT under users — easier to query all RSVPs for a given event.
+    }
+
+    // ── sports ──────────────────────────────────────────────────────────────
+    // Read-only for all authenticated users. System admin manages.
+
+    match /sports/{sportId} {
+      allow read: if isSignedIn();
+      allow write: if isSystemAdmin();
+    }
+
+    // ── rankingMethods ───────────────────────────────────────────────────────
+    // Read-only for team admins and system admin. System admin manages.
+
+    match /rankingMethods/{methodId} {
+      allow read: if isSignedIn();
+      allow write: if isSystemAdmin();
+    }
+
+    // ── teams ────────────────────────────────────────────────────────────────
+    // Team admins write. Team members (players + admins) read.
+    // System admin reads and writes all.
+
+    match /teams/{teamId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isTeamAdmin(teamId) || isSystemAdmin();
+      allow delete: if isSystemAdmin();
+
+      // Rankings subcollection — COACH PRIVATE
+      // Players cannot read their own rankings or anyone else's.
+      match /rankings/{userId} {
+        allow read, write: if isTeamAdmin(teamId) || isSystemAdmin();
+        // Explicitly deny all other access (including the ranked player)
+      }
+
+      // Player position preferences subcollection
+      // Players read/write their own. Admins read/write all (for lineup building).
+      match /playerPreferences/{userId} {
+        allow read, write: if isTeamMember(teamId) && isSelf(userId);
+        allow read, write: if isTeamAdmin(teamId) || isSystemAdmin();
+      }
+
+      // Join requests subcollection
+      match /joinRequests/{requestId} {
+        // Any signed-in user can create a request for themselves only
+        allow create: if isSignedIn() &&
+          request.resource.data.userId == request.auth.uid;
+        // Any signed-in user can read — needed for admin list queries
+        // (isTeamAdmin inside a list rule hits get() limits with multiple docs)
+        allow read: if isSignedIn();
+        // Team admins update (approve/deny) and delete
+        allow update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
+      }
+    }
+
+    // ── events ───────────────────────────────────────────────────────────────
+    // Team admins create/edit. Team members read.
+
+    match /events/{eventId} {
+      allow read: if isTeamMember(resource.data.teamId) || isSystemAdmin();
+      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId) || isSystemAdmin();
+      allow delete: if isTeamAdmin(resource.data.teamId) || isSystemAdmin();
+
+      // Availability subcollection — stored per event for efficient querying
+      // teamId is denormalized into each availability doc for rule evaluation
+      match /availability/{userId} {
+        // Player writes (create/update) their own RSVP only
+        allow create, update: if isSignedIn() && userId == request.auth.uid;
+        // Player deletes their own RSVP
+        allow delete: if isSignedIn() &&
+          (userId == request.auth.uid || isTeamAdmin(resource.data.teamId));
+        // Any signed-in user can read — yes/no/maybe is not sensitive data,
+        // and the teamId where-clause in the query scopes results correctly.
+        allow read: if isSignedIn();
+      }
+    }
+
+    // ── rankings (subcollection of teams) ────────────────────────────────────
+    // COACH PRIVATE: team admins ONLY — players cannot read their own rankings.
+    // Stored at teams/{teamId}/rankings/{userId}
+    // Rules handled in the /teams/{teamId} match block below (see nested match).
+
+    // ── lineups ───────────────────────────────────────────────────────────────
+    // Team admins write. Team members can read their own lineup for an event.
+
+    match /lineups/{lineupId} {
+      allow read: if resource == null || isTeamMember(resource.data.teamId) || isSystemAdmin();
+      allow create: if isTeamAdmin(request.resource.data.teamId);
+      allow update: if isTeamAdmin(resource.data.teamId) || isSystemAdmin();
+      allow delete: if isTeamAdmin(resource.data.teamId) || isSystemAdmin();
+    }
+
+    // ── lineupTemplates ───────────────────────────────────────────────────────
+    // Per-team reusable lineup templates. Admins read/write; players read.
+
+    match /lineupTemplates/{templateId} {
+      allow read: if resource == null || isTeamMember(resource.data.teamId) || isSystemAdmin();
+      allow write: if isTeamAdmin(request.resource.data.teamId) || isSystemAdmin();
+    }
+
+    // ── teamNotifications ─────────────────────────────────────────────────────
+    // Persisted by sendTeamNotification Cloud Function (writes are server-only).
+    // Team members can read; only Cloud Functions write.
+
+    match /teamNotifications/{teamId}/messages/{msgId} {
+      allow read: if isTeamMember(teamId) || isSystemAdmin();
+      allow write: if false; // Cloud Function only
+    }
+
+    // ── dropInSessions ────────────────────────────────────────────────────────
+    // Players can add/remove only their own UID from signups array.
+    // Team admins manage generated teams and session settings.
+
+    match /dropInSessions/{sessionId} {
+      // resource is null when the doc doesn't exist — allow signed-in users to
+      // attempt the read so the stream doesn't throw before the doc is created.
+      allow read: if isSignedIn() &&
+        (resource == null || isTeamMember(resource.data.teamId) || isSystemAdmin());
+
+      // Admins create the session, OR any team member creating the doc for the
+      // first time as part of their own signup (first player to sign up).
+      allow create: if isTeamAdmin(request.resource.data.teamId) ||
+        (isTeamMember(request.resource.data.teamId) &&
+         request.resource.data.signups.hasOnly([request.auth.uid]));
+
+      // Players may only toggle their own UID in signups or waitlist arrays
+      allow update: if isTeamAdmin(resource.data.teamId) || isSystemAdmin() ||
+        (isTeamMember(resource.data.teamId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['signups', 'waitlist']));
+
+      allow delete: if isTeamAdmin(resource.data.teamId) || isSystemAdmin();
+    }
+  }
+}

@@ -1,0 +1,32 @@
+# Service account key — never commit this
+service-account-key.json
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.g.dart
+*.freezed.dart
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_export_environment.sh
+
+# Firebase
+.firebase/
+firebase-debug.log
+
+# Environment
+.env
+*.env.local
+
+# Claude Code
+.claude/
