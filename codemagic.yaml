@@ -11,6 +11,8 @@ workflows:
       vars:
         BUNDLE_ID: com.sportsrostering.app
     scripts:
+      - name: Upgrade codemagic-cli-tools
+        script: pip3 install codemagic-cli-tools --upgrade
       - name: Set up code signing
         script: |
           keychain initialize
