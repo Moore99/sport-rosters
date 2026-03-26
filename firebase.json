@@ -1,0 +1,34 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "sports-rostering",
+          "appId": "1:363898653310:android:cd50ad3a75acb8c95ce62f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "sports-rostering",
+          "configurations": {
+            "android": "1:363898653310:android:cd50ad3a75acb8c95ce62f",
+            "ios": "1:363898653310:ios:075d70dc074aa36b5ce62f",
+            "web": "1:363898653310:web:6e150d09b188a6e75ce62f"
+          }
+        }
+      }
+    }
+  }
+}

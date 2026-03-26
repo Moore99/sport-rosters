@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "363898653310",
+    "project_id": "sports-rostering",
+    "storage_bucket": "sports-rostering.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:363898653310:android:cd50ad3a75acb8c95ce62f",
+        "android_client_info": {
+          "package_name": "com.sportsrostering.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "363898653310-qsrgn1f747cn9178qelceha6tcjemk3i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sportsrostering.app",
+            "certificate_hash": "6f040895c207c5ac6cac51475d8316d6ed1bd58f"
+          }
+        },
+        {
+          "client_id": "363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfj7g2--iAf0CDKBcFyRv7Ia7KIuoH_D4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "363898653310-rfako4db7amsb2qu66p88d7prt83625u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sportsrostering.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

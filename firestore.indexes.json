@@ -1,0 +1,45 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "teamId", "order": "ASCENDING" },
+        { "fieldPath": "date",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "date",            "order": "ASCENDING" },
+        { "fieldPath": "reminder24Sent",  "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "date",           "order": "ASCENDING" },
+        { "fieldPath": "reminder2Sent",  "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "joinRequests",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status",    "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "joinRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",    "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
