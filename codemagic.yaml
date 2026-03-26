@@ -6,6 +6,8 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - Keys
       vars:
         BUNDLE_ID: com.sportsrostering.app
     scripts:
