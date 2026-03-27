@@ -261,10 +261,10 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 2 | firebase_messaging + Crashlytics | ✅ Done |
 | 2 | Push notifications (FCM token → Firestore, permission request) | ✅ Done |
 | 2 | Auto-balanced drop-in teams | ✅ Done |
-| 2 | Rewarded ads | TODO |
+| 2 | Rewarded ads (gates auto-generate lineup + auto-balance boat seating) | ✅ Done |
 | 3 | Player position preferences (per-team, flexible categories) | ✅ Done |
 | 3 | Advanced lineup generator (ranking + preference matching) | ✅ Done |
-| 3 | PDF/CSV export | TODO |
+| 3 | PDF/CSV export (lineup PDF, boat seating PDF, availability CSV) | ✅ Done |
 | 4 | Multi-admin (co-coach) support | ✅ Done |
 | 4 | Dragon Boating + boat balance seating screen | ✅ Done |
 | 4 | Player weight field + kg/lbs toggle | ✅ Done |
