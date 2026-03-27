@@ -8,20 +8,12 @@ workflows:
       cocoapods: default
       groups:
         - Keys
-      vars:
-        BUNDLE_ID: com.sportsrostering.app
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.sportsrostering.app
     scripts:
-      - name: Upgrade codemagic-cli-tools
-        script: pip3 install codemagic-cli-tools --upgrade
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files $BUNDLE_ID \
-            --type IOS_APP_STORE \
-            --certificate-key=@env:APP_STORE_CONNECT_PRIVATE_KEY \
-            --create
-          keychain add-certificates
-          xcode-project use-profiles
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
       - name: Get Flutter packages
         script: flutter pub get
       - name: Install CocoaPods
