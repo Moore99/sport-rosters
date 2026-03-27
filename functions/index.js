@@ -137,7 +137,15 @@ async function _deleteDocRefs(db, refs) {
  * Failure behaviour:
  *   - New purchase:  fail closed  (throws error — user can retry)
  *   - Restore:       fail open    (grants entitlement — user already paid)
+ *
+ * Android note: Play Console API access not yet linked — Android validation
+ * fails open (grants entitlement) until ANDROID_VALIDATION_ENABLED is set to
+ * true in app config. iOS validation is fully enforced.
  */
+
+// Set to true once Play Console service account is linked and tested.
+const ANDROID_VALIDATION_ENABLED = false;
+
 exports.validateIap = onCall(
   {
     region:          'northamerica-northeast1',
@@ -155,6 +163,14 @@ exports.validateIap = onCall(
     }
     if (!['ios', 'android'].includes(platform)) {
       throw new HttpsError('invalid-argument', `Unknown platform: ${platform}`);
+    }
+
+    // Android validation deferred until Play Console API access is configured
+    if (platform === 'android' && !ANDROID_VALIDATION_ENABLED) {
+      console.log('Android validation not yet enabled — failing open.');
+      const db = getFirestore();
+      await db.collection('users').doc(uid).update({ adFree: true });
+      return { success: true };
     }
 
     let valid = false;
