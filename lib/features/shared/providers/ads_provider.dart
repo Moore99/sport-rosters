@@ -1,11 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../../core/config/app_config.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
 import '../../teams/presentation/providers/teams_provider.dart';
 
 // ── Ad-free flag ───────────────────────────────────────────────────────────────
@@ -26,10 +26,9 @@ class IapStatus {
 }
 
 class IapNotifier extends StateNotifier<IapStatus> {
-  final Ref _ref;
   StreamSubscription<List<PurchaseDetails>>? _sub;
 
-  IapNotifier(this._ref) : super(const IapStatus(IapState.idle)) {
+  IapNotifier() : super(const IapStatus(IapState.idle)) {
     _listenPurchases();
   }
 
@@ -47,8 +46,14 @@ class IapNotifier extends StateNotifier<IapStatus> {
       // IMPORTANT: deliver BEFORE completing — matches nuclear-motd bug fix (build 99)
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
-        await _grantAdFree();
-        state = const IapStatus(IapState.success);
+        final isRestore = purchase.status == PurchaseStatus.restored;
+        final validated = await _validateWithServer(purchase, isRestore: isRestore);
+        if (validated) {
+          state = const IapStatus(IapState.success);
+        } else {
+          state = const IapStatus(IapState.error,
+              'Purchase could not be verified. Please try again.');
+        }
       } else if (purchase.status == PurchaseStatus.error) {
         // Do NOT grant adFree on error — only on confirmed purchase/restore
         state = IapStatus(IapState.error, purchase.error?.message ?? 'Purchase failed.');
@@ -58,13 +63,35 @@ class IapNotifier extends StateNotifier<IapStatus> {
     }
   }
 
-  Future<void> _grantAdFree() async {
-    final uid = _ref.read(currentUserProvider)?.uid;
-    if (uid == null) return;
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .update({'adFree': true});
+  /// Sends the receipt/token to the Cloud Function for server-side validation.
+  /// The function writes adFree:true to Firestore on success.
+  /// Returns true if entitlement was granted.
+  Future<bool> _validateWithServer(
+    PurchaseDetails purchase, {
+    required bool isRestore,
+  }) async {
+    try {
+      final callable = FirebaseFunctions
+          .instanceFor(region: 'northamerica-northeast1')
+          .httpsCallable('validateIap');
+
+      await callable.call(<String, dynamic>{
+        'platform':    Platform.isIOS ? 'ios' : 'android',
+        'receiptData': purchase.verificationData.serverVerificationData,
+        'productId':   purchase.productID,
+        'isRestore':   isRestore,
+      });
+
+      return true;
+    } on FirebaseFunctionsException catch (e) {
+      // permission-denied = store says receipt is invalid
+      // internal = transient error — fail open on restore only
+      if (isRestore && e.code == 'internal') return true;
+      return false;
+    } catch (_) {
+      // Unexpected error — fail open on restore
+      return isRestore;
+    }
   }
 
   Future<void> purchaseRemoveAds() async {
@@ -109,4 +136,4 @@ class IapNotifier extends StateNotifier<IapStatus> {
 }
 
 final iapProvider =
-    StateNotifierProvider<IapNotifier, IapStatus>((ref) => IapNotifier(ref));
+    StateNotifierProvider<IapNotifier, IapStatus>((ref) => IapNotifier());

@@ -1,11 +1,17 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule }        = require('firebase-functions/v2/scheduler');
+const { defineSecret }      = require('firebase-functions/params');
 const { initializeApp }     = require('firebase-admin/app');
 const { getAuth }           = require('firebase-admin/auth');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
+const { google }            = require('googleapis');
 
 initializeApp();
+
+// ── Secrets (set via: firebase functions:secrets:set SECRET_NAME) ─────────────
+const appleSharedSecret         = defineSecret('APPLE_IAP_SHARED_SECRET');
+const googlePlayServiceAccount  = defineSecret('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
 
 /**
  * deleteAccount — GDPR/PIPEDA compliant account deletion cascade.
@@ -113,6 +119,144 @@ async function _deleteDocRefs(db, refs) {
     refs.slice(i, i + BATCH_SIZE).forEach((ref) => batch.delete(ref));
     await batch.commit();
   }
+}
+
+/**
+ * validateIap — server-side receipt validation for the "Remove Ads" one-time purchase.
+ *
+ * Called by the app after a purchase or restore event is received from the store.
+ * On success, sets adFree: true on the user's Firestore doc via Admin SDK.
+ *
+ * Params:
+ *   platform    — 'ios' | 'android'
+ *   receiptData — iOS: base64 App Store receipt (verificationData.serverVerificationData)
+ *                 Android: purchase token (verificationData.serverVerificationData)
+ *   productId   — e.g. 'com.sportsrostering.app.remove_ads'
+ *   isRestore   — true if this is a restore (fail-open on network error)
+ *
+ * Failure behaviour:
+ *   - New purchase:  fail closed  (throws error — user can retry)
+ *   - Restore:       fail open    (grants entitlement — user already paid)
+ */
+exports.validateIap = onCall(
+  {
+    region:          'northamerica-northeast1',
+    enforceAppCheck: true,
+    secrets:         [appleSharedSecret, googlePlayServiceAccount],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+    const { platform, receiptData, productId, isRestore = false } = request.data;
+    if (!platform || !receiptData || !productId) {
+      throw new HttpsError('invalid-argument',
+        'platform, receiptData, and productId are required.');
+    }
+    if (!['ios', 'android'].includes(platform)) {
+      throw new HttpsError('invalid-argument', `Unknown platform: ${platform}`);
+    }
+
+    let valid = false;
+    try {
+      if (platform === 'ios') {
+        valid = await _validateAppleReceipt(
+          receiptData, productId, appleSharedSecret.value());
+      } else {
+        valid = await _validateGooglePurchase(
+          receiptData, productId, googlePlayServiceAccount.value());
+      }
+    } catch (err) {
+      console.error(`IAP validation error (${platform}):`, err.message);
+      // Fail open on restore so a transient outage doesn't strand paying users
+      if (isRestore) {
+        console.warn('Restore: failing open due to validation error.');
+        valid = true;
+      } else {
+        throw new HttpsError('internal',
+          'Could not verify purchase. Please try again.');
+      }
+    }
+
+    if (!valid) {
+      throw new HttpsError('permission-denied',
+        'Purchase could not be verified with the store.');
+    }
+
+    // Grant entitlement via Admin SDK — cannot be spoofed by the client
+    const db = getFirestore();
+    await db.collection('users').doc(uid).update({ adFree: true });
+
+    return { success: true };
+  }
+);
+
+// ── Apple receipt validation (legacy /verifyReceipt) ─────────────────────────
+
+async function _validateAppleReceipt(receiptData, productId, sharedSecret) {
+  const body = JSON.stringify({
+    'receipt-data': receiptData,
+    password:       sharedSecret,
+    'exclude-old-transactions': true,
+  });
+
+  // Always try production first; Apple returns status 21007 for sandbox receipts
+  let data = await _applePost('https://buy.itunes.apple.com/verifyReceipt', body);
+
+  if (data.status === 21007) {
+    // Sandbox receipt — retry against sandbox endpoint (expected during TestFlight)
+    data = await _applePost('https://sandbox.itunes.apple.com/verifyReceipt', body);
+  }
+
+  if (data.status !== 0) {
+    console.warn(`Apple verifyReceipt returned status ${data.status}`);
+    return false;
+  }
+
+  // Confirm the receipt contains a transaction for the expected product
+  const inApp = data.receipt?.in_app ?? [];
+  const found = inApp.some((item) => item.product_id === productId);
+  if (!found) {
+    console.warn(`Apple receipt valid but productId '${productId}' not found`);
+  }
+  return found;
+}
+
+async function _applePost(url, body) {
+  const res = await fetch(url, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  });
+  return res.json();
+}
+
+// ── Google Play purchase validation ──────────────────────────────────────────
+
+async function _validateGooglePurchase(purchaseToken, productId, serviceAccountJson) {
+  const credentials = JSON.parse(serviceAccountJson);
+  const auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+  });
+
+  const publisher = google.androidpublisher({ version: 'v3', auth });
+
+  const result = await publisher.purchases.products.get({
+    packageName: 'com.sportsrostering.app',
+    productId,
+    token: purchaseToken,
+  });
+
+  // purchaseState: 0 = Purchased, 1 = Cancelled, 2 = Pending
+  const purchaseState = result.data.purchaseState;
+  if (purchaseState !== 0) {
+    console.warn(`Google Play purchaseState is ${purchaseState} (not purchased)`);
+    return false;
+  }
+
+  // consumptionState 1 = already consumed; for a non-consumable this is always 0
+  return true;
 }
 
 /**
