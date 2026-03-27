@@ -124,12 +124,17 @@ class _PlayerRankingTile extends ConsumerWidget {
     final score     = ranking?.score ?? 0.0;
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: _scoreColor(score, context),
-        child: Text(
-          ranking?.scoreLabel ?? '—',
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
-              color: Colors.white),
+      leading: Semantics(
+        label: ranking != null ? 'Rating ${ranking!.scoreLabel}' : 'Unrated',
+        child: ExcludeSemantics(
+          child: CircleAvatar(
+            backgroundColor: _scoreColor(score, context),
+            child: Text(
+              ranking?.scoreLabel ?? '—',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
+                  color: Colors.white),
+            ),
+          ),
         ),
       ),
       title:    Text(name),
@@ -164,13 +169,18 @@ class _PlayerRankingTile extends ConsumerWidget {
             children: [
               Text('Score: ${editScore.toStringAsFixed(1)}',
                   style: Theme.of(ctx).textTheme.titleMedium),
-              Slider(
-                value:    editScore,
-                min:      0,
-                max:      10,
-                divisions: 20,
-                label:    editScore.toStringAsFixed(1),
-                onChanged: (v) => setState(() => editScore = v),
+              Semantics(
+                label: 'Player rating',
+                child: Slider(
+                  value:    editScore,
+                  min:      0,
+                  max:      10,
+                  divisions: 20,
+                  label:    editScore.toStringAsFixed(1),
+                  semanticFormatterCallback: (v) =>
+                      'Rating ${v.toStringAsFixed(1)} out of 10',
+                  onChanged: (v) => setState(() => editScore = v),
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
