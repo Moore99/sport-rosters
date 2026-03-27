@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'core/router/app_router.dart';
+import 'core/services/biometric_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -54,11 +55,51 @@ void main() async {
   );
 }
 
-class SportsRosteringApp extends ConsumerWidget {
+class SportsRosteringApp extends ConsumerStatefulWidget {
   const SportsRosteringApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SportsRosteringApp> createState() => _SportsRosteringAppState();
+}
+
+class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
+    with WidgetsBindingObserver {
+  DateTime? _backgroundedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _backgroundedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final bg = _backgroundedAt;
+      if (bg != null && DateTime.now().difference(bg).inSeconds > 30) {
+        _tryLock();
+      }
+    }
+  }
+
+  Future<void> _tryLock() async {
+    final service = ref.read(biometricServiceProvider);
+    final enabled = await service.isEnabled();
+    if (!enabled) return;
+    final available = await service.isAvailable();
+    if (available) ref.read(biometricLockProvider.notifier).lock();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.watch(notificationInitProvider); // initializes FCM when user signs in
     final router    = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);

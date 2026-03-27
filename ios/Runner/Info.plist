@@ -70,5 +70,7 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Sport Rosters uses Face ID to keep your account secure.</string>
 	</dict>
 </plist>
