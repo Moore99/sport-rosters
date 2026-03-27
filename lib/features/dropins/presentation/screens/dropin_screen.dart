@@ -387,6 +387,7 @@ class _PlayerTile extends ConsumerWidget {
           ? IconButton(
               icon:      Icon(Icons.remove_circle_outline,
                   color: Theme.of(context).colorScheme.error),
+              tooltip:   'Remove from session',
               onPressed: onRemove,
             )
           : null,

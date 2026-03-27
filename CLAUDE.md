@@ -7,7 +7,7 @@ Read this file first. Reflects the actual current state, not the original spec.
 ## Running the Application
 
 ```bash
-flutter run
+flutter run --dart-define=GOOGLE_PLACES_API_KEY=***REMOVED_GOOGLE_PLACES_API_KEY***
 flutter pub get   # After modifying pubspec.yaml
 flutter clean     # Often fails on OneDrive repos due to file locking — safe to ignore
 flutter doctor
@@ -15,7 +15,7 @@ flutter doctor
 
 **Build APK for Android:**
 ```bash
-flutter build apk --release
+flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY=***REMOVED_GOOGLE_PLACES_API_KEY***
 ```
 
 **Install APK on connected device:**
