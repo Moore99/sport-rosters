@@ -274,8 +274,22 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 4 | App icon (whistle), splash screen, app name "Sport Rosters" | ✅ Done |
 | 4 | 21-sport roster with positions + preference categories | ✅ Done |
 | 5 | Sub-teams (snake draft, goalie pre-assign, tab UI in lineup screen) | ✅ Done |
+| 6 | Server-side IAP validation — iOS enforced, Android deferred (Play Console API access blocked) | ⚠️ Partial |
 
 ## Known Issues / Blockers
+
+### Android IAP Validation — Play Console API Access Blocked
+- `validateIap` Cloud Function deployed ✅ — iOS validation fully enforced ✅
+- Android validation currently **fails open** (grants entitlement without server verification)
+- Root cause: `Setup → API access` not visible in Play Console despite being account owner
+- `ANDROID_VALIDATION_ENABLED = false` in `functions/index.js` — flip to `true` once fixed
+- **To fix (try in order):**
+  1. Enable **Google Play Android Developer API** in Google Cloud Console → APIs & Services → Library
+  2. Try direct URL: `https://play.google.com/console/u/1/developers/6842817044785591935/setup/api-access`
+  3. Try logging in as `u/0` (primary Google account) — `u/1` accounts sometimes have restricted access
+  4. Contact Google Play developer support if none of the above work
+- **Risk while deferred:** Low — requires rooted device + App Check bypass to exploit. One-time low-price IAP makes fraud economically unattractive.
+- **Secrets already set:** `APPLE_IAP_SHARED_SECRET` ✅, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` ✅
 
 ### Google Places Autocomplete — API Key
 - Key is injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY=...` (no longer hardcoded in source)
