@@ -18,6 +18,8 @@ import '../../features/lineups/presentation/screens/lineup_screen.dart';
 import '../../features/lineups/presentation/screens/boat_seating_screen.dart';
 import '../../features/lineups/presentation/screens/position_preference_screen.dart';
 import '../../features/dropins/presentation/screens/dropin_screen.dart';
+import '../../core/services/biometric_service.dart';
+import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
 import '../../features/shared/screens/help_screen.dart';
 import '../../features/shared/screens/privacy_screen.dart';
 import '../../features/shared/screens/terms_screen.dart';
@@ -28,6 +30,7 @@ import '../../features/teams/presentation/screens/notification_inbox_screen.dart
 // Route paths
 class AppRoutes {
   static const login          = '/login';
+  static const biometricLock  = '/biometric-lock';
   static const register       = '/register';
   static const forgotPassword = '/forgot-password';
   static const teams          = '/teams';
@@ -51,24 +54,37 @@ class AppRoutes {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authState    = ref.watch(authStateProvider);
+  final bioLocked    = ref.watch(biometricLockProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.teams,
     redirect: (context, state) {
-      final isLoggedIn = authState.valueOrNull != null;
-      final isAuthRoute = state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.register ||
-          state.matchedLocation == AppRoutes.forgotPassword ||
-          state.matchedLocation == AppRoutes.privacy ||
-          state.matchedLocation == AppRoutes.terms;
+      final isLoggedIn  = authState.valueOrNull != null;
+      final currentPath = state.matchedLocation;
+      final isAuthRoute = currentPath == AppRoutes.login ||
+          currentPath == AppRoutes.register ||
+          currentPath == AppRoutes.forgotPassword ||
+          currentPath == AppRoutes.privacy ||
+          currentPath == AppRoutes.terms;
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
-      if (isLoggedIn && state.matchedLocation == AppRoutes.login) return AppRoutes.teams;
+
+      // Gate all authenticated routes behind biometric lock when active.
+      if (isLoggedIn && bioLocked && currentPath != AppRoutes.biometricLock) {
+        return AppRoutes.biometricLock;
+      }
+      // Once unlocked, leave the lock screen.
+      if (isLoggedIn && !bioLocked && currentPath == AppRoutes.biometricLock) {
+        return AppRoutes.teams;
+      }
+
+      if (isLoggedIn && currentPath == AppRoutes.login) return AppRoutes.teams;
       return null;
     },
     routes: [
-      GoRoute(path: AppRoutes.login,          builder: (_, __) => const LoginScreen()),
+      GoRoute(path: AppRoutes.login,         builder: (_, __) => const LoginScreen()),
+      GoRoute(path: AppRoutes.biometricLock, builder: (_, __) => const BiometricLockScreen()),
       GoRoute(path: AppRoutes.register,       builder: (_, __) => const RegisterScreen()),
       GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(path: AppRoutes.teams,          builder: (_, __) => const TeamsScreen()),

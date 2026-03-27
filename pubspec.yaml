@@ -52,6 +52,9 @@ dependencies:
   # Sign in with Apple (required by App Store when any social login is offered)
   sign_in_with_apple: ^6.0.0
 
+  # Biometric authentication (Face ID / Touch ID / Fingerprint)
+  local_auth: ^2.3.0
+
   # Utilities
   url_launcher: ^6.3.0
   package_info_plus: ^9.0.0

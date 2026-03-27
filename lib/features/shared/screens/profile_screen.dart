@@ -10,6 +10,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../auth/data/user_repository.dart';
+import '../../../core/services/biometric_service.dart';
 import '../../../core/services/weight_unit_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/providers/auth_notifier.dart';
@@ -17,6 +18,10 @@ import '../../auth/presentation/providers/auth_provider.dart';
 import '../../teams/domain/team.dart';
 import '../../teams/presentation/providers/teams_provider.dart';
 import '../providers/ads_provider.dart';
+
+final _biometricAvailableProvider = FutureProvider.autoDispose<bool>(
+  (ref) => ref.read(biometricServiceProvider).isAvailable(),
+);
 
 final _appVersionProvider = FutureProvider<String>((ref) async {
   final info = await PackageInfo.fromPlatform();
@@ -28,13 +33,15 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync  = ref.watch(currentUserProfileProvider);
-    final teamsAsync = ref.watch(userTeamsProvider);
-    final uid        = ref.watch(currentUserProvider)?.uid ?? '';
-    final adFree     = ref.watch(adFreeProvider);
-    final iapState   = ref.watch(iapProvider);
-    final themeMode  = ref.watch(themeModeProvider);
-    final weightUnit = ref.watch(weightUnitProvider);
+    final userAsync        = ref.watch(currentUserProfileProvider);
+    final teamsAsync       = ref.watch(userTeamsProvider);
+    final uid              = ref.watch(currentUserProvider)?.uid ?? '';
+    final adFree           = ref.watch(adFreeProvider);
+    final iapState         = ref.watch(iapProvider);
+    final themeMode        = ref.watch(themeModeProvider);
+    final weightUnit       = ref.watch(weightUnitProvider);
+    final bioAvailable     = ref.watch(_biometricAvailableProvider).valueOrNull ?? false;
+    final bioEnabled       = ref.watch(biometricEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
@@ -214,6 +221,23 @@ class ProfileScreen extends ConsumerWidget {
             // ── Legal & Account ────────────────────────────────────────
             Text('Account', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
+            if (bioAvailable)
+              SwitchListTile(
+                secondary: const Icon(Icons.fingerprint),
+                title:     const Text('Face ID / Fingerprint'),
+                subtitle:  const Text('Lock the app when you leave'),
+                value:     bioEnabled,
+                onChanged: (v) async {
+                  if (v) {
+                    // Verify they can authenticate before enabling
+                    final ok = await ref
+                        .read(biometricServiceProvider)
+                        .authenticate();
+                    if (!ok) return;
+                  }
+                  await ref.read(biometricEnabledProvider.notifier).set(v);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.help_outline),
               title:   const Text('Help'),
