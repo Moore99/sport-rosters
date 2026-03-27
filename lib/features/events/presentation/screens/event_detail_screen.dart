@@ -446,7 +446,10 @@ class _UserNameTile extends ConsumerWidget {
     final nameAsync = ref.watch(_userNameProvider(userId));
     return ListTile(
       dense:   true,
-      leading: const CircleAvatar(radius: 14, child: Icon(Icons.person, size: 16)),
+      leading: CircleAvatar(
+        radius: 14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+        child: const Icon(Icons.person, size: 16),
+      ),
       title:   Text(nameAsync.valueOrNull ?? userId,
                    overflow: TextOverflow.ellipsis),
     );

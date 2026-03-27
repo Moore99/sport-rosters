@@ -345,7 +345,7 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 32,
+                    radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
                     backgroundImage: photoUrl != null
                         ? NetworkImage(photoUrl) as ImageProvider
                         : null,
@@ -355,11 +355,11 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
                         : null,
                   ),
                   if (_uploading)
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: CircleAvatar(
-                        radius: 32,
+                        radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
                         backgroundColor: Colors.black38,
-                        child: SizedBox(
+                        child: const SizedBox(
                           width: 20, height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white)),
@@ -647,6 +647,7 @@ class _TeamRoleTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
+        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(team.sport.substring(0, 1)),
       ),
       title: Text(team.name),

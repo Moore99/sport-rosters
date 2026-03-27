@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../data/user_repository.dart';
 import '../../domain/app_user.dart';
@@ -130,6 +131,67 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       return false;
     } catch (e) {
       state = AsyncError('Google sign-in failed. Please try again.', StackTrace.current);
+      return false;
+    }
+  }
+
+  /// Signs in with Apple (iOS only). Creates a Firestore profile if first sign-in.
+  /// Apple only provides name/email on the *first* authentication — subsequent
+  /// sign-ins omit them, so we fall back to whatever Firebase has on the user.
+  Future<bool> signInWithApple() async {
+    state = const AsyncLoading();
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken:     appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      final userCred = await _auth.signInWithCredential(oauthCredential);
+      final user     = userCred.user!;
+
+      // Create Firestore profile on first Apple sign-in
+      final existing = await _users.getUser(user.uid);
+      if (existing == null) {
+        final firstName = appleCredential.givenName ?? '';
+        final lastName  = appleCredential.familyName ?? '';
+        final fullName  = '$firstName $lastName'.trim();
+
+        await _users.createUser(AppUser(
+          userId:    user.uid,
+          name:      fullName.isNotEmpty
+              ? fullName
+              : (user.displayName ?? user.email?.split('@').first ?? 'Player'),
+          email:     user.email ?? '',
+          teams:     [],
+          adFree:    false,
+          role:      'player',
+          deleted:   false,
+          createdAt: DateTime.now(),
+        ));
+      }
+
+      state = const AsyncData(null);
+      return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        // User dismissed the sheet — not an error
+        state = const AsyncData(null);
+        return false;
+      }
+      state = AsyncError('Apple sign-in failed. Please try again.', StackTrace.current);
+      return false;
+    } on FirebaseAuthException catch (e) {
+      state = AsyncError(friendlyAuthError(e), StackTrace.current);
+      return false;
+    } catch (e) {
+      state = AsyncError('Apple sign-in failed. Please try again.', StackTrace.current);
       return false;
     }
   }

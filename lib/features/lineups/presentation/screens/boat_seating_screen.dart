@@ -730,7 +730,7 @@ class _FullWidthSeatTile extends ConsumerWidget {
       dense: true,
       leading: ExcludeSemantics(
         child: CircleAvatar(
-          radius: 16,
+          radius: 16 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
           backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
           child: Text(roleLabel[0],
               style: TextStyle(
@@ -823,6 +823,7 @@ class _PlayerPickerSheet extends ConsumerWidget {
       return ListTile(
         leading: ExcludeSemantics(
           child: CircleAvatar(
+            radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
             backgroundColor: placedAt != null
                 ? Theme.of(context).colorScheme.surfaceContainerHighest
                 : null,
@@ -860,7 +861,10 @@ class _PlayerPickerSheet extends ConsumerWidget {
               children: [
                 // Unassign option
                 ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person_off)),
+                  leading: CircleAvatar(
+                    radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                    child: const Icon(Icons.person_off),
+                  ),
                   title: const Text('Unassigned'),
                   selected: currentUid.isEmpty,
                   onTap: () { onSelect(''); Navigator.of(context).pop(); },

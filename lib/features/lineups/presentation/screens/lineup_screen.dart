@@ -467,9 +467,11 @@ class _PositionTile extends ConsumerWidget {
         : null;
     final assignedName = nameAsync?.valueOrNull;
 
+    final avatarScale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
     return ListTile(
       leading: ExcludeSemantics(
         child: CircleAvatar(
+          radius: 20 * avatarScale,
           backgroundColor: assignedUid.isNotEmpty
               ? Theme.of(context).colorScheme.primaryContainer
               : Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -571,6 +573,7 @@ class _PlayerPickerSheet extends ConsumerWidget {
               : 'Unrated',
           child: ExcludeSemantics(
             child: CircleAvatar(
+              radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
               backgroundColor: placedAt != null
                   ? Theme.of(context).colorScheme.surfaceContainerHighest
                   : ranking != null
@@ -621,7 +624,10 @@ class _PlayerPickerSheet extends ConsumerWidget {
               children: [
                 // Unassign option
                 ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person_off)),
+                  leading: CircleAvatar(
+                    radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                    child: const Icon(Icons.person_off),
+                  ),
                   title:   const Text('Unassigned'),
                   selected: currentUid.isEmpty,
                   onTap: () {

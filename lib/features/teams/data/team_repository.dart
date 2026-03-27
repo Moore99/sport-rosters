@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/join_request.dart';
@@ -95,13 +96,21 @@ class TeamRepository {
         'players':  FieldValue.arrayRemove([userId]),
       });
 
-  /// Uploads a logo image to Firebase Storage and saves the download URL on the team.
+  /// Uploads a logo image via the uploadTeamLogo Cloud Function (admin-verified).
+  /// The function writes to Storage via Admin SDK; direct client writes are denied.
   Future<void> uploadTeamLogo(String teamId, File imageFile) async {
-    final ref = FirebaseStorage.instance
-        .ref('team_logos/$teamId.jpg');
-    await ref.putFile(imageFile, SettableMetadata(contentType: 'image/jpeg'));
-    final url = await ref.getDownloadURL();
-    await _teams.doc(teamId).update({'logoUrl': url});
+    final bytes = await imageFile.readAsBytes();
+    final imageBase64 = base64Encode(bytes);
+
+    final callable = FirebaseFunctions
+        .instanceFor(region: 'northamerica-northeast1')
+        .httpsCallable('uploadTeamLogo');
+
+    await callable.call(<String, dynamic>{
+      'teamId':      teamId,
+      'imageBase64': imageBase64,
+    });
+    // logoUrl is written to Firestore by the function — no local update needed.
   }
 
   /// Admin removes a player from the team + removes teamId from their profile.
