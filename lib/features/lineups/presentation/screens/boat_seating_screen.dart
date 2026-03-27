@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/services/export_service.dart';
+import '../../../../core/services/rewarded_ad_service.dart';
 import '../../../../core/services/weight_unit_provider.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/auth/domain/app_user.dart';
@@ -10,6 +12,7 @@ import '../../../../features/events/domain/event.dart';
 import '../../../../features/events/presentation/providers/events_provider.dart';
 import '../../../../features/teams/domain/team.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../shared/providers/ads_provider.dart';
 import '../../data/lineup_repository.dart';
 import '../../domain/lineup.dart';
 import '../providers/lineup_provider.dart';
@@ -160,6 +163,27 @@ class _BoatSeatingScreenState extends ConsumerState<BoatSeatingScreen> {
     }
 
     setState(() { _draft = result; _balancing = false; });
+
+    if (!mounted) return;
+
+    // Show rewarded ad for free users (same gate as lineup auto-generate).
+    if (AppConfig.enableRewardedAds) {
+      final adFree = ref.read(adFreeProvider);
+      if (!adFree) {
+        final earned = await RewardedAdService.showAndAwaitReward();
+        if (!earned) {
+          // User dismissed early — roll back the draft
+          setState(() => _draft = {for (final k in _draft.keys) k: ''});
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text(
+                  'Watch the full ad to keep the auto-balanced seating.')),
+            );
+          }
+          return;
+        }
+      }
+    }
 
     if (mounted) {
       final filled = result.values.where((v) => v.isNotEmpty).length;
