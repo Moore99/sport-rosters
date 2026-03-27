@@ -704,13 +704,15 @@ class _FullWidthSeatTile extends ConsumerWidget {
 
     return ListTile(
       dense: true,
-      leading: CircleAvatar(
-        radius: 16,
-        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-        child: Text(roleLabel[0],
-            style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.onSecondaryContainer)),
+      leading: ExcludeSemantics(
+        child: CircleAvatar(
+          radius: 16,
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          child: Text(roleLabel[0],
+              style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer)),
+        ),
       ),
       title: Text(roleLabel,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -795,17 +797,19 @@ class _PlayerPickerSheet extends ConsumerWidget {
           ? '${placedAt.replaceFirst(RegExp(r'^Boat \d+ '), '')}${weightKg != null ? ' · ${formatWeight(weightKg, weightUnit)}' : ''}'
           : weightKg != null ? formatWeight(weightKg, weightUnit) : null;
       return ListTile(
-        leading: CircleAvatar(
-          backgroundColor: placedAt != null
-              ? Theme.of(context).colorScheme.surfaceContainerHighest
-              : null,
-          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+        leading: ExcludeSemantics(
+          child: CircleAvatar(
+            backgroundColor: placedAt != null
+                ? Theme.of(context).colorScheme.surfaceContainerHighest
+                : null,
+            child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
         ),
         title:    Text(name,
             style: TextStyle(
                 color: placedAt != null
-                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.6)
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.75)
                     : null)),
         subtitle: subtitle != null ? Text(subtitle) : null,
         selected: uid == currentUid,

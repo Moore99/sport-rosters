@@ -468,16 +468,18 @@ class _PositionTile extends ConsumerWidget {
     final assignedName = nameAsync?.valueOrNull;
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: assignedUid.isNotEmpty
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Text(
-          position.substring(0, 1),
-          style: TextStyle(
-              color: assignedUid.isNotEmpty
-                  ? Theme.of(context).colorScheme.onPrimaryContainer
-                  : Theme.of(context).colorScheme.outline),
+      leading: ExcludeSemantics(
+        child: CircleAvatar(
+          backgroundColor: assignedUid.isNotEmpty
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Text(
+            position.substring(0, 1),
+            style: TextStyle(
+                color: assignedUid.isNotEmpty
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.outline),
+          ),
         ),
       ),
       title:    Text(position),
@@ -563,26 +565,33 @@ class _PlayerPickerSheet extends ConsumerWidget {
       final name      = nameAsync.valueOrNull ?? uid;
       final subtitle  = placedAt;
       return ListTile(
-        leading: CircleAvatar(
-          backgroundColor: placedAt != null
-              ? Theme.of(context).colorScheme.surfaceContainerHighest
-              : ranking != null
-                  ? _scoreColor(ranking.score, context)
-                  : null,
-          child: Text(
-            ranking?.scoreLabel ?? '?',
-            style: TextStyle(
-                color: placedAt != null
-                    ? Theme.of(context).colorScheme.outline
-                    : Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.bold),
+        leading: Semantics(
+          label: ranking != null
+              ? 'Rating ${ranking.scoreLabel}'
+              : 'Unrated',
+          child: ExcludeSemantics(
+            child: CircleAvatar(
+              backgroundColor: placedAt != null
+                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                  : ranking != null
+                      ? _scoreColor(ranking.score, context)
+                      : null,
+              child: Text(
+                ranking?.scoreLabel ?? '?',
+                style: TextStyle(
+                    color: placedAt != null
+                        ? Theme.of(context).colorScheme.outline
+                        : Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ),
         title: Text(name,
             style: TextStyle(
                 color: placedAt != null
-                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.6)
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0.75)
                     : null)),
         subtitle: subtitle != null ? Text(subtitle) : null,
         selected: uid == currentUid,
