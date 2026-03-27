@@ -1,7 +1,7 @@
 name: sports_rostering
 description: Multi-sport team roster, scheduling, and drop-in session management
 publish_to: "none"
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -48,6 +48,9 @@ dependencies:
 
   # In-app purchases (Remove Ads)
   in_app_purchase: ^3.2.0
+
+  # Sign in with Apple (required by App Store when any social login is offered)
+  sign_in_with_apple: ^6.0.0
 
   # Utilities
   url_launcher: ^6.3.0

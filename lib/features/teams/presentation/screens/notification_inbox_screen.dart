@@ -98,6 +98,7 @@ class _NotificationTile extends StatelessWidget {
     final fmt = DateFormat('MMM d, h:mm a');
     return ListTile(
       leading: CircleAvatar(
+        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
         child: Icon(Icons.notifications_outlined,
             color: Theme.of(context).colorScheme.onPrimaryContainer),

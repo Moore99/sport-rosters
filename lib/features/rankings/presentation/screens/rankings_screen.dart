@@ -128,6 +128,7 @@ class _PlayerRankingTile extends ConsumerWidget {
         label: ranking != null ? 'Rating ${ranking!.scoreLabel}' : 'Unrated',
         child: ExcludeSemantics(
           child: CircleAvatar(
+            radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
             backgroundColor: _scoreColor(score, context),
             child: Text(
               ranking?.scoreLabel ?? '—',

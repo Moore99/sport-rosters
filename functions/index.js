@@ -5,6 +5,7 @@ const { initializeApp }     = require('firebase-admin/app');
 const { getAuth }           = require('firebase-admin/auth');
 const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
 const { getMessaging }      = require('firebase-admin/messaging');
+const { getStorage }        = require('firebase-admin/storage');
 const { google }            = require('googleapis');
 
 initializeApp();
@@ -457,5 +458,58 @@ exports.sendEventReminders = onSchedule(
         await eventDoc.ref.update({ reminder2Sent: true });
       }
     }
+  }
+);
+
+/**
+ * uploadTeamLogo — admin-only team logo upload via Cloud Function proxy.
+ *
+ * Storage rules deny all direct client writes to team_logos/. This function
+ * verifies the caller is a team admin, then writes to Storage via Admin SDK.
+ *
+ * Params: { teamId, imageBase64 }
+ *   teamId      — Firestore team document ID
+ *   imageBase64 — JPEG image data, base64-encoded (max ~2.67 MB after encoding)
+ */
+exports.uploadTeamLogo = onCall(
+  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+    const { teamId, imageBase64 } = request.data;
+    if (!teamId || !imageBase64) {
+      throw new HttpsError('invalid-argument', 'teamId and imageBase64 are required.');
+    }
+
+    const db = getFirestore();
+
+    // Verify the caller is a team admin
+    const teamSnap = await db.collection('teams').doc(teamId).get();
+    if (!teamSnap.exists) throw new HttpsError('not-found', 'Team not found.');
+    const admins = teamSnap.data().admins ?? [];
+    if (!admins.includes(uid)) {
+      throw new HttpsError('permission-denied', 'Only team admins can upload a team logo.');
+    }
+
+    // Write image to Storage via Admin SDK (bypasses client-facing rules)
+    const bucket = getStorage().bucket();
+    const filePath = `team_logos/${teamId}.jpg`;
+    const file = bucket.file(filePath);
+
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    await file.save(imageBuffer, {
+      metadata: { contentType: 'image/jpeg' },
+      public: false,
+    });
+
+    // Make file publicly readable and get the URL
+    await file.makePublic();
+    const logoUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+    // Persist URL to Firestore
+    await db.collection('teams').doc(teamId).update({ logoUrl });
+
+    return { logoUrl };
   }
 );

@@ -323,7 +323,7 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 32,
+                    radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
                     backgroundImage: widget.team.logoUrl != null
                         ? NetworkImage(widget.team.logoUrl!)
                         : null,
@@ -391,7 +391,10 @@ class _JoinRequestTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.person_add)),
+        leading: CircleAvatar(
+          radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+          child: const Icon(Icons.person_add),
+        ),
         title:    Text(request.userName),
         subtitle: Text(request.userEmail),
         trailing: Row(
@@ -457,6 +460,7 @@ class _MemberTile extends ConsumerWidget {
     final displayName = isSelf ? '$name (you)' : name;
     return ListTile(
       leading: CircleAvatar(
+        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: const TextStyle(fontWeight: FontWeight.bold),

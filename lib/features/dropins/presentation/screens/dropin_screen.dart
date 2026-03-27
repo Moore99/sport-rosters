@@ -353,7 +353,7 @@ class _TeamMemberRow extends ConsumerWidget {
     return ListTile(
       dense: true,
       leading: CircleAvatar(
-        radius: 14,
+        radius: 14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
             style: const TextStyle(fontSize: 12)),
       ),
@@ -379,9 +379,12 @@ class _PlayerTile extends ConsumerWidget {
     final name = ref.watch(_userNameProvider(userId)).valueOrNull ?? userId;
     return ListTile(
       leading: label != null
-          ? CircleAvatar(child: Text(label!,
-              style: const TextStyle(fontSize: 12)))
-          : const CircleAvatar(child: Icon(Icons.person)),
+          ? CircleAvatar(
+              radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+              child: Text(label!, style: const TextStyle(fontSize: 12)))
+          : CircleAvatar(
+              radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+              child: const Icon(Icons.person)),
       title:   Text(isSelf ? '$name (you)' : name),
       trailing: onRemove != null
           ? IconButton(

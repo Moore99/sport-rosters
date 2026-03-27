@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../providers/auth_notifier.dart';
@@ -165,6 +168,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         }
                       },
                     ),
+
+                    // ── Sign in with Apple (iOS only — required by App Store) ─
+                    if (Platform.isIOS) ...[
+                      const SizedBox(height: 12),
+                      SignInWithAppleButton(
+                        onPressed: isLoading ? () {} : () async {
+                          final ok = await ref
+                              .read(authNotifierProvider.notifier)
+                              .signInWithApple();
+                          if (!ok && context.mounted) {
+                            final err = ref.read(authNotifierProvider)
+                                .error?.toString() ?? 'Apple sign-in failed.';
+                            ScaffoldMessenger.of(context)
+                                .showSnackBar(SnackBar(content: Text(err)));
+                          }
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 24),
 
                     // ── Register link ─────────────────────────────────────

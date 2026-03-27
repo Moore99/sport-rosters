@@ -93,6 +93,7 @@ class _TeamCard extends ConsumerWidget {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
+          radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
           backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
           child: team.logoUrl == null ? Text(team.sport.substring(0, 1)) : null,
         ),
