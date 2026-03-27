@@ -18,6 +18,13 @@ flutter doctor
 flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
 ```
 
+**Build AAB for Play Store:**
+```bash
+flutter build appbundle --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
+```
+AAB output: `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab`
+Note: Flutter reports "failed to produce .aab file" due to the build junction — the file IS there at the path above, ignore the warning.
+
 **Install APK on connected device:**
 ```bash
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\app-release.apk"
@@ -275,6 +282,11 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 4 | 21-sport roster with positions + preference categories | ✅ Done |
 | 5 | Sub-teams (snake draft, goalie pre-assign, tab UI in lineup screen) | ✅ Done |
 | 6 | Server-side IAP validation — iOS enforced, Android deferred (Play Console API access blocked) | ⚠️ Partial |
+| 6 | Sign in with Apple (App Store requirement when Google Sign-In offered) | ✅ Done |
+| 6 | Team logo upload secured via Cloud Function proxy (admin-verified) | ✅ Done |
+| 6 | CircleAvatar radii scale with system text size (accessibility) | ✅ Done |
+| 6 | Biometric authentication (Face ID / Touch ID / Fingerprint) | ✅ Done |
+| 6 | Cloud Functions runtime upgraded to Node.js 22 | ✅ Done |
 
 ## Known Issues / Blockers
 
@@ -290,6 +302,11 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
   4. Contact Google Play developer support if none of the above work
 - **Risk while deferred:** Low — requires rooted device + App Check bypass to exploit. One-time low-price IAP makes fraud economically unattractive.
 - **Secrets already set:** `APPLE_IAP_SHARED_SECRET` ✅, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` ✅
+
+### Android minSdk
+- Set to `maxOf(flutter.minSdkVersion, 23)` in `android/app/build.gradle.kts`
+- Required by `local_auth` (biometrics). Flutter default is 21; biometrics need API 23+.
+- A linter/Flutter Gradle plugin upgrade may revert this to `flutter.minSdkVersion` — if builds break, check this line first.
 
 ### Google Places Autocomplete — API Key
 - Key is injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY=...` (no longer hardcoded in source)
