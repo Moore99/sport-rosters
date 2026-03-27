@@ -205,7 +205,7 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 ## Development Workflow
 
 ### Android Testing
-1. `flutter build apk --release`
+1. `flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ`
 2. `adb install -r build/app/outputs/flutter-apk/app-release.apk`
 3. `adb shell am force-stop com.sportsrostering.app`
 4. Launch manually; `flutter logs` to monitor
@@ -277,8 +277,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 ## Known Issues / Blockers
 
-### Google Places Autocomplete — API Key Invalid
-- Key in `AppConfig.googlePlacesApiKey`: `AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ`
-- App reports "Invalid API key" at runtime
-- **To fix**: Go to Google Cloud Console → APIs & Services → Credentials, find this key, and ensure **Places API** (not just Maps SDK) is enabled. Also verify the key has no HTTP referrer restrictions that would block Android/iOS app requests — use Android app restriction (package: `com.sportsrostering.app`) instead.
-- The location field falls back gracefully to a plain text field if Places is unavailable.
+### Google Places Autocomplete — API Key
+- Key is injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY=...` (no longer hardcoded in source)
+- Codemagic injects it from the `Keys` environment group (`GOOGLE_PLACES_API_KEY`)
+- Key is restricted in Google Cloud Console to Android app (`com.sportsrostering.app`) + Places API only
+- SHA-1 registered in Cloud Console: `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`
+- The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without `--dart-define`)
