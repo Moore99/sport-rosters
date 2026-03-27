@@ -127,7 +127,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Event')),
-      body: SafeArea(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -191,6 +193,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                         _locationCtrl.selection = TextSelection.fromPosition(
                           TextPosition(offset: _locationCtrl.text.length),
                         );
+                        FocusScope.of(context).unfocus();
                       },
                     ),
                     const SizedBox(height: 20),
@@ -356,6 +359,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
