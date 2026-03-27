@@ -44,7 +44,7 @@ android {
 
     defaultConfig {
         applicationId = "com.sportsrostering.app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23  // local_auth (biometrics) requires API 23+
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
