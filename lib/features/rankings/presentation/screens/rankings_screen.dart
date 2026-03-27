@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/ranking_repository.dart';
 import '../../domain/ranking.dart';
@@ -19,8 +20,9 @@ class RankingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teamAsync    = ref.watch(teamProvider(teamId));
+    final teamAsync     = ref.watch(teamProvider(teamId));
     final rankingsAsync = ref.watch(teamRankingsProvider(teamId));
+    final currentUid    = ref.watch(currentUserProvider)?.uid;
 
     final team = teamAsync.valueOrNull;
 
@@ -40,6 +42,20 @@ class RankingsScreen extends ConsumerWidget {
         error:   (e, _) => Center(child: Text('Error: $e')),
         data:    (team) {
           if (team == null) return const Center(child: Text('Team not found.'));
+
+          // Local admin guard — Firestore rules enforce this server-side too.
+          if (currentUid == null || !team.admins.contains(currentUid)) {
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.lock_outline, size: 48),
+                  SizedBox(height: 16),
+                  Text('Rankings are visible to coaches only.'),
+                ],
+              ),
+            );
+          }
 
           final allMembers = [...team.players]; // admins not typically ranked
           if (allMembers.isEmpty) {

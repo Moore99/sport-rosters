@@ -227,9 +227,12 @@ class AppConfig {
   }
 
   // ── Google Places ─────────────────────────────────────────────────────────
-  // Enable Places API in Google Cloud Console, create a key restricted to
+  // Injected at build time via --dart-define=GOOGLE_PLACES_API_KEY=...
+  // Never hardcode this value here — pass it through Codemagic env vars or
+  // the local build command. Restrict the key in Google Cloud Console to
   // Android (package: com.sportsrostering.app) and iOS (bundle: com.sportsrostering.app).
-  static const String googlePlacesApiKey = 'AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ';
+  static const String googlePlacesApiKey =
+      String.fromEnvironment('GOOGLE_PLACES_API_KEY', defaultValue: '');
 
   // ── Feature Flags ─────────────────────────────────────────────────────────
   // Toggle incomplete Phase 2+ features without removing code

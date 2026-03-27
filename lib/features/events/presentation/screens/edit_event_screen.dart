@@ -383,7 +383,8 @@ class _CounterField extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.remove_circle_outline),
+          icon:    const Icon(Icons.remove_circle_outline),
+          tooltip: 'Decrease $label',
           onPressed: value > min ? () => onChanged(value - step) : null,
         ),
         Column(
@@ -393,7 +394,8 @@ class _CounterField extends StatelessWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.add_circle_outline),
+          icon:    const Icon(Icons.add_circle_outline),
+          tooltip: 'Increase $label',
           onPressed: value < max ? () => onChanged(value + step) : null,
         ),
       ],
