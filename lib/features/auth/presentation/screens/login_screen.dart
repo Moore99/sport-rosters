@@ -157,14 +157,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               const Icon(Icons.login)),
                       label: const Text('Continue with Google'),
                       onPressed: isLoading ? null : () async {
-                        final ok = await ref
+                        await ref
                             .read(authNotifierProvider.notifier)
                             .signInWithGoogle();
-                        if (!ok && context.mounted) {
-                          final err = ref.read(authNotifierProvider)
-                              .error?.toString() ?? 'Google sign-in failed.';
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(content: Text(err)));
+                        if (context.mounted) {
+                          final authState = ref.read(authNotifierProvider);
+                          if (authState is AsyncError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(authState.error.toString())),
+                            );
+                          }
                         }
                       },
                     ),
@@ -174,14 +176,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 12),
                       SignInWithAppleButton(
                         onPressed: isLoading ? () {} : () async {
-                          final ok = await ref
+                          await ref
                               .read(authNotifierProvider.notifier)
                               .signInWithApple();
-                          if (!ok && context.mounted) {
-                            final err = ref.read(authNotifierProvider)
-                                .error?.toString() ?? 'Apple sign-in failed.';
-                            ScaffoldMessenger.of(context)
-                                .showSnackBar(SnackBar(content: Text(err)));
+                          if (context.mounted) {
+                            final authState = ref.read(authNotifierProvider);
+                            if (authState is AsyncError) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(authState.error.toString())),
+                              );
+                            }
                           }
                         },
                       ),

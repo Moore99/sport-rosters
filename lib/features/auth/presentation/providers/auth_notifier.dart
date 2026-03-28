@@ -24,6 +24,8 @@ String friendlyAuthError(FirebaseAuthException e) {
       return 'Too many attempts. Please try again later.';
     case 'network-request-failed':
       return 'No internet connection. Please try again.';
+    case 'account-exists-with-different-credential':
+      return 'This email is already registered with a different sign-in method. Please use your original sign-in method.';
     default:
       // Include error code in debug builds to help diagnose unexpected errors
       assert(() {
