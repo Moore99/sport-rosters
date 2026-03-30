@@ -7,6 +7,8 @@ import '../../../../core/services/export_service.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/teams/data/spares_repository.dart';
+import '../../../../features/teams/presentation/providers/spares_provider.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
@@ -16,15 +18,17 @@ import '../providers/events_provider.dart';
 class EventDetailScreen extends ConsumerWidget {
   final String teamId;
   final String eventId;
-  const EventDetailScreen({super.key, required this.teamId, required this.eventId});
+  const EventDetailScreen(
+      {super.key, required this.teamId, required this.eventId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventAsync = ref.watch(eventProvider(eventId));
 
     return eventAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error:   (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
       data: (event) {
         if (event == null) {
           return const Scaffold(body: Center(child: Text('Event not found.')));
@@ -36,22 +40,26 @@ class EventDetailScreen extends ConsumerWidget {
 }
 
 class _EventDetailView extends ConsumerWidget {
-  final Event  event;
+  final Event event;
   final String teamId;
   const _EventDetailView({required this.event, required this.teamId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uid      = ref.watch(currentUserProvider)?.uid ?? '';
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final teamAsync = ref.watch(teamProvider(teamId));
-    final isAdmin   = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
-    final myAvail   = ref.watch(myAvailabilityProvider(event.eventId)).valueOrNull;
-    final allAvail  = isAdmin
-        ? ref.watch(eventAvailabilityProvider((event.eventId, teamId))).valueOrNull ?? []
+    final isAdmin = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
+    final myAvail =
+        ref.watch(myAvailabilityProvider(event.eventId)).valueOrNull;
+    final allAvail = isAdmin
+        ? ref
+                .watch(eventAvailabilityProvider((event.eventId, teamId)))
+                .valueOrNull ??
+            []
         : <Availability>[];
 
-    final dateFmt   = DateFormat('EEEE, MMMM d, yyyy');
-    final timeFmt   = DateFormat('h:mm a');
+    final dateFmt = DateFormat('EEEE, MMMM d, yyyy');
+    final timeFmt = DateFormat('h:mm a');
 
     return Scaffold(
       appBar: AppBar(
@@ -61,22 +69,22 @@ class _EventDetailView extends ConsumerWidget {
           if (isAdmin)
             if (teamAsync.valueOrNull?.sport == 'Dragon Boating')
               IconButton(
-                icon:    const Icon(Icons.directions_boat_outlined),
+                icon: const Icon(Icons.directions_boat_outlined),
                 tooltip: 'Boat Seating',
-                onPressed: () =>
-                    context.push('/teams/$teamId/events/${event.eventId}/boat-seating'),
+                onPressed: () => context.push(
+                    '/teams/$teamId/events/${event.eventId}/boat-seating'),
               )
             else
               IconButton(
-                icon:    const Icon(Icons.list_alt),
+                icon: const Icon(Icons.list_alt),
                 tooltip: 'Lineup',
-                onPressed: () =>
-                    context.push('/teams/$teamId/events/${event.eventId}/lineup'),
+                onPressed: () => context
+                    .push('/teams/$teamId/events/${event.eventId}/lineup'),
               ),
           // Notify team about this event — admin only
           if (isAdmin)
             IconButton(
-              icon:    const Icon(Icons.notifications_outlined),
+              icon: const Icon(Icons.notifications_outlined),
               tooltip: 'Notify Team',
               onPressed: () => context.push(
                 '/teams/$teamId/notify',
@@ -86,7 +94,7 @@ class _EventDetailView extends ConsumerWidget {
           // Drop-in button
           if (event.isDropIn)
             IconButton(
-              icon:    const Icon(Icons.people_alt_outlined),
+              icon: const Icon(Icons.people_alt_outlined),
               tooltip: 'Drop-in',
               onPressed: () =>
                   context.push('/teams/$teamId/events/${event.eventId}/dropin'),
@@ -114,8 +122,7 @@ class _EventDetailView extends ConsumerWidget {
                         ),
                         FilledButton(
                           style: FilledButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(ctx).colorScheme.error,
+                            backgroundColor: Theme.of(ctx).colorScheme.error,
                           ),
                           onPressed: () => Navigator.of(ctx).pop(true),
                           child: const Text('Delete'),
@@ -143,8 +150,7 @@ class _EventDetailView extends ConsumerWidget {
                 PopupMenuItem(
                   value: 'delete',
                   child: ListTile(
-                    leading: Icon(Icons.delete_outline,
-                        color: Colors.red),
+                    leading: Icon(Icons.delete_outline, color: Colors.red),
                     title: Text('Delete Event',
                         style: TextStyle(color: Colors.red)),
                     contentPadding: EdgeInsets.zero,
@@ -154,74 +160,156 @@ class _EventDetailView extends ConsumerWidget {
             ),
         ],
       ),
-      body: SafeArea(top: false, child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: SafeArea(
+          top: false,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ── Event header card ──────────────────────────────────────────
+              _HeaderCard(event: event, dateFmt: dateFmt, timeFmt: timeFmt),
+              const SizedBox(height: 20),
 
-          // ── Event header card ──────────────────────────────────────────
-          _HeaderCard(event: event, dateFmt: dateFmt, timeFmt: timeFmt),
-          const SizedBox(height: 20),
-
-          // ── RSVP (players + admins can respond) ───────────────────────
-          if (event.allowSignups) ...[
-            Row(
-              children: [
-                Text('Your RSVP', style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                if (event.rsvpDeadline != null)
-                  Text(
-                    event.rsvpOpen
-                        ? 'Closes ${DateFormat('MMM d h:mm a').format(event.rsvpDeadline!)}'
-                        : 'RSVP closed',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: event.rsvpOpen
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _RsvpButtons(
-              current:  myAvail?.response,
-              disabled: !event.rsvpOpen,
-              onSelect: (r) => ref.read(eventRepositoryProvider).setAvailability(
-                Availability(
-                  userId:    uid,
-                  eventId:   event.eventId,
-                  teamId:    teamId,
-                  response:  r,
-                  updatedAt: DateTime.now(),
+              // ── RSVP (players + admins can respond) ───────────────────────
+              if (event.allowSignups) ...[
+                Row(
+                  children: [
+                    Text('Your RSVP',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    if (event.rsvpDeadline != null)
+                      Text(
+                        event.rsvpOpen
+                            ? 'Closes ${DateFormat('MMM d h:mm a').format(event.rsvpDeadline!)}'
+                            : 'RSVP closed',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: event.rsvpOpen
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.error,
+                            ),
+                      ),
+                  ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // ── Availability summary (admin) ────────────────────────────────
-          if (isAdmin) ...[
-            Row(
-              children: [
-                Text('Availability', style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                if (allAvail.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.download_outlined),
-                    tooltip: 'Export CSV',
-                    onPressed: () => _exportCsv(context, ref, event, allAvail),
-                  ),
+                const SizedBox(height: 8),
+                _RsvpButtons(
+                  current: myAvail?.response,
+                  disabled: !event.rsvpOpen,
+                  onSelect: (r) =>
+                      ref.read(eventRepositoryProvider).setAvailability(
+                            Availability(
+                              userId: uid,
+                              eventId: event.eventId,
+                              teamId: teamId,
+                              response: r,
+                              updatedAt: DateTime.now(),
+                            ),
+                          ),
+                ),
+                const SizedBox(height: 24),
               ],
-            ),
-            const SizedBox(height: 8),
-            _AvailabilitySummary(
-              allAvail:   allAvail,
-              teamAsync:  teamAsync,
-              minPlayers: event.minPlayers,
-            ),
-          ],
-        ],
-      )),
+
+              // ── Availability summary (admin) ────────────────────────────────
+              if (isAdmin) ...[
+                Row(
+                  children: [
+                    Text('Availability',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    if (allAvail.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.download_outlined),
+                        tooltip: 'Export CSV',
+                        onPressed: () =>
+                            _exportCsv(context, ref, event, allAvail),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _AvailabilitySummary(
+                  allAvail: allAvail,
+                  teamAsync: teamAsync,
+                  minPlayers: event.minPlayers,
+                ),
+                const SizedBox(height: 16),
+                _NotifySparesButton(
+                  event: event,
+                  teamId: teamId,
+                  yesCount: allAvail
+                      .where((a) => a.response == AvailabilityResponse.yes)
+                      .length,
+                ),
+              ],
+            ],
+          )),
     );
+  }
+}
+
+class _NotifySparesButton extends ConsumerWidget {
+  final Event event;
+  final String teamId;
+  final int yesCount;
+  const _NotifySparesButton({
+    required this.event,
+    required this.teamId,
+    required this.yesCount,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sparesAsync = ref.watch(teamSparesProvider(teamId));
+    final sparesCount = sparesAsync.valueOrNull?.length ?? 0;
+    final isBelowMin = yesCount < event.minPlayers;
+
+    if (!isBelowMin || sparesCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return FilledButton.tonalIcon(
+      icon: const Icon(Icons.person_add),
+      label: Text('Notify Spares ($sparesCount available)'),
+      onPressed: () => _notifySpares(context, ref),
+    );
+  }
+
+  Future<void> _notifySpares(BuildContext context, WidgetRef ref) async {
+    final teamName =
+        ref.read(teamProvider(event.teamId)).valueOrNull?.name ?? 'Your Team';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Notify Spares'),
+        content: Text(
+            'Send notifications to spares for the ${event.type.label.toLowerCase()} on ${DateFormat.MMMd().format(event.date)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Notify'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final sent = await ref.read(sparesRepositoryProvider).notifySpares(
+          eventId: event.eventId,
+          teamId: event.teamId,
+          teamName: teamName,
+          eventDate: event.date,
+        );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                sent > 0 ? 'Notified $sent spares' : 'No spares notified')),
+      );
+    }
   }
 }
 
@@ -234,7 +322,8 @@ Future<void> _exportCsv(
   List<Availability> allAvail,
 ) async {
   final userRepo = ref.read(userRepositoryProvider);
-  final teamName = ref.read(teamProvider(event.teamId)).valueOrNull?.name ?? 'Team';
+  final teamName =
+      ref.read(teamProvider(event.teamId)).valueOrNull?.name ?? 'Team';
 
   final rows = <({String name, String response})>[];
   for (final a in allAvail) {
@@ -244,23 +333,24 @@ Future<void> _exportCsv(
   }
   // Sort: Yes → Maybe → No
   const order = {'Yes': 0, 'Maybe': 1, 'No': 2};
-  rows.sort((a, b) =>
-      (order[a.response] ?? 9).compareTo(order[b.response] ?? 9));
+  rows.sort(
+      (a, b) => (order[a.response] ?? 9).compareTo(order[b.response] ?? 9));
 
   await ExportService.shareAvailabilityCsv(
-    teamName:   teamName,
+    teamName: teamName,
     eventLabel: event.type.label,
-    eventDate:  event.date,
-    rows:       rows,
+    eventDate: event.date,
+    rows: rows,
   );
 }
 
 // ── Header card ────────────────────────────────────────────────────────────────
 
 class _HeaderCard extends StatelessWidget {
-  final Event    event;
+  final Event event;
   final DateFormat dateFmt, timeFmt;
-  const _HeaderCard({required this.event, required this.dateFmt, required this.timeFmt});
+  const _HeaderCard(
+      {required this.event, required this.dateFmt, required this.timeFmt});
 
   @override
   Widget build(BuildContext context) {
@@ -283,8 +373,9 @@ class _HeaderCard extends StatelessWidget {
                       if (!event.isUpcoming)
                         Chip(
                           label: const Text('Past'),
-                          backgroundColor:
-                              Theme.of(context).colorScheme.surfaceContainerHighest,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
                         ),
                     ],
                   ),
@@ -309,7 +400,7 @@ class _HeaderCard extends StatelessWidget {
 
 class _InfoRow extends StatelessWidget {
   final IconData icon;
-  final String   text;
+  final String text;
   const _InfoRow(this.icon, this.text);
 
   @override
@@ -330,23 +421,27 @@ class _RsvpButtons extends StatelessWidget {
   final AvailabilityResponse? current;
   final bool disabled;
   final ValueChanged<AvailabilityResponse> onSelect;
-  const _RsvpButtons({this.current, this.disabled = false, required this.onSelect});
+  const _RsvpButtons(
+      {this.current, this.disabled = false, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
     return SegmentedButton<AvailabilityResponse>(
-      segments: AvailabilityResponse.values.map((r) =>
-        ButtonSegment(
-          value:   r,
-          label:   Text(r.label),
-          icon:    Text(r.emoji),
-          enabled: !disabled,
-        )).toList(),
+      segments: AvailabilityResponse.values
+          .map((r) => ButtonSegment(
+                value: r,
+                label: Text(r.label),
+                icon: Text(r.emoji),
+                enabled: !disabled,
+              ))
+          .toList(),
       selected: current != null ? {current!} : {},
       emptySelectionAllowed: true,
-      onSelectionChanged: disabled ? null : (s) {
-        if (s.isNotEmpty) onSelect(s.first);
-      },
+      onSelectionChanged: disabled
+          ? null
+          : (s) {
+              if (s.isNotEmpty) onSelect(s.first);
+            },
     );
   }
 }
@@ -354,9 +449,9 @@ class _RsvpButtons extends StatelessWidget {
 // ── Availability summary (admin) ───────────────────────────────────────────────
 
 class _AvailabilitySummary extends ConsumerWidget {
-  final List<Availability>   allAvail;
-  final AsyncValue            teamAsync;
-  final int                  minPlayers;
+  final List<Availability> allAvail;
+  final AsyncValue teamAsync;
+  final int minPlayers;
   const _AvailabilitySummary({
     required this.allAvail,
     required this.teamAsync,
@@ -365,9 +460,13 @@ class _AvailabilitySummary extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final yes    = allAvail.where((a) => a.response == AvailabilityResponse.yes).toList();
-    final no     = allAvail.where((a) => a.response == AvailabilityResponse.no).toList();
-    final maybe  = allAvail.where((a) => a.response == AvailabilityResponse.maybe).toList();
+    final yes =
+        allAvail.where((a) => a.response == AvailabilityResponse.yes).toList();
+    final no =
+        allAvail.where((a) => a.response == AvailabilityResponse.no).toList();
+    final maybe = allAvail
+        .where((a) => a.response == AvailabilityResponse.maybe)
+        .toList();
     final yesCount = yes.length;
     final hasQuorum = yesCount >= minPlayers;
 
@@ -396,7 +495,7 @@ class _AvailabilitySummary extends ConsumerWidget {
 
         // Response groups
         _ResponseGroup(label: 'Yes', emoji: '✅', responses: yes, ref: ref),
-        _ResponseGroup(label: 'No',  emoji: '❌', responses: no,  ref: ref),
+        _ResponseGroup(label: 'No', emoji: '❌', responses: no, ref: ref),
         _ResponseGroup(label: 'Maybe', emoji: '❓', responses: maybe, ref: ref),
       ],
     );
@@ -404,12 +503,14 @@ class _AvailabilitySummary extends ConsumerWidget {
 }
 
 class _ResponseGroup extends StatelessWidget {
-  final String             label, emoji;
+  final String label, emoji;
   final List<Availability> responses;
-  final WidgetRef          ref;
+  final WidgetRef ref;
   const _ResponseGroup({
-    required this.label, required this.emoji,
-    required this.responses, required this.ref,
+    required this.label,
+    required this.emoji,
+    required this.responses,
+    required this.ref,
   });
 
   @override
@@ -431,13 +532,14 @@ class _ResponseGroup extends StatelessWidget {
 }
 
 /// Resolves a userId to a display name via Firestore (cached by Riverpod).
-final _userNameProvider = FutureProvider.family<String, String>((ref, uid) async {
+final _userNameProvider =
+    FutureProvider.family<String, String>((ref, uid) async {
   final user = await ref.read(userRepositoryProvider).getUser(uid);
   return user?.name.isNotEmpty == true ? user!.name : uid;
 });
 
 class _UserNameTile extends ConsumerWidget {
-  final String    userId;
+  final String userId;
   final WidgetRef ref;
   const _UserNameTile({required this.userId, required this.ref});
 
@@ -445,13 +547,14 @@ class _UserNameTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nameAsync = ref.watch(_userNameProvider(userId));
     return ListTile(
-      dense:   true,
+      dense: true,
       leading: CircleAvatar(
-        radius: 14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+        radius:
+            14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: const Icon(Icons.person, size: 16),
       ),
-      title:   Text(nameAsync.valueOrNull ?? userId,
-                   overflow: TextOverflow.ellipsis),
+      title: Text(nameAsync.valueOrNull ?? userId,
+          overflow: TextOverflow.ellipsis),
     );
   }
 }

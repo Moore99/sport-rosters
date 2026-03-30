@@ -23,9 +23,10 @@ class TeamDetailScreen extends ConsumerWidget {
     final teamAsync = ref.watch(teamProvider(teamId));
 
     return teamAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error:   (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
-      data:    (team) {
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      data: (team) {
         if (team == null) {
           return const Scaffold(body: Center(child: Text('Team not found.')));
         }
@@ -41,10 +42,11 @@ class _TeamDetailView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uid     = ref.watch(currentUserProvider)?.uid ?? '';
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final isAdmin = team.isAdmin(uid);
-    final requestsAsync = isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
-    final pendingCount  = requestsAsync?.valueOrNull?.length ?? 0;
+    final requestsAsync =
+        isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
+    final pendingCount = requestsAsync?.valueOrNull?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -82,90 +84,102 @@ class _TeamDetailView extends ConsumerWidget {
               tooltip: 'Player Rankings (Coach only)',
               onPressed: () => context.push('/teams/${team.teamId}/rankings'),
             ),
+          // Spares — admin only
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(Icons.people_outline),
+              tooltip: 'Manage Spares',
+              onPressed: () => context.push('/teams/${team.teamId}/spares'),
+            ),
         ],
       ),
-      body: SafeArea(top: false, child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // ── Header card ─────────────────────────────────────────────
-          _HeaderCard(team: team, isAdmin: isAdmin),
-          const SizedBox(height: 16),
+      body: SafeArea(
+          top: false,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // ── Header card ─────────────────────────────────────────────
+              _HeaderCard(team: team, isAdmin: isAdmin),
+              const SizedBox(height: 16),
 
-          // ── Pending join requests (admin only) ───────────────────────
-          if (isAdmin) ...[
-            _SectionHeader(
-              title: 'Join Requests',
-              badge: pendingCount > 0 ? pendingCount : null,
-            ),
-            const SizedBox(height: 8),
-            requestsAsync!.when(
-              loading: () => const LinearProgressIndicator(),
-              error:   (e, _) => Text('Error: $e'),
-              data:    (requests) => requests.isEmpty
-                  ? const _EmptySection(message: 'No pending requests')
-                  : Column(
-                      children: requests
-                          .map((r) => _JoinRequestTile(request: r, teamId: team.teamId))
-                          .toList(),
-                    ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              // ── Pending join requests (admin only) ───────────────────────
+              if (isAdmin) ...[
+                _SectionHeader(
+                  title: 'Join Requests',
+                  badge: pendingCount > 0 ? pendingCount : null,
+                ),
+                const SizedBox(height: 8),
+                requestsAsync!.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, _) => Text('Error: $e'),
+                  data: (requests) => requests.isEmpty
+                      ? const _EmptySection(message: 'No pending requests')
+                      : Column(
+                          children: requests
+                              .map((r) => _JoinRequestTile(
+                                  request: r, teamId: team.teamId))
+                              .toList(),
+                        ),
+                ),
+                const SizedBox(height: 20),
+              ],
 
-          // ── Position preferences ─────────────────────────────────────
-          const SizedBox(height: 4),
-          OutlinedButton.icon(
-            icon:  const Icon(Icons.tune),
-            label: const Text('My Position Preferences'),
-            onPressed: () => context.push(
-              '/teams/${team.teamId}/preferences/$uid'
-              '?sport=${Uri.encodeComponent(team.sport)}'
-              '&name=',
-            ),
-          ),
-          const SizedBox(height: 20),
+              // ── Position preferences ─────────────────────────────────────
+              const SizedBox(height: 4),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.tune),
+                label: const Text('My Position Preferences'),
+                onPressed: () => context.push(
+                  '/teams/${team.teamId}/preferences/$uid'
+                  '?sport=${Uri.encodeComponent(team.sport)}'
+                  '&name=',
+                ),
+              ),
+              const SizedBox(height: 20),
 
-          // ── Roster ──────────────────────────────────────────────────
-          _SectionHeader(
-            title: 'Roster',
-            badge: team.totalMembers,
-          ),
-          const SizedBox(height: 8),
-          if (team.admins.isEmpty && team.players.isEmpty)
-            const _EmptySection(message: 'No members yet')
-          else ...[
-            ...team.admins.map((id) => _MemberTile(
-                  userId:    id,
-                  label:     'Coach / Admin',
-                  isAdmin:   isAdmin,
-                  isSelf:    id == uid,
-                  canRemove: false,
-                  onRemove:  null,
-                  onSetPrefs: isAdmin
-                      ? () => context.push(
-                            '/teams/${team.teamId}/preferences/$id'
-                            '?sport=${Uri.encodeComponent(team.sport)}&name=',
-                          )
-                      : null,
-                )),
-            ...team.players.map((id) => _MemberTile(
-                  userId:    id,
-                  label:     'Player',
-                  isAdmin:   isAdmin,
-                  isSelf:    id == uid,
-                  canRemove: isAdmin && id != uid,
-                  onRemove:  () => _confirmRemove(context, ref, id),
-                  onPromote: isAdmin ? () => _confirmPromote(context, ref, id) : null,
-                  onSetPrefs: isAdmin
-                      ? () => context.push(
-                            '/teams/${team.teamId}/preferences/$id'
-                            '?sport=${Uri.encodeComponent(team.sport)}&name=',
-                          )
-                      : null,
-                )),
-          ],
-        ],
-      )),
+              // ── Roster ──────────────────────────────────────────────────
+              _SectionHeader(
+                title: 'Roster',
+                badge: team.totalMembers,
+              ),
+              const SizedBox(height: 8),
+              if (team.admins.isEmpty && team.players.isEmpty)
+                const _EmptySection(message: 'No members yet')
+              else ...[
+                ...team.admins.map((id) => _MemberTile(
+                      userId: id,
+                      label: 'Coach / Admin',
+                      isAdmin: isAdmin,
+                      isSelf: id == uid,
+                      canRemove: false,
+                      onRemove: null,
+                      onSetPrefs: isAdmin
+                          ? () => context.push(
+                                '/teams/${team.teamId}/preferences/$id'
+                                '?sport=${Uri.encodeComponent(team.sport)}&name=',
+                              )
+                          : null,
+                    )),
+                ...team.players.map((id) => _MemberTile(
+                      userId: id,
+                      label: 'Player',
+                      isAdmin: isAdmin,
+                      isSelf: id == uid,
+                      canRemove: isAdmin && id != uid,
+                      onRemove: () => _confirmRemove(context, ref, id),
+                      onPromote: isAdmin
+                          ? () => _confirmPromote(context, ref, id)
+                          : null,
+                      onSetPrefs: isAdmin
+                          ? () => context.push(
+                                '/teams/${team.teamId}/preferences/$id'
+                                '?sport=${Uri.encodeComponent(team.sport)}&name=',
+                              )
+                          : null,
+                    )),
+              ],
+            ],
+          )),
     );
   }
 
@@ -177,7 +191,8 @@ class _TeamDetailView extends ConsumerWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Share this ID with players so they can request to join:'),
+            const Text(
+                'Share this ID with players so they can request to join:'),
             const SizedBox(height: 12),
             SelectableText(
               teamId,
@@ -216,11 +231,15 @@ class _TeamDetailView extends ConsumerWidget {
           'This cannot be undone from within the app.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              await ref.read(teamRepositoryProvider).promoteToAdmin(team.teamId, userId);
+              await ref
+                  .read(teamRepositoryProvider)
+                  .promoteToAdmin(team.teamId, userId);
             },
             child: const Text('Promote'),
           ),
@@ -234,16 +253,21 @@ class _TeamDetailView extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Remove Player'),
-        content: const Text('Remove this player from the team? They can request to rejoin.'),
+        content: const Text(
+            'Remove this player from the team? They can request to rejoin.'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () async {
               Navigator.of(context).pop();
-              await ref.read(teamRepositoryProvider).removePlayer(team.teamId, userId);
+              await ref
+                  .read(teamRepositoryProvider)
+                  .removePlayer(team.teamId, userId);
             },
             child: const Text('Remove'),
           ),
@@ -297,7 +321,8 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
 
     setState(() => _uploading = true);
     try {
-      await ref.read(teamRepositoryProvider)
+      await ref
+          .read(teamRepositoryProvider)
           .uploadTeamLogo(widget.team.teamId, File(cropped.path));
     } catch (e) {
       if (mounted) {
@@ -323,7 +348,10 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                    radius: 32 *
+                        MediaQuery.textScalerOf(context)
+                            .scale(1.0)
+                            .clamp(1.0, 1.5),
                     backgroundImage: widget.team.logoUrl != null
                         ? NetworkImage(widget.team.logoUrl!)
                         : null,
@@ -334,13 +362,15 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
                   ),
                   if (widget.isAdmin)
                     Positioned(
-                      right: 0, bottom: 0,
+                      right: 0,
+                      bottom: 0,
                       child: CircleAvatar(
                         radius: 10,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         child: _uploading
                             ? const SizedBox(
-                                width: 10, height: 10,
+                                width: 10,
+                                height: 10,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 1.5, color: Colors.white))
                             : const Icon(Icons.camera_alt,
@@ -370,8 +400,7 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
             if (widget.isAdmin)
               Chip(
                 label: const Text('Admin'),
-                backgroundColor:
-                    Theme.of(context).colorScheme.primaryContainer,
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               ),
           ],
         ),
@@ -392,10 +421,11 @@ class _JoinRequestTile extends ConsumerWidget {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+          radius:
+              20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
           child: const Icon(Icons.person_add),
         ),
-        title:    Text(request.userName),
+        title: Text(request.userName),
         subtitle: Text(request.userEmail),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -436,9 +466,9 @@ class _JoinRequestTile extends ConsumerWidget {
 class _MemberTile extends ConsumerWidget {
   final String userId;
   final String label;
-  final bool   isAdmin;
-  final bool   isSelf;
-  final bool   canRemove;
+  final bool isAdmin;
+  final bool isSelf;
+  final bool canRemove;
   final VoidCallback? onRemove;
   final VoidCallback? onSetPrefs;
   final VoidCallback? onPromote;
@@ -460,7 +490,8 @@ class _MemberTile extends ConsumerWidget {
     final displayName = isSelf ? '$name (you)' : name;
     return ListTile(
       leading: CircleAvatar(
-        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+        radius:
+            20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -496,7 +527,8 @@ class _MemberTile extends ConsumerWidget {
   }
 }
 
-final _userNameProvider = FutureProvider.family<String, String>((ref, uid) async {
+final _userNameProvider =
+    FutureProvider.family<String, String>((ref, uid) async {
   final user = await ref.read(userRepositoryProvider).getUser(uid);
   return user?.name.isNotEmpty == true ? user!.name : uid;
 });
