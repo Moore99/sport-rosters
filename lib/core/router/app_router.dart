@@ -24,43 +24,47 @@ import '../../features/shared/screens/help_screen.dart';
 import '../../features/shared/screens/privacy_screen.dart';
 import '../../features/shared/screens/terms_screen.dart';
 import '../../features/shared/screens/profile_screen.dart';
+import '../../features/shared/screens/spare_response_screen.dart';
 import '../../features/teams/presentation/screens/send_notification_screen.dart';
 import '../../features/teams/presentation/screens/notification_inbox_screen.dart';
+import '../../features/teams/presentation/screens/manage_spares_screen.dart';
 
 // Route paths
 class AppRoutes {
-  static const login          = '/login';
-  static const biometricLock  = '/biometric-lock';
-  static const register       = '/register';
+  static const login = '/login';
+  static const biometricLock = '/biometric-lock';
+  static const register = '/register';
   static const forgotPassword = '/forgot-password';
-  static const teams          = '/teams';
-  static const teamDetail     = '/teams/:teamId';
-  static const createTeam     = '/teams/create';
-  static const events         = '/teams/:teamId/events';
-  static const createEvent    = '/teams/:teamId/events/create';
-  static const eventDetail    = '/teams/:teamId/events/:eventId';
-  static const editEvent      = '/teams/:teamId/events/:eventId/edit';
-  static const rankings       = '/teams/:teamId/rankings';
-  static const positionPrefs  = '/teams/:teamId/preferences/:userId';
-  static const lineup         = '/teams/:teamId/events/:eventId/lineup';
-  static const dropin         = '/teams/:teamId/events/:eventId/dropin';
-  static const boatSeating         = '/teams/:teamId/events/:eventId/boat-seating';
-  static const sendNotification    = '/teams/:teamId/notify';
-  static const notificationInbox   = '/teams/:teamId/inbox';
-  static const profile        = '/profile';
-  static const privacy        = '/privacy';
-  static const terms          = '/terms';
-  static const help           = '/help';
+  static const teams = '/teams';
+  static const teamDetail = '/teams/:teamId';
+  static const createTeam = '/teams/create';
+  static const events = '/teams/:teamId/events';
+  static const createEvent = '/teams/:teamId/events/create';
+  static const eventDetail = '/teams/:teamId/events/:eventId';
+  static const editEvent = '/teams/:teamId/events/:eventId/edit';
+  static const rankings = '/teams/:teamId/rankings';
+  static const positionPrefs = '/teams/:teamId/preferences/:userId';
+  static const lineup = '/teams/:teamId/events/:eventId/lineup';
+  static const dropin = '/teams/:teamId/events/:eventId/dropin';
+  static const boatSeating = '/teams/:teamId/events/:eventId/boat-seating';
+  static const sendNotification = '/teams/:teamId/notify';
+  static const notificationInbox = '/teams/:teamId/inbox';
+  static const manageSpares = '/teams/:teamId/spares';
+  static const profile = '/profile';
+  static const privacy = '/privacy';
+  static const terms = '/terms';
+  static const help = '/help';
+  static const spareResponse = '/spare-response/:eventId/:teamId';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState    = ref.watch(authStateProvider);
-  final bioLocked    = ref.watch(biometricLockProvider);
+  final authState = ref.watch(authStateProvider);
+  final bioLocked = ref.watch(biometricLockProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.teams,
     redirect: (context, state) {
-      final isLoggedIn  = authState.valueOrNull != null;
+      final isLoggedIn = authState.valueOrNull != null;
       final currentPath = state.matchedLocation;
       final isAuthRoute = currentPath == AppRoutes.login ||
           currentPath == AppRoutes.register ||
@@ -83,15 +87,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: AppRoutes.login,         builder: (_, __) => const LoginScreen()),
-      GoRoute(path: AppRoutes.biometricLock, builder: (_, __) => const BiometricLockScreen()),
-      GoRoute(path: AppRoutes.register,       builder: (_, __) => const RegisterScreen()),
-      GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
-      GoRoute(path: AppRoutes.teams,          builder: (_, __) => const TeamsScreen()),
-      GoRoute(path: AppRoutes.createTeam,     builder: (_, __) => const CreateTeamScreen()),
+      GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
+      GoRoute(
+          path: AppRoutes.biometricLock,
+          builder: (_, __) => const BiometricLockScreen()),
+      GoRoute(
+          path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
+      GoRoute(
+          path: AppRoutes.forgotPassword,
+          builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(path: AppRoutes.teams, builder: (_, __) => const TeamsScreen()),
+      GoRoute(
+          path: AppRoutes.createTeam,
+          builder: (_, __) => const CreateTeamScreen()),
       GoRoute(
         path: AppRoutes.teamDetail,
-        builder: (_, state) => TeamDetailScreen(teamId: state.pathParameters['teamId']!),
+        builder: (_, state) =>
+            TeamDetailScreen(teamId: state.pathParameters['teamId']!),
         routes: [
           // Rankings — admin only; guard enforced in RankingsScreen + Firestore rules
           GoRoute(
@@ -103,16 +115,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'preferences/:userId',
             builder: (_, state) => PositionPreferenceScreen(
-              teamId:     state.pathParameters['teamId']!,
-              userId:     state.pathParameters['userId']!,
-              sport:      state.uri.queryParameters['sport'] ?? '',
-              playerName: state.uri.queryParameters['name']  ?? '',
+              teamId: state.pathParameters['teamId']!,
+              userId: state.pathParameters['userId']!,
+              sport: state.uri.queryParameters['sport'] ?? '',
+              playerName: state.uri.queryParameters['name'] ?? '',
             ),
           ),
           GoRoute(
             path: 'notify',
             builder: (_, state) => SendNotificationScreen(
-              teamId:  state.pathParameters['teamId']!,
+              teamId: state.pathParameters['teamId']!,
               eventId: state.extra as String?,
             ),
           ),
@@ -123,8 +135,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: 'spares',
+            builder: (_, state) => ManageSparesScreen(
+              teamId: state.pathParameters['teamId']!,
+            ),
+          ),
+          GoRoute(
             path: 'events',
-            builder: (_, state) => EventsScreen(teamId: state.pathParameters['teamId']!),
+            builder: (_, state) =>
+                EventsScreen(teamId: state.pathParameters['teamId']!),
             routes: [
               // 'create' must be declared before ':eventId' so it isn't swallowed by the param
               GoRoute(
@@ -136,7 +155,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: ':eventId',
                 builder: (_, state) => EventDetailScreen(
-                  teamId:  state.pathParameters['teamId']!,
+                  teamId: state.pathParameters['teamId']!,
                   eventId: state.pathParameters['eventId']!,
                 ),
                 routes: [
@@ -149,21 +168,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'lineup',
                     builder: (_, state) => LineupScreen(
-                      teamId:  state.pathParameters['teamId']!,
+                      teamId: state.pathParameters['teamId']!,
                       eventId: state.pathParameters['eventId']!,
                     ),
                   ),
                   GoRoute(
                     path: 'dropin',
                     builder: (_, state) => DropInScreen(
-                      teamId:  state.pathParameters['teamId']!,
+                      teamId: state.pathParameters['teamId']!,
                       eventId: state.pathParameters['eventId']!,
                     ),
                   ),
                   GoRoute(
                     path: 'boat-seating',
                     builder: (_, state) => BoatSeatingScreen(
-                      teamId:  state.pathParameters['teamId']!,
+                      teamId: state.pathParameters['teamId']!,
                       eventId: state.pathParameters['eventId']!,
                     ),
                   ),
@@ -173,10 +192,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
-      GoRoute(path: AppRoutes.privacy, builder: (_, __) => const PrivacyScreen()),
-      GoRoute(path: AppRoutes.terms,   builder: (_, __) => const TermsScreen()),
-      GoRoute(path: AppRoutes.help,    builder: (_, __) => const HelpScreen()),
+      GoRoute(
+          path: AppRoutes.profile, builder: (_, __) => const ProfileScreen()),
+      GoRoute(
+          path: AppRoutes.privacy, builder: (_, __) => const PrivacyScreen()),
+      GoRoute(path: AppRoutes.terms, builder: (_, __) => const TermsScreen()),
+      GoRoute(path: AppRoutes.help, builder: (_, __) => const HelpScreen()),
+      GoRoute(
+        path: AppRoutes.spareResponse,
+        builder: (_, state) => SpareResponseScreen(
+          eventId: state.pathParameters['eventId']!,
+          teamId: state.pathParameters['teamId']!,
+        ),
+      ),
     ],
   );
 });

@@ -9,6 +9,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import 'core/router/app_router.dart';
 import 'core/services/biometric_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -101,8 +102,24 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
   @override
   Widget build(BuildContext context) {
     ref.watch(notificationInitProvider); // initializes FCM when user signs in
-    final router    = ref.watch(appRouterProvider);
+    final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // Check for pending spare notification navigation
+    final pendingNav = ref.watch(pendingSpareNavigationProvider);
+    if (pendingNav.eventId != null && pendingNav.teamId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final eventId = pendingNav.eventId;
+        final teamId = pendingNav.teamId;
+        // Clear the pending navigation
+        ref.read(pendingSpareNavigationProvider.notifier).state =
+            const PendingNavigation();
+        // Navigate to spare response screen
+        if (eventId != null && teamId != null) {
+          router.push('/spare-response/$eventId/$teamId');
+        }
+      });
+    }
 
     return MaterialApp.router(
       title: 'Sport Rosters',

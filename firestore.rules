@@ -101,6 +101,13 @@ service cloud.firestore {
         // Team admins update (approve/deny) and delete
         allow update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
       }
+
+      // Spares subcollection — players available to fill in when roster is short
+      // Team admins read/write. Signed-in users read (to see if they're a spare).
+      match /spares/{userId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
+      }
     }
 
     // ── events ───────────────────────────────────────────────────────────────
