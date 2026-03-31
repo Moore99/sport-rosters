@@ -41,12 +41,23 @@ To force a clean build, delete `C:\BuildTemp\sports-rostering` contents (not the
 
 ---
 
-## Testing
+## Testing & Code Quality
 
 ```bash
 flutter test
-flutter analyze   # Note: shows false-positive URI errors on Windows — pre-existing, non-blocking
+flutter analyze   # Lint + static analysis
 ```
+
+### Windows `flutter analyze` False Positives
+On Windows, you may see false-positive URI errors like:
+```
+Error: Uri is unavailable — 'dart:html' can't be accessed on this platform.
+```
+These are pre-existing, non-blocking, and can be ignored. They occur due to platform-specific conditional imports in dependencies. If these become noisy and you need to verify other warnings pass, run:
+```bash
+flutter analyze --no-fatal-infos --no-fatal-warnings
+```
+This still catches actual errors.
 
 ---
 
@@ -207,6 +218,27 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 - Plugins registered with `flutterEngine`, not `self`
 - `Firebase.initializeApp()` called in Dart `main.dart` — do NOT add `FirebaseApp.configure()` to AppDelegate
 
+**iOS Deployment Target:**
+- Minimum supported: **iOS 17.0** (as of March 2026, required for Xcode 26 / iOS 26 SDK)
+- Set in `ios/Podfile`: `platform :ios, '17.0'`
+- Set in `ios/Runner.xcodeproj/project.pbxproj`: `IPHONEOS_DEPLOYMENT_TARGET = 17.0`
+
+---
+
+## Version Management
+
+**ALWAYS bump version before building for release** — both for Play Store and TestFlight.
+
+- Format: `major.minor.patch+build` (e.g., `1.0.1+4`)
+- **Play Store**: Requires a new `versionCode` (build number) for each upload
+- **TestFlight**: Requires a new build number for each upload
+
+**Before any release build:**
+1. Check current version in `pubspec.yaml`
+2. Increment the build number (+1 from previous)
+3. Commit before building
+4. Verify AAB/APK signing key before uploading to Play Store
+
 ---
 
 ## Development Workflow
@@ -287,6 +319,7 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 6 | CircleAvatar radii scale with system text size (accessibility) | ✅ Done |
 | 6 | Biometric authentication (Face ID / Touch ID / Fingerprint) | ✅ Done |
 | 6 | Cloud Functions runtime upgraded to Node.js 22 | ✅ Done |
+| 7 | Spares list (team-level standby players, admin notifies when roster short) | ✅ Done |
 
 ## Known Issues / Blockers
 
@@ -314,3 +347,26 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 - Key is restricted in Google Cloud Console to Android app (`com.sportsrostering.app`) + Places API only
 - SHA-1 registered in Cloud Console: `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`
 - The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without `--dart-define`)
+
+---
+
+## Troubleshooting
+
+### Build Issues
+
+| Issue | Solution |
+|-------|----------|
+| `flutter clean` fails on OneDrive | Safe to ignore — file locking issue. Delete `C:\BuildTemp\sports-rostering` manually if needed |
+| APK not found after build | Check `C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\` (Windows junction path) |
+| AAB build says "failed" but file exists | Ignore — Flutter reports this falsely due to build junction. File is at `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab` |
+| iOS build fails with SIGABRT | Check `Info.plist` — `UISceneDelegateClassName` must be `$(PRODUCT_MODULE_NAME).SceneDelegate`, NOT `AppDelegate` |
+| Biometrics fail on Android | Check `android/app/build.gradle.kts` — `minSdk` must be ≥23 |
+
+### Runtime Issues
+
+| Issue | Solution |
+|-------|----------|
+| Rankings visible to players | Check Firestore rules — ensure `request.auth.token.teamAdmin == true` before allowing read |
+| Stream providers stay in error after sign-out | Ensure providers watch `currentUserProvider` — see Firestore Security Rules section |
+| AdMob not showing | Verify app ID in `AndroidManifest.xml` (Android) / `Info.plist` (iOS) matches AdMob console |
+| IAP restore not working | Check network — Apple requires active connection for restore requests |
