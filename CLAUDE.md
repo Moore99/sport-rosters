@@ -342,10 +342,11 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 - A linter/Flutter Gradle plugin upgrade may revert this to `flutter.minSdkVersion` — if builds break, check this line first.
 
 ### Google Places Autocomplete — API Key
-- Key is injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY=...` (no longer hardcoded in source)
-- Codemagic injects it from the `Keys` environment group (`GOOGLE_PLACES_API_KEY`)
-- Key is restricted in Google Cloud Console to Android app (`com.sportsrostering.app`) + Places API only
-- SHA-1 registered in Cloud Console: `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`
+- **Separate keys required for Android and iOS** — Google Cloud doesn't allow a single key for both platforms
+- **Android key**: restrict to Android app (`com.sportsrostering.app`) + SHA-1: `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`
+- **iOS key**: restrict to iOS app bundle (`com.sportsrostering.app`)
+- Keys injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY_ANDROID=...` and `--dart-define=GOOGLE_PLACES_API_KEY_IOS=...`
+- Codemagic: set both `GOOGLE_PLACES_API_KEY_ANDROID` and `GOOGLE_PLACES_API_KEY_IOS` in Keys group
 - The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without `--dart-define`)
 
 ---
