@@ -321,6 +321,13 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 6 | Cloud Functions runtime upgraded to Node.js 22 | ✅ Done |
 | 7 | Spares list (team-level standby players, admin notifies when roster short) | ✅ Done |
 
+## Current Production Versions
+
+| Platform | Version | Build | Status |
+|----------|---------|-------|--------|
+| Android (Play Store) | 1.0.2 | 5 | Submitted |
+| iOS (TestFlight) | 1.0.2 | 3 | Ready for testing |
+
 ## Known Issues / Blockers
 
 ### Android IAP Validation — Play Console API Access Blocked
