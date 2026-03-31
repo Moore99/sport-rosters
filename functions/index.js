@@ -513,3 +513,98 @@ exports.uploadTeamLogo = onCall(
     return { logoUrl };
   }
 );
+
+/**
+ * notifySpares — notifies team spares about an event needing players.
+ *
+ * Called when an event is below minimum players and admin clicks "Notify Spares".
+ * Sends push notification to the first N spares (by joinedAt timestamp).
+ *
+ * Params: { eventId, teamId, teamName, eventDate, batchSize }
+ *   eventId    — Firestore event document ID
+ *   teamId     — Firestore team document ID
+ *   teamName   — Display name of the team
+ *   eventDate  — ISO date string of the event
+ *   batchSize  — Number of spares to notify (default 10)
+ */
+exports.notifySpares = onCall(
+  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+    const { eventId, teamId, teamName, eventDate, batchSize = 10 } = request.data;
+    if (!eventId || !teamId) {
+      throw new HttpsError('invalid-argument', 'eventId and teamId are required.');
+    }
+
+    const db = getFirestore();
+
+    // Verify the caller is a team admin
+    const teamSnap = await db.collection('teams').doc(teamId).get();
+    if (!teamSnap.exists) throw new HttpsError('not-found', 'Team not found.');
+    const admins = teamSnap.data().admins ?? [];
+    if (!admins.includes(uid)) {
+      throw new HttpsError('permission-denied', 'Only team admins can notify spares.');
+    }
+
+    // Get spares, sorted by joinedAt (first-come first)
+    const sparesSnap = await db.collection('teams').doc(teamId)
+      .collection('spares')
+      .orderBy('joinedAt')
+      .limit(batchSize)
+      .get();
+
+    if (sparesSnap.empty) {
+      return { sent: 0 };
+    }
+
+    // Get FCM tokens for spares
+    const tokens = [];
+    for (const doc of sparesSnap.docs) {
+      const userId = doc.id;
+      const userSnap = await db.collection('users').doc(userId).get();
+      const token = userSnap.data()?.fcmToken;
+      if (token) tokens.push(token);
+    }
+
+    if (tokens.length === 0) {
+      return { sent: 0 };
+    }
+
+    const eventDateObj = new Date(eventDate);
+    const dateStr = eventDateObj.toLocaleDateString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric'
+    });
+
+    const title = `Spares Needed - ${teamName}`;
+    const body = `Event on ${dateStr} needs players. Tap to fill in!`;
+
+    // Send notifications
+    const BATCH = 500;
+    let sent = 0;
+    for (let i = 0; i < tokens.length; i += BATCH) {
+      const batch = tokens.slice(i, i + BATCH);
+      const response = await getMessaging().sendEachForMulticast({
+        tokens: batch,
+        notification: { title, body },
+        data: { teamId, eventId, type: 'spareNeeded' },
+        android: { priority: 'high' },
+        apns: { payload: { aps: { sound: 'default' } } },
+      });
+      sent += response.successCount;
+    }
+
+    // Persist to notification inbox
+    await db.collection('teamNotifications').doc(teamId)
+      .collection('messages').add({
+        title,
+        body,
+        senderUid: uid,
+        sentAt: new Date(),
+        eventId,
+      });
+
+    return { sent };
+  }
+);
