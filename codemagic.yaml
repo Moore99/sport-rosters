@@ -12,6 +12,8 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.sportsrostering.app
     scripts:
+      - name: Clean previous builds
+        script: rm -rf build android/.gradle
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
       - name: Get Flutter packages
