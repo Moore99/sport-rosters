@@ -21,7 +21,8 @@ workflows:
       - name: Build IPA
         script: |
           flutter build ipa --release \
-            --dart-define=GOOGLE_PLACES_API_KEY=$GOOGLE_PLACES_API_KEY \
+            --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY_IOS \
+            --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY_ANDROID \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
