@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +38,17 @@ String friendlyAuthError(FirebaseAuthException e) {
       return 'Something went wrong (${e.code}). Please try again.';
   }
 }
+
+// Singleton — avoids re-initialization between signOut() and signIn() calls,
+// which can leave the native GIDSignIn in a state where it can't resolve a
+// presentingViewController (SIGABRT on iOS with UISceneDelegate).
+// iOS clientId must be the iOS OAuth client ID (not the web client ID).
+final _googleSignIn = GoogleSignIn(
+  clientId: Platform.isIOS
+      ? '363898653310-rfako4db7amsb2qu66p88d7prt83625u.apps.googleusercontent.com'
+      : null,
+  serverClientId: '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com',
+);
 
 /// Handles auth actions: sign in, register, sign out, password reset.
 /// State = error message string, or null when idle/successful.
@@ -96,10 +109,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      final googleUser = await GoogleSignIn(
-        // Web client ID — required so Firebase can verify the idToken on both platforms
-        serverClientId: '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com',
-      ).signIn();
+      final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         // User cancelled the picker
         state = const AsyncData(null);
@@ -202,7 +212,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn().signOut();
+    await _googleSignIn.signOut();
     await _auth.signOut();
     // Clear Firestore offline cache so the next user starts with a clean slate.
     // Must be called after sign-out (no active listeners).
