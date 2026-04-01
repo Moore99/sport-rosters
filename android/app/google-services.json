@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "363898653310-kq8grd8k0e35kjajd1om5ds1btf9msk2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sportsrostering.app",
+            "certificate_hash": "1f0b6e081d5fdb850f2b23487699a6bd778fbe40"
+          }
+        },
+        {
           "client_id": "363898653310-qsrgn1f747cn9178qelceha6tcjemk3i.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

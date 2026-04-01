@@ -96,7 +96,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await GoogleSignIn(
+        // Web client ID — required so Firebase can verify the idToken on both platforms
+        serverClientId: '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com',
+      ).signIn();
       if (googleUser == null) {
         // User cancelled the picker
         state = const AsyncData(null);
