@@ -23,6 +23,8 @@ workflows:
       - name: Build IPA
         script: |
           flutter build ipa --release \
+            --build-name=$(cat version.txt) \
+            --build-number=$BUILD_NUMBER \
             --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY_IOS \
             --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY_ANDROID \
             --export-options-plist=/Users/builder/export_options.plist

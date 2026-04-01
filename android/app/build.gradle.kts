@@ -46,8 +46,8 @@ android {
         applicationId = "com.sportsrostering.app"
         minSdk = maxOf(flutter.minSdkVersion, 23)  // 23 required by local_auth (biometrics)
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: flutter.versionCode
+        versionName = rootProject.file("../version.txt").readText().trim()
     }
 
     buildTypes {

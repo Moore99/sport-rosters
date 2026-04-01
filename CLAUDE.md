@@ -227,17 +227,21 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 
 ## Version Management
 
-**ALWAYS bump version before building for release** — both for Play Store and TestFlight.
+**Single source of truth: `version.txt`** at repo root (e.g., `1.0.3`).
 
-- Format: `major.minor.patch+build` (e.g., `1.0.1+4`)
-- **Play Store**: Requires a new `versionCode` (build number) for each upload
-- **TestFlight**: Requires a new build number for each upload
+- `version.txt` — controls the marketing version name for both platforms
+- `android/app/build.gradle.kts` reads `versionName` from `version.txt`; `versionCode` from `$BUILD_NUMBER` env var (Codemagic) or falls back to `flutter.versionCode` (local builds)
+- `codemagic.yaml` passes `--build-name=$(cat version.txt) --build-number=$BUILD_NUMBER` to `flutter build ipa`
+- `pubspec.yaml` version should stay in sync with `version.txt` (used as local build fallback); build number in pubspec is only used for local APK builds
 
-**Before any release build:**
-1. Check current version in `pubspec.yaml`
-2. Increment the build number (+1 from previous)
-3. Commit before building
-4. Verify AAB/APK signing key before uploading to Play Store
+**To release a new version:**
+1. Edit `version.txt` (e.g., `1.0.3` → `1.0.4`)
+2. Update `pubspec.yaml` version to match (increment build number for local testing)
+3. Commit and push → trigger Codemagic for iOS; build APK locally for Android
+4. Codemagic auto-increments `$BUILD_NUMBER` for iOS
+5. Verify AAB/APK signing key before uploading to Play Store
+
+**Build numbers are now Codemagic-managed** — both platforms use `$BUILD_NUMBER` so they stay aligned across releases.
 
 ---
 
@@ -325,8 +329,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.0.2 | 5 | Submitted |
+| Android (Play Store) | 1.0.2 | 5 | Released |
 | iOS (TestFlight) | 1.0.2 | 3 | Ready for testing |
+| Next build (both) | 1.0.3 | Codemagic $BUILD_NUMBER | In development |
 
 ## Known Issues / Blockers
 
@@ -342,6 +347,14 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
   4. Contact Google Play developer support if none of the above work
 - **Risk while deferred:** Low — requires rooted device + App Check bypass to exploit. One-time low-price IAP makes fraud economically unattractive.
 - **Secrets already set:** `APPLE_IAP_SHARED_SECRET` ✅, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` ✅
+
+### Google Sign-In — `google-services.json` Stale (needs re-download)
+- Firebase Console has all 3 fingerprints registered: debug SHA-1, release SHA-1, Play App Signing SHA-256
+- **`android/app/google-services.json` only contains the debug SHA-1** — stale, was not re-downloaded after fingerprints were added
+- Symptom: Google Sign-In fails on release/Play Store installs
+- **To fix:** Firebase Console → Project Settings → Android app (`com.sportsrostering.app`) → Download `google-services.json` → replace `android/app/google-services.json` → rebuild
+- **Note:** The SHA-256 (`AF:5E:...D4`) is the Google Play App Signing certificate — required for Play Store installs to work
+- iOS Google Sign-In fix (missing `CFBundleURLTypes` URL scheme) applied in 1.0.3 ✅
 
 ### Android minSdk
 - Set to `maxOf(flutter.minSdkVersion, 23)` in `android/app/build.gradle.kts`
