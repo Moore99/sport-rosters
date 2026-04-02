@@ -144,7 +144,7 @@ async function _deleteDocRefs(db, refs) {
  * true in app config. iOS validation is fully enforced.
  */
 
-// Play Console service account linked 2026-04-02 — Android validation enabled.
+// Play Console service account linked 2026-04-02 — Android validation enabled. Runtime: Node.js 22.
 const ANDROID_VALIDATION_ENABLED = true;
 
 exports.validateIap = onCall(
