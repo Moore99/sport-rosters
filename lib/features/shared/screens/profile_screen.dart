@@ -253,6 +253,11 @@ class ProfileScreen extends ConsumerWidget {
               title:   const Text('Terms of Service'),
               onTap:   () => context.push(AppRoutes.terms),
             ),
+            ListTile(
+              leading: const Icon(Icons.accessibility_outlined),
+              title:   const Text('Accessibility'),
+              onTap:   () => context.push(AppRoutes.accessibility),
+            ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),

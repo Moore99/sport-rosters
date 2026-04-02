@@ -23,6 +23,7 @@ import '../../features/auth/presentation/screens/biometric_lock_screen.dart';
 import '../../features/shared/screens/help_screen.dart';
 import '../../features/shared/screens/privacy_screen.dart';
 import '../../features/shared/screens/terms_screen.dart';
+import '../../features/shared/screens/accessibility_screen.dart';
 import '../../features/shared/screens/profile_screen.dart';
 import '../../features/shared/screens/spare_response_screen.dart';
 import '../../features/teams/presentation/screens/send_notification_screen.dart';
@@ -54,6 +55,7 @@ class AppRoutes {
   static const privacy = '/privacy';
   static const terms = '/terms';
   static const help = '/help';
+  static const accessibility = '/accessibility';
   static const spareResponse = '/spare-response/:eventId/:teamId';
 }
 
@@ -70,7 +72,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           currentPath == AppRoutes.register ||
           currentPath == AppRoutes.forgotPassword ||
           currentPath == AppRoutes.privacy ||
-          currentPath == AppRoutes.terms;
+          currentPath == AppRoutes.terms ||
+          currentPath == AppRoutes.accessibility;
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
 
@@ -198,6 +201,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.privacy, builder: (_, __) => const PrivacyScreen()),
       GoRoute(path: AppRoutes.terms, builder: (_, __) => const TermsScreen()),
       GoRoute(path: AppRoutes.help, builder: (_, __) => const HelpScreen()),
+      GoRoute(
+          path: AppRoutes.accessibility,
+          builder: (_, __) => const AccessibilityScreen()),
       GoRoute(
         path: AppRoutes.spareResponse,
         builder: (_, state) => SpareResponseScreen(
