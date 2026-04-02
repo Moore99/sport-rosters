@@ -334,17 +334,11 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 ## Known Issues / Blockers
 
-### Android IAP Validation — Play Console API Access Blocked
-- `validateIap` Cloud Function deployed ✅ — iOS validation fully enforced ✅
-- Android validation currently **fails open** (grants entitlement without server verification)
-- Root cause: `Setup → API access` not visible in Play Console despite being account owner
-- `ANDROID_VALIDATION_ENABLED = false` in `functions/index.js` — flip to `true` once fixed
-- **To fix (try in order):**
-  1. Enable **Google Play Android Developer API** in Google Cloud Console → APIs & Services → Library
-  2. Try direct URL: `https://play.google.com/console/u/1/developers/6842817044785591935/setup/api-access`
-  3. Try logging in as `u/0` (primary Google account) — `u/1` accounts sometimes have restricted access
-  4. Contact Google Play developer support if none of the above work
-- **Risk while deferred:** Low — requires rooted device + App Check bypass to exploit. One-time low-price IAP makes fraud economically unattractive.
+### Android IAP Validation — ✅ Resolved (2026-04-02)
+- `validateIap` Cloud Function fully enforced on both iOS and Android
+- Service account `play-iap-validator@sports-rostering.iam.gserviceaccount.com` granted Financial data + Manage orders in Play Console → Users and permissions
+- `ANDROID_VALIDATION_ENABLED = true` in `functions/index.js`
+- Note: "Setup → API access" no longer exists in Play Console UI — service accounts are now invited via Users and permissions like regular users
 - **Secrets already set:** `APPLE_IAP_SHARED_SECRET` ✅, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` ✅
 
 ### Google Sign-In — `google-services.json` Stale (needs re-download)
