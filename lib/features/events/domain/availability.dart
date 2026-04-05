@@ -33,7 +33,7 @@ class Availability {
   factory Availability.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return Availability(
-      userId:    doc.id,
+      userId:    d['userId']   as String? ?? doc.id,  // field preferred; doc.id for legacy docs
       eventId:   d['eventId']  as String? ?? '',
       teamId:    d['teamId']   as String? ?? '',
       response:  _responseFrom(d['response'] as String? ?? 'maybe'),
@@ -42,6 +42,7 @@ class Availability {
   }
 
   Map<String, dynamic> toFirestore() => {
+    'userId':    userId,   // denormalized so collectionGroup queries can filter by userId
     'eventId':   eventId,
     'teamId':    teamId,
     'response':  response.name,

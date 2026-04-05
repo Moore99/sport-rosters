@@ -235,6 +235,26 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  Future<bool> sendEmailVerification() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = AsyncError(friendlyAuthError(e), StackTrace.current);
+      return false;
+    }
+  }
+
+  /// Reloads the Firebase user and returns true if email is now verified.
+  Future<bool> reloadAndCheckVerified() async {
+    try {
+      await _auth.currentUser?.reload();
+      return _auth.currentUser?.emailVerified ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Re-authenticates with [currentPassword] then updates to [newPassword].
   /// Returns true on success; sets error state and returns false on failure.
   Future<bool> changePassword({
