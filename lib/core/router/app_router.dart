@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/email_verify_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/teams/presentation/screens/teams_screen.dart';
 import '../../features/teams/presentation/screens/team_detail_screen.dart';
@@ -29,6 +30,7 @@ import '../../features/shared/screens/spare_response_screen.dart';
 import '../../features/teams/presentation/screens/send_notification_screen.dart';
 import '../../features/teams/presentation/screens/notification_inbox_screen.dart';
 import '../../features/teams/presentation/screens/manage_spares_screen.dart';
+import '../../features/events/presentation/screens/player_attendance_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -36,6 +38,7 @@ class AppRoutes {
   static const biometricLock = '/biometric-lock';
   static const register = '/register';
   static const forgotPassword = '/forgot-password';
+  static const emailVerify = '/email-verify';
   static const teams = '/teams';
   static const teamDetail = '/teams/:teamId';
   static const createTeam = '/teams/create';
@@ -57,6 +60,7 @@ class AppRoutes {
   static const help = '/help';
   static const accessibility = '/accessibility';
   static const spareResponse = '/spare-response/:eventId/:teamId';
+  static const playerAttendance = '/teams/:teamId/attendance/:userId';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -86,6 +90,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.teams;
       }
 
+      // Gate email/password accounts behind email verification
+      final firebaseUser = authState.valueOrNull;
+      final isEmailUser  = firebaseUser?.providerData
+              .any((p) => p.providerId == 'password') ?? false;
+      if (isLoggedIn && !bioLocked && isEmailUser &&
+          firebaseUser?.emailVerified == false &&
+          currentPath != AppRoutes.emailVerify) {
+        return AppRoutes.emailVerify;
+      }
+      if (isLoggedIn && !bioLocked &&
+          currentPath == AppRoutes.emailVerify &&
+          (!isEmailUser || firebaseUser?.emailVerified == true)) {
+        return AppRoutes.teams;
+      }
+
       if (isLoggedIn && currentPath == AppRoutes.login) return AppRoutes.teams;
       return null;
     },
@@ -99,6 +118,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: AppRoutes.forgotPassword,
           builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(
+          path: AppRoutes.emailVerify,
+          builder: (_, __) => const EmailVerifyScreen()),
       GoRoute(path: AppRoutes.teams, builder: (_, __) => const TeamsScreen()),
       GoRoute(
           path: AppRoutes.createTeam,
@@ -141,6 +163,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'spares',
             builder: (_, state) => ManageSparesScreen(
               teamId: state.pathParameters['teamId']!,
+            ),
+          ),
+          GoRoute(
+            path: 'attendance/:userId',
+            builder: (_, state) => PlayerAttendanceScreen(
+              teamId: state.pathParameters['teamId']!,
+              userId: state.pathParameters['userId']!,
             ),
           ),
           GoRoute(

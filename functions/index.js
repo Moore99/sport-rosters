@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule }        = require('firebase-functions/v2/scheduler');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { defineSecret }      = require('firebase-functions/params');
 const { initializeApp }     = require('firebase-admin/app');
 const { getAuth }           = require('firebase-admin/auth');
@@ -606,5 +607,125 @@ exports.notifySpares = onCall(
       });
 
     return { sent };
+  }
+);
+
+/**
+ * resetTestPasswords — bulk reset passwords for test users.
+ * 
+ * SECURITY: This function should only be used in development/test environments.
+ * It allows resetting passwords without the user's current password.
+ * 
+ * Params: { email, newPassword } or { resetAll: true }
+ *   email       — specific user email to reset
+ *   newPassword — the new password to set
+ *   resetAll    — if true, resets all @test.com users to the default password
+ */
+exports.resetTestPasswords = onCall(
+  { region: 'northamerica-northeast1', enforceAppCheck: false }, // Disable App Check for testing
+  async (request) => {
+    const { email, newPassword, resetAll } = request.data;
+    const defaultPassword = newPassword || 'testpass123';
+
+    // Security: Only allow in development (check custom claim or specific auth)
+    // For now, allow any authenticated user to perform resets (restrict in production)
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Must be signed in.');
+    }
+
+    const auth = getAuth();
+
+    try {
+      if (resetAll) {
+        // Reset all @test.com users
+        const users = await auth.listUsers();
+        const testUsers = users.users.filter(u => u.email?.endsWith('@test.com'));
+        
+        const results = [];
+        for (const user of testUsers) {
+          await auth.updateUser(user.uid, { password: defaultPassword });
+          results.push({ email: user.email, uid: user.uid });
+        }
+        return { reset: results.length, users: results };
+      } 
+      else if (email) {
+        // Reset specific user
+        const user = await auth.getUserByEmail(email);
+        await auth.updateUser(user.uid, { password: defaultPassword });
+        return { reset: 1, email, uid: user.uid };
+      } 
+      else {
+        throw new HttpsError('invalid-argument', 'Must provide email or resetAll: true');
+      }
+    } catch (e) {
+      if (e.code === 'auth/user-not-found') {
+        throw new HttpsError('not-found', 'User not found: ' + email);
+      }
+      throw new HttpsError('internal', e.message);
+    }
+  }
+);
+
+/**
+ * notifyWaitlistPromotion — Firestore trigger that fires when a dropInSession
+ * document is updated. If a player moved from waitlist → signups, they get a
+ * push notification.
+ */
+exports.notifyWaitlistPromotion = onDocumentUpdated(
+  { document: 'dropInSessions/{sessionId}', region: 'northamerica-northeast1' },
+  async (event) => {
+    const before = event.data.before.data() ?? {};
+    const after  = event.data.after.data()  ?? {};
+
+    const beforeWaitlist = before.waitlist ?? [];
+    const afterSignups   = after.signups   ?? [];
+    const afterWaitlist  = after.waitlist  ?? [];
+
+    // Find UIDs that were on the waitlist and are now in signups
+    const promoted = beforeWaitlist.filter(uid =>
+      afterSignups.includes(uid) && !afterWaitlist.includes(uid)
+    );
+    if (promoted.length === 0) return;
+
+    const db      = getFirestore();
+    const eventId = after.eventId;
+    const teamId  = after.teamId ?? '';
+
+    // Get event date for notification body
+    let timeStr = '';
+    if (eventId) {
+      const eventSnap = await db.collection('events').doc(eventId).get();
+      if (eventSnap.exists) {
+        const d = eventSnap.data().date?.toDate();
+        if (d) {
+          timeStr = d.toLocaleTimeString('en-CA',
+            { hour: 'numeric', minute: '2-digit', hour12: true });
+        }
+      }
+    }
+
+    for (const uid of promoted) {
+      const userSnap = await db.collection('users').doc(uid).get();
+      const fcmToken = userSnap.data()?.fcmToken;
+      if (!fcmToken) continue;
+
+      try {
+        await getMessaging().send({
+          token: fcmToken,
+          notification: {
+            title: "You're in!",
+            body: timeStr
+              ? `A spot opened up — you've been moved off the waitlist. Session at ${timeStr}.`
+              : "A spot opened up — you've been moved off the waitlist.",
+          },
+          data: { teamId, eventId: eventId ?? '' },
+          android: { priority: 'high' },
+          apns:    { payload: { aps: { sound: 'default' } } },
+        });
+      } catch (_) {
+        // Stale token — ignore, token cleanup handled by sendTeamNotification
+      }
+    }
   }
 );

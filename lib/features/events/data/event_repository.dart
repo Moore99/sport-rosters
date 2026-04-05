@@ -74,6 +74,27 @@ class EventRepository {
   /// Player sets or updates their RSVP.
   Future<void> setAvailability(Availability avail) =>
       _avail(avail.eventId).doc(avail.userId).set(avail.toFirestore());
+
+  /// All past events for a team, most recent first.
+  Future<List<Event>> fetchPastTeamEvents(String teamId) async {
+    final snap = await _events
+        .where('teamId', isEqualTo: teamId)
+        .where('date', isLessThan: Timestamp.fromDate(DateTime.now()))
+        .orderBy('date', descending: true)
+        .get();
+    return snap.docs.map(Event.fromFirestore).toList();
+  }
+
+  /// All availability records for one player across a team (collection group).
+  Future<List<Availability>> fetchPlayerTeamAvailability(
+      String teamId, String userId) async {
+    final snap = await _db
+        .collectionGroup('availability')
+        .where('userId', isEqualTo: userId)
+        .where('teamId', isEqualTo: teamId)
+        .get();
+    return snap.docs.map(Availability.fromFirestore).toList();
+  }
 }
 
 final eventRepositoryProvider = Provider<EventRepository>(

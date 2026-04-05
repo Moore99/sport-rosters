@@ -159,6 +159,9 @@ class _TeamDetailView extends ConsumerWidget {
                                 '?sport=${Uri.encodeComponent(team.sport)}&name=',
                               )
                           : null,
+                      onAttendance: isAdmin
+                          ? () => context.push('/teams/${team.teamId}/attendance/$id')
+                          : null,
                     )),
                 ...team.players.map((id) => _MemberTile(
                       userId: id,
@@ -175,6 +178,9 @@ class _TeamDetailView extends ConsumerWidget {
                                 '/teams/${team.teamId}/preferences/$id'
                                 '?sport=${Uri.encodeComponent(team.sport)}&name=',
                               )
+                          : null,
+                      onAttendance: isAdmin
+                          ? () => context.push('/teams/${team.teamId}/attendance/$id')
                           : null,
                     )),
               ],
@@ -472,6 +478,7 @@ class _MemberTile extends ConsumerWidget {
   final VoidCallback? onRemove;
   final VoidCallback? onSetPrefs;
   final VoidCallback? onPromote;
+  final VoidCallback? onAttendance;
 
   const _MemberTile({
     required this.userId,
@@ -482,6 +489,7 @@ class _MemberTile extends ConsumerWidget {
     required this.onRemove,
     this.onSetPrefs,
     this.onPromote,
+    this.onAttendance,
   });
 
   @override
@@ -507,6 +515,12 @@ class _MemberTile extends ConsumerWidget {
               icon: const Icon(Icons.tune),
               tooltip: 'Set position preferences',
               onPressed: onSetPrefs,
+            ),
+          if (onAttendance != null)
+            IconButton(
+              icon: const Icon(Icons.bar_chart_outlined),
+              tooltip: 'Attendance history',
+              onPressed: onAttendance,
             ),
           if (onPromote != null)
             IconButton(
