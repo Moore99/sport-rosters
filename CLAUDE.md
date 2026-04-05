@@ -329,7 +329,7 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.0.6 | 11 | In progress |
+| Android (Play Store) | 1.0.6 | 14 | Under review |
 | iOS (App Store) | 1.0.6 | pending | Pending Codemagic build |
 
 ## Known Issues / Blockers
