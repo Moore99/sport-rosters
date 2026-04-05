@@ -79,10 +79,13 @@ class EventRepository {
   Future<List<Event>> fetchPastTeamEvents(String teamId) async {
     final snap = await _events
         .where('teamId', isEqualTo: teamId)
-        .where('date', isLessThan: Timestamp.fromDate(DateTime.now()))
         .orderBy('date', descending: true)
         .get();
-    return snap.docs.map(Event.fromFirestore).toList();
+    final now = DateTime.now();
+    return snap.docs
+        .map(Event.fromFirestore)
+        .where((e) => e.date.isBefore(now))
+        .toList();
   }
 
   /// Fetches availability docs for [userId] across the given [eventIds] using
