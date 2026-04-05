@@ -329,8 +329,8 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.0.4 | 8 | Released |
-| iOS (App Store) | 1.0.4 | pending | Codemagic build in progress (initiated 2026-04-03) |
+| Android (Play Store) | 1.0.5 | 9 | In progress |
+| iOS (App Store) | 1.0.5 | pending | Pending Codemagic build |
 
 ## Known Issues / Blockers
 
@@ -341,12 +341,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 - Note: "Setup → API access" no longer exists in Play Console UI — service accounts are now invited via Users and permissions like regular users
 - **Secrets already set:** `APPLE_IAP_SHARED_SECRET` ✅, `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` ✅
 
-### Google Sign-In — `google-services.json` Stale (needs re-download)
-- Firebase Console has all 3 fingerprints registered: debug SHA-1, release SHA-1, Play App Signing SHA-256
-- **`android/app/google-services.json` only contains the debug SHA-1** — stale, was not re-downloaded after fingerprints were added
-- Symptom: Google Sign-In fails on release/Play Store installs
-- **To fix:** Firebase Console → Project Settings → Android app (`com.sportsrostering.app`) → Download `google-services.json` → replace `android/app/google-services.json` → rebuild
-- **Note:** The SHA-256 (`AF:5E:...D4`) is the Google Play App Signing certificate — required for Play Store installs to work
+### Google Sign-In — ✅ Resolved (1.0.4 build 8)
+- `google-services.json` updated with all 3 fingerprints (debug SHA-1, release SHA-1, Play App Signing SHA-256)
+- Google Sign-In working on Play Store installs as of 1.0.4 (8)
 - iOS Google Sign-In fix (missing `CFBundleURLTypes` URL scheme) applied in 1.0.3 ✅
 
 ### Android minSdk

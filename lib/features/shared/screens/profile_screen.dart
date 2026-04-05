@@ -258,6 +258,19 @@ class ProfileScreen extends ConsumerWidget {
               title:   const Text('Accessibility'),
               onTap:   () => context.push(AppRoutes.accessibility),
             ),
+            // Show change password only for email/password accounts
+            if (ref.watch(currentUserProvider)
+                    ?.providerData
+                    .any((p) => p.providerId == 'password') ==
+                true)
+              ListTile(
+                leading: const Icon(Icons.password_outlined),
+                title:   const Text('Change Password'),
+                onTap:   () => showDialog(
+                  context: context,
+                  builder: (_) => const _ChangePasswordDialog(),
+                ),
+              ),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -660,6 +673,154 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
         _error = 'Unexpected error. Please try again.';
       });
     }
+  }
+}
+
+// ── Change password dialog ─────────────────────────────────────────────────────
+
+class _ChangePasswordDialog extends ConsumerStatefulWidget {
+  const _ChangePasswordDialog();
+
+  @override
+  ConsumerState<_ChangePasswordDialog> createState() =>
+      _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
+  final _formKey     = GlobalKey<FormState>();
+  final _currentCtrl = TextEditingController();
+  final _newCtrl     = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  bool _obscureCurrent = true;
+  bool _obscureNew     = true;
+  bool _obscureConfirm = true;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _currentCtrl.dispose();
+    _newCtrl.dispose();
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    final ok = await ref.read(authNotifierProvider.notifier).changePassword(
+      currentPassword: _currentCtrl.text,
+      newPassword:     _newCtrl.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password updated successfully.')),
+      );
+    } else {
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final error = ref.watch(authNotifierProvider).error?.toString();
+
+    return AlertDialog(
+      title: const Text('Change Password'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller:  _currentCtrl,
+              obscureText: _obscureCurrent,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:  'Current password',
+                prefixIcon: const Icon(Icons.lock_outlined),
+                border:     const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureCurrent
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: () =>
+                      setState(() => _obscureCurrent = !_obscureCurrent),
+                ),
+              ),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Enter your current password.' : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller:  _newCtrl,
+              obscureText: _obscureNew,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText:  'New password',
+                prefixIcon: const Icon(Icons.lock_outlined),
+                border:     const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureNew
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                ),
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Enter a new password.';
+                if (v.length < 6) return 'Password must be at least 6 characters.';
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller:  _confirmCtrl,
+              obscureText: _obscureConfirm,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _save(),
+              decoration: InputDecoration(
+                labelText:  'Confirm new password',
+                prefixIcon: const Icon(Icons.lock_outlined),
+                border:     const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(_obscureConfirm
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  onPressed: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
+                ),
+              ),
+              validator: (v) =>
+                  v != _newCtrl.text ? 'Passwords do not match.' : null,
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                error,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error, fontSize: 13),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? const SizedBox(
+                  height: 18, width: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Update Password'),
+        ),
+      ],
+    );
   }
 }
 

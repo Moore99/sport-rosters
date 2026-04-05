@@ -235,6 +235,34 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// Re-authenticates with [currentPassword] then updates to [newPassword].
+  /// Returns true on success; sets error state and returns false on failure.
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        state = AsyncError('No signed-in user.', StackTrace.current);
+        return false;
+      }
+      // Re-authenticate first — required by Firebase before sensitive operations.
+      final credential = EmailAuthProvider.credential(
+        email:    user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+      state = const AsyncData(null);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      state = AsyncError(friendlyAuthError(e), StackTrace.current);
+      return false;
+    }
+  }
+
   void clearError() => state = const AsyncData(null);
 }
 
