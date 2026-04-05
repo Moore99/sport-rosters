@@ -76,16 +76,19 @@ class EventRepository {
       _avail(avail.eventId).doc(avail.userId).set(avail.toFirestore());
 
   /// All past events for a team, most recent first.
+  /// Uses only a single-field equality filter (no orderBy) to avoid requiring
+  /// a composite index. Filtering and sorting done client-side.
   Future<List<Event>> fetchPastTeamEvents(String teamId) async {
     final snap = await _events
         .where('teamId', isEqualTo: teamId)
-        .orderBy('date', descending: true)
         .get();
     final now = DateTime.now();
-    return snap.docs
+    final past = snap.docs
         .map(Event.fromFirestore)
         .where((e) => e.date.isBefore(now))
-        .toList();
+        .toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return past;
   }
 
   /// Fetches availability docs for [userId] across the given [eventIds] using
