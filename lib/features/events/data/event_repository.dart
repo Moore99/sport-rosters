@@ -85,15 +85,18 @@ class EventRepository {
     return snap.docs.map(Event.fromFirestore).toList();
   }
 
-  /// All availability records for one player across a team (collection group).
-  Future<List<Availability>> fetchPlayerTeamAvailability(
-      String teamId, String userId) async {
-    final snap = await _db
-        .collectionGroup('availability')
-        .where('userId', isEqualTo: userId)
-        .where('teamId', isEqualTo: teamId)
-        .get();
-    return snap.docs.map(Availability.fromFirestore).toList();
+  /// Fetches availability docs for [userId] across the given [eventIds] using
+  /// direct document reads (no composite index required).
+  Future<List<Availability>> fetchPlayerAvailabilityForEvents(
+      List<String> eventIds, String userId) async {
+    if (eventIds.isEmpty) return [];
+    final snaps = await Future.wait(
+      eventIds.map((id) => _avail(id).doc(userId).get()),
+    );
+    return snaps
+        .where((s) => s.exists)
+        .map(Availability.fromFirestore)
+        .toList();
   }
 }
 

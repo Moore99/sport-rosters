@@ -13,8 +13,8 @@ final _attendanceProvider = FutureProvider.autoDispose
   (ref, args) async {
     final repo   = ref.read(eventRepositoryProvider);
     final events = await repo.fetchPastTeamEvents(args.teamId);
-    final avails = await repo.fetchPlayerTeamAvailability(
-        args.teamId, args.userId);
+    final avails = await repo.fetchPlayerAvailabilityForEvents(
+        events.map((e) => e.eventId).toList(), args.userId);
     final byEvent = {for (final a in avails) a.eventId: a.response};
     return _AttendanceData(events: events, byEvent: byEvent);
   },
