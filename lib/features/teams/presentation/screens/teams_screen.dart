@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../domain/team.dart';
 import '../providers/teams_provider.dart';
 import '../../data/team_repository.dart';
@@ -192,6 +195,7 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
       profile?.name ?? user.email ?? '',
       user.email ?? '',
     );
+    unawaited(ref.read(analyticsServiceProvider).logTeamJoined(team.sport));
 
     if (mounted) {
       Navigator.of(context).pop();

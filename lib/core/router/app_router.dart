@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../services/analytics_service.dart';
+
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -66,9 +68,11 @@ class AppRoutes {
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
   final bioLocked = ref.watch(biometricLockProvider);
+  final analyticsObserver = ref.read(analyticsObserverProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.teams,
+    observers: [analyticsObserver],
     redirect: (context, state) {
       final isLoggedIn = authState.valueOrNull != null;
       final currentPath = state.matchedLocation;
