@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -8,6 +10,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../data/user_repository.dart';
 import '../../domain/app_user.dart';
+
+final _analytics = FirebaseAnalytics.instance;
 
 /// Converts Firebase error codes to user-friendly messages.
 String friendlyAuthError(FirebaseAuthException e) {
@@ -62,6 +66,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     state = const AsyncLoading();
     try {
       await _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+      unawaited(_analytics.logLogin(loginMethod: 'email'));
       state = const AsyncData(null);
       return true;
     } on FirebaseAuthException catch (e) {
@@ -97,6 +102,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         createdAt: DateTime.now(),
       ));
 
+      unawaited(_analytics.logSignUp(signUpMethod: 'email'));
       state = const AsyncData(null);
       return true;
     } on FirebaseAuthException catch (e) {
@@ -137,6 +143,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           deleted:   false,
           createdAt: DateTime.now(),
         ));
+        unawaited(_analytics.logSignUp(signUpMethod: 'google'));
+      } else {
+        unawaited(_analytics.logLogin(loginMethod: 'google'));
       }
 
       state = const AsyncData(null);
@@ -190,6 +199,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           deleted:   false,
           createdAt: DateTime.now(),
         ));
+        unawaited(_analytics.logSignUp(signUpMethod: 'apple'));
+      } else {
+        unawaited(_analytics.logLogin(loginMethod: 'apple'));
       }
 
       state = const AsyncData(null);

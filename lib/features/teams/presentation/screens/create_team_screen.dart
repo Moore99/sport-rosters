@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
 import '../../domain/team.dart';
@@ -51,6 +54,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
 
     try {
       await ref.read(teamRepositoryProvider).createTeam(team, uid);
+      unawaited(ref.read(analyticsServiceProvider).logTeamCreated(_sport));
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(

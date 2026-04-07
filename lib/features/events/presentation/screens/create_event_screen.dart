@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +8,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/event.dart';
@@ -107,6 +110,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
 
     try {
       await ref.read(eventRepositoryProvider).createEvent(event);
+      unawaited(ref.read(analyticsServiceProvider).logEventCreated(sport));
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
