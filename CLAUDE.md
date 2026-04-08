@@ -269,8 +269,8 @@ These versions were resolved by pub — do not tighten constraints without check
 | firebase_core | 4.6.0 | |
 | firebase_auth | 6.3.0 | |
 | cloud_firestore | 6.2.0 | |
-| firebase_messaging | deferred | Conflicts with auth at current versions — add Phase 2 |
-| firebase_crashlytics | deferred | Add Phase 2 alongside messaging |
+| firebase_messaging | ^16.1.1 | ✅ Live — FCM token → Firestore, permission request, foreground/background handlers, spare deep-link routing |
+| firebase_crashlytics | ^5.0.7 | ✅ Live — disabled in debug mode |
 | firebase_storage | deferred | Add Phase 2 for profile photos |
 | flutter_riverpod | 2.6.1 | |
 | go_router | 17.1.0 | |
