@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../teams/presentation/providers/teams_provider.dart';
 
 // ── Ad-free flag ───────────────────────────────────────────────────────────────
@@ -50,6 +51,10 @@ class IapNotifier extends StateNotifier<IapStatus> {
         final validated = await _validateWithServer(purchase, isRestore: isRestore);
         if (validated) {
           state = const IapStatus(IapState.success);
+          if (!isRestore) {
+            unawaited(AnalyticsService(FirebaseAnalytics.instance)
+                .logRemoveAdsPurchased());
+          }
         } else {
           state = const IapStatus(IapState.error,
               'Purchase could not be verified. Please try again.');

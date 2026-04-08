@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/teams/data/spares_repository.dart';
 import '../../../../features/teams/presentation/providers/spares_provider.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';
@@ -193,16 +196,20 @@ class _EventDetailView extends ConsumerWidget {
                 _RsvpButtons(
                   current: myAvail?.response,
                   disabled: !event.rsvpOpen,
-                  onSelect: (r) =>
-                      ref.read(eventRepositoryProvider).setAvailability(
-                            Availability(
-                              userId: uid,
-                              eventId: event.eventId,
-                              teamId: teamId,
-                              response: r,
-                              updatedAt: DateTime.now(),
-                            ),
+                  onSelect: (r) {
+                    unawaited(ref.read(eventRepositoryProvider).setAvailability(
+                          Availability(
+                            userId: uid,
+                            eventId: event.eventId,
+                            teamId: teamId,
+                            response: r,
+                            updatedAt: DateTime.now(),
                           ),
+                        ));
+                    unawaited(ref
+                        .read(analyticsServiceProvider)
+                        .logAvailabilitySet(r.name));
+                  },
                 ),
                 const SizedBox(height: 24),
               ],

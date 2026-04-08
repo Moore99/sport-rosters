@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +8,7 @@ import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/events/presentation/providers/events_provider.dart';
 import '../../../../features/rankings/presentation/providers/rankings_provider.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../../core/services/analytics_service.dart';
 import '../../data/dropin_repository.dart';
 import '../providers/dropin_provider.dart';
 
@@ -103,17 +106,27 @@ class DropInScreen extends ConsumerWidget {
                     foregroundColor:
                         Theme.of(context).colorScheme.onSecondaryContainer,
                   ),
-                  onPressed: () => ref
-                      .read(dropInRepositoryProvider)
-                      .signUp(eventId, teamId, uid, maxPlayers: maxPlayers),
+                  onPressed: () {
+                    unawaited(ref
+                        .read(dropInRepositoryProvider)
+                        .signUp(eventId, teamId, uid, maxPlayers: maxPlayers));
+                    unawaited(ref
+                        .read(analyticsServiceProvider)
+                        .logDropInSignup());
+                  },
                 )
               else
                 FilledButton.icon(
                   icon:  const Icon(Icons.add_circle_outline),
                   label: const Text("I'm In"),
-                  onPressed: () => ref
-                      .read(dropInRepositoryProvider)
-                      .signUp(eventId, teamId, uid, maxPlayers: maxPlayers),
+                  onPressed: () {
+                    unawaited(ref
+                        .read(dropInRepositoryProvider)
+                        .signUp(eventId, teamId, uid, maxPlayers: maxPlayers));
+                    unawaited(ref
+                        .read(analyticsServiceProvider)
+                        .logDropInSignup());
+                  },
                 ),
             const SizedBox(height: 24),
 
