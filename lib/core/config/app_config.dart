@@ -50,6 +50,8 @@ class AppConfig {
     'Ice Hockey',
     'Lacrosse',
     'Quidditch',
+    'Rugby',
+    'Rugby 7s',
     'Softball',
     'Ultimate Frisbee',
     'Volleyball',
@@ -244,6 +246,32 @@ class AppConfig {
       'Beater 1',
       'Beater 2',
       'Seeker'
+    ],
+    'Rugby': [
+      'Loosehead Prop',
+      'Hooker',
+      'Tighthead Prop',
+      'Left Lock',
+      'Right Lock',
+      'Blindside Flanker',
+      'Openside Flanker',
+      'Number 8',
+      'Scrum-Half',
+      'Fly-Half',
+      'Left Wing',
+      'Inside Centre',
+      'Outside Centre',
+      'Right Wing',
+      'Fullback',
+    ],
+    'Rugby 7s': [
+      'Prop',
+      'Hooker',
+      'Flanker',
+      'Scrum-Half',
+      'Fly-Half',
+      'Centre',
+      'Fullback',
     ],
     'Futsal': ['Goalkeeper', 'Fixo', 'Right Wing', 'Left Wing', 'Pivot'],
     'Field Hockey': [
@@ -524,6 +552,36 @@ class AppConfig {
     'Quidditch': {
       'Any Chaser': ['Chaser 1', 'Chaser 2', 'Chaser 3'],
       'Any Beater': ['Beater 1', 'Beater 2'],
+    },
+    'Rugby': {
+      'Any Forward': [
+        'Loosehead Prop',
+        'Hooker',
+        'Tighthead Prop',
+        'Left Lock',
+        'Right Lock',
+        'Blindside Flanker',
+        'Openside Flanker',
+        'Number 8'
+      ],
+      'Any Prop': ['Loosehead Prop', 'Tighthead Prop'],
+      'Any Lock': ['Left Lock', 'Right Lock'],
+      'Any Flanker': ['Blindside Flanker', 'Openside Flanker'],
+      'Any Back': [
+        'Scrum-Half',
+        'Fly-Half',
+        'Left Wing',
+        'Inside Centre',
+        'Outside Centre',
+        'Right Wing',
+        'Fullback'
+      ],
+      'Any Centre': ['Inside Centre', 'Outside Centre'],
+      'Any Wing': ['Left Wing', 'Right Wing'],
+    },
+    'Rugby 7s': {
+      'Any Forward': ['Prop', 'Hooker', 'Flanker'],
+      'Any Back': ['Scrum-Half', 'Fly-Half', 'Centre', 'Fullback'],
     },
     'Futsal': {
       'Any Outfield': ['Fixo', 'Right Wing', 'Left Wing', 'Pivot'],
