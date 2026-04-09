@@ -74,6 +74,17 @@ class _AttendanceBody extends StatelessWidget {
     final maybe = events.where((e) => byEvent[e.eventId] == AvailabilityResponse.maybe).length;
     final none  = events.length - yes - no - maybe;
 
+    // Streak: consecutive yes responses from most-recent event
+    int streak = 0;
+    for (final e in events) {
+      if (byEvent[e.eventId] == AvailabilityResponse.yes) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    final recentForm = events.take(5).toList();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -109,6 +120,56 @@ class _AttendanceBody extends StatelessWidget {
                   '${events.isEmpty ? 0 : (yes * 100 ~/ events.length)}% confirmed available',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
+                if (recentForm.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text('Recent form',
+                          style: Theme.of(context).textTheme.labelMedium),
+                      const Spacer(),
+                      ...recentForm.map((e) {
+                        final r = byEvent[e.eventId];
+                        final color = switch (r) {
+                          AvailabilityResponse.yes   => Colors.green,
+                          AvailabilityResponse.no    => Colors.red,
+                          AvailabilityResponse.maybe => Colors.orange,
+                          null                       => Colors.grey,
+                        };
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Tooltip(
+                            message:
+                                '${DateFormat('MMM d').format(e.date)}: ${r?.label ?? 'No response'}',
+                            child: CircleAvatar(
+                                radius: 8, backgroundColor: color),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                  if (streak > 1) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.local_fire_department,
+                            size: 14, color: Colors.deepOrange),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$streak-event yes streak',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Colors.deepOrange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
