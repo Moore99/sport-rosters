@@ -185,7 +185,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'create',
                 builder: (_, state) => CreateEventScreen(
-                  teamId: state.pathParameters['teamId']!,
+                  teamId:   state.pathParameters['teamId']!,
+                  copyFrom: state.extra as Event?,
                 ),
               ),
               GoRoute(

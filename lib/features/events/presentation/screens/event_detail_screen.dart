@@ -111,6 +111,11 @@ class _EventDetailView extends ConsumerWidget {
                     '/teams/$teamId/events/${event.eventId}/edit',
                     extra: event,
                   );
+                } else if (v == 'copy') {
+                  context.push(
+                    '/teams/$teamId/events/create',
+                    extra: event,
+                  );
                 } else if (v == 'delete') {
                   final confirmed = await showDialog<bool>(
                     context: context,
@@ -147,6 +152,14 @@ class _EventDetailView extends ConsumerWidget {
                   child: ListTile(
                     leading: Icon(Icons.edit_outlined),
                     title: Text('Edit Event'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'copy',
+                  child: ListTile(
+                    leading: Icon(Icons.copy_outlined),
+                    title: Text('Copy Event'),
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),

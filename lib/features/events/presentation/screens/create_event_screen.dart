@@ -15,33 +15,63 @@ import '../../domain/event.dart';
 
 class CreateEventScreen extends ConsumerStatefulWidget {
   final String teamId;
-  const CreateEventScreen({super.key, required this.teamId});
+  final Event? copyFrom;
+  const CreateEventScreen({super.key, required this.teamId, this.copyFrom});
 
   @override
   ConsumerState<CreateEventScreen> createState() => _CreateEventScreenState();
 }
 
 class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
-  final _formKey      = GlobalKey<FormState>();
-  final _locationCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _locationCtrl;
 
-  EventType _type        = EventType.practice;
+  late EventType _type;
   DateTime  _date        = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _time        = const TimeOfDay(hour: 18, minute: 0);
-  int       _minPlayers  = 1;
-  int       _maxPlayers  = 20;
-  bool      _allowSignups  = true;
+  late TimeOfDay _time;
+  late int  _minPlayers;
+  late int  _maxPlayers;
+  late bool _allowSignups;
   DateTime? _rsvpDeadline;
   bool      _loading       = false;
 
   // Sub-teams (non-Dragon Boating sports)
-  int _numSubTeams = 1;
+  late int _numSubTeams;
 
   // Dragon Boating boat config
-  int  _numBoats      = 1;
-  int  _seatsPerBoat  = 20;
-  bool _hasDrummer    = true;
+  late int  _numBoats;
+  late int  _seatsPerBoat;
+  late bool _hasDrummer;
   bool _loadingConfig = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final src = widget.copyFrom;
+    if (src != null) {
+      _locationCtrl = TextEditingController(text: src.location);
+      _type         = src.type;
+      _time         = TimeOfDay.fromDateTime(src.date);
+      _minPlayers   = src.minPlayers;
+      _maxPlayers   = src.maxPlayers;
+      _allowSignups = src.allowSignups;
+      _numSubTeams  = src.numSubTeams;
+      _numBoats     = src.boatConfig?.numBoats    ?? 1;
+      _seatsPerBoat = src.boatConfig?.seatsPerBoat ?? 20;
+      _hasDrummer   = src.boatConfig?.hasDrummer   ?? true;
+    } else {
+      _locationCtrl = TextEditingController();
+      _type         = EventType.practice;
+      _time         = const TimeOfDay(hour: 18, minute: 0);
+      _minPlayers   = 1;
+      _maxPlayers   = 20;
+      _allowSignups = true;
+      _numSubTeams  = 1;
+      _numBoats     = 1;
+      _seatsPerBoat = 20;
+      _hasDrummer   = true;
+    }
+  }
 
   @override
   void dispose() { _locationCtrl.dispose(); super.dispose(); }
@@ -130,7 +160,8 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     final sport     = teamAsync.valueOrNull?.sport ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Event')),
+      appBar: AppBar(
+          title: Text(widget.copyFrom != null ? 'Copy Event' : 'New Event')),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
@@ -355,7 +386,9 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                           ? const SizedBox(
                               height: 20, width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Create Event'),
+                          : Text(widget.copyFrom != null
+                              ? 'Create Copy'
+                              : 'Create Event'),
                     ),
                   ],
                 ),
