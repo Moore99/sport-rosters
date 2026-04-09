@@ -7,7 +7,7 @@ Read this file first. Reflects the actual current state, not the original spec.
 ## Running the Application
 
 ```bash
-flutter run --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
+flutter run --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ --dart-define=GOOGLE_PLACES_API_KEY_IOS=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
 flutter pub get   # After modifying pubspec.yaml
 flutter clean     # Often fails on OneDrive repos due to file locking — safe to ignore
 flutter doctor
@@ -15,12 +15,12 @@ flutter doctor
 
 **Build APK for Android:**
 ```bash
-flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
+flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ --dart-define=GOOGLE_PLACES_API_KEY_IOS=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
 ```
 
 **Build AAB for Play Store:**
 ```bash
-flutter build appbundle --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
+flutter build appbundle --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ --dart-define=GOOGLE_PLACES_API_KEY_IOS=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
 ```
 AAB output: `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab`
 Note: Flutter reports "failed to produce .aab file" due to the build junction — the file IS there at the path above, ignore the warning.
@@ -67,7 +67,7 @@ This still catches actual errors.
 - **Flutter 3.x** — Web, Android, iOS
 - **Riverpod** (`flutter_riverpod ^2.4.9`) — state management
 - **GoRouter** (`go_router ^17.1.0`) — navigation
-- **Firebase** — Auth, Firestore, Messaging, Crashlytics, Storage
+- **Firebase** — Auth, Firestore, Messaging, Crashlytics, Storage, Analytics, App Check
 - **Google AdMob** — banner + interstitial + rewarded ads
 - **In-App Purchases** — one-time "Remove Ads"
 - **Material 3** — UI toolkit
@@ -90,7 +90,8 @@ lib/
 │   │   └── app_theme.dart           # Material 3 color scheme, text styles
 │   └── services/
 │       ├── auth_service.dart        # Firebase Auth wrapper
-│       └── notification_service.dart # FCM + app badge
+│       ├── notification_service.dart # FCM + app badge
+│       └── analytics_service.dart   # Firebase Analytics + GoRouter observer
 ├── features/
 │   ├── auth/                        # Login, register, forgot password
 │   ├── teams/                       # Team create/join/manage
@@ -248,7 +249,7 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 ## Development Workflow
 
 ### Android Testing
-1. `flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ`
+1. `flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ --dart-define=GOOGLE_PLACES_API_KEY_IOS=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ`
 2. `adb install -r build/app/outputs/flutter-apk/app-release.apk`
 3. `adb shell am force-stop com.sportsrostering.app`
 4. Launch manually; `flutter logs` to monitor
@@ -271,7 +272,9 @@ These versions were resolved by pub — do not tighten constraints without check
 | cloud_firestore | 6.2.0 | |
 | firebase_messaging | ^16.1.1 | ✅ Live — FCM token → Firestore, permission request, foreground/background handlers, spare deep-link routing |
 | firebase_crashlytics | ^5.0.7 | ✅ Live — disabled in debug mode |
-| firebase_storage | deferred | Add Phase 2 for profile photos |
+| firebase_storage | ^13.2.0 | ✅ Live — team logo upload via Cloud Function proxy |
+| firebase_analytics | ^12.2.0 | ✅ Live — GoRouter observer, screen tracking |
+| firebase_app_check | ^0.4.2 | ✅ Live — enforced on Cloud Functions |
 | flutter_riverpod | 2.6.1 | |
 | go_router | 17.1.0 | |
 | google_mobile_ads | 5.3.1 | |
@@ -317,13 +320,19 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 4 | App icon (whistle), splash screen, app name "Sport Rosters" | ✅ Done |
 | 4 | 21-sport roster with positions + preference categories | ✅ Done |
 | 5 | Sub-teams (snake draft, goalie pre-assign, tab UI in lineup screen) | ✅ Done |
-| 6 | Server-side IAP validation — iOS enforced, Android deferred (Play Console API access blocked) | ⚠️ Partial |
+| 6 | Server-side IAP validation — iOS + Android enforced via Cloud Function | ✅ Done |
 | 6 | Sign in with Apple (App Store requirement when Google Sign-In offered) | ✅ Done |
 | 6 | Team logo upload secured via Cloud Function proxy (admin-verified) | ✅ Done |
 | 6 | CircleAvatar radii scale with system text size (accessibility) | ✅ Done |
 | 6 | Biometric authentication (Face ID / Touch ID / Fingerprint) | ✅ Done |
 | 6 | Cloud Functions runtime upgraded to Node.js 22 | ✅ Done |
 | 7 | Spares list (team-level standby players, admin notifies when roster short) | ✅ Done |
+| 8 | Email verification gate (email/password accounts only) | ✅ Done |
+| 8 | Firebase Analytics + GoRouter screen tracking | ✅ Done |
+| 8 | Firebase App Check (Cloud Functions enforcement) | ✅ Done |
+| 8 | Player attendance history screen | ✅ Done |
+| 8 | Change password (email/password accounts, Profile screen) | ✅ Done |
+| 8 | Accessibility screen (in-app + website) | ✅ Done |
 
 ## Current Production Versions
 
