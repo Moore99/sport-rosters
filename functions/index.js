@@ -124,6 +124,86 @@ async function _deleteDocRefs(db, refs) {
 }
 
 /**
+ * exportUserData — GDPR/PIPEDA data portability export.
+ *
+ * Returns a JSON object containing the calling user's personal data:
+ *   profile       — name, email, phone, weightKg
+ *   teams         — team memberships with role
+ *   availabilityRecords  — all event RSVP responses
+ *   dropInParticipations — drop-in sessions the user signed up for
+ *
+ * Sensitive internal fields (fcmToken, adFree) are excluded.
+ * Must be called by the authenticated user requesting their own data.
+ */
+exports.exportUserData = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+  const db = getFirestore();
+
+  // ── 1. User profile ──────────────────────────────────────────────────────────
+  const userSnap = await db.collection('users').doc(uid).get();
+  const profileData = userSnap.exists ? userSnap.data() : {};
+
+  // ── 2. Team memberships ──────────────────────────────────────────────────────
+  const teamIds = profileData.teams ?? [];
+  const teams = [];
+  for (const teamId of teamIds) {
+    const teamSnap = await db.collection('teams').doc(teamId).get();
+    if (teamSnap.exists) {
+      const t = teamSnap.data();
+      teams.push({
+        teamId,
+        name:  t.name  ?? '',
+        sport: t.sport ?? '',
+        role:  (t.admins ?? []).includes(uid) ? 'admin' : 'player',
+      });
+    }
+  }
+
+  // ── 3. Availability records ──────────────────────────────────────────────────
+  const availSnap = await db.collectionGroup('availability')
+    .where('userId', '==', uid)
+    .get();
+  const availabilityRecords = availSnap.docs.map(d => {
+    const data = d.data();
+    return {
+      eventId:   data.eventId  ?? '',
+      teamId:    data.teamId   ?? '',
+      response:  data.response ?? '',
+      updatedAt: data.updatedAt?.toDate()?.toISOString() ?? null,
+    };
+  });
+
+  // ── 4. Drop-in participations ─────────────────────────────────────────────────
+  const dropInSnap = await db.collection('dropInSessions')
+    .where('signups', 'array-contains', uid)
+    .get();
+  const dropInParticipations = dropInSnap.docs.map(d => {
+    const data = d.data();
+    return {
+      sessionId: d.id,
+      eventId:   data.eventId ?? '',
+      teamId:    data.teamId  ?? '',
+    };
+  });
+
+  return {
+    exportedAt: new Date().toISOString(),
+    profile: {
+      uid,
+      name:     profileData.name     ?? '',
+      email:    profileData.email    ?? '',
+      phone:    profileData.phone    ?? null,
+      weightKg: profileData.weightKg ?? null,
+    },
+    teams,
+    availabilityRecords,
+    dropInParticipations,
+  };
+});
+
+/**
  * validateIap — server-side receipt validation for the "Remove Ads" one-time purchase.
  *
  * Called by the app after a purchase or restore event is received from the store.

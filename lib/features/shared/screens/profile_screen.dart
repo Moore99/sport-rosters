@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -258,6 +260,7 @@ class ProfileScreen extends ConsumerWidget {
               title:   const Text('Accessibility'),
               onTap:   () => context.push(AppRoutes.accessibility),
             ),
+            const _ExportDataButton(),
             // Show change password only for email/password accounts
             if (ref.watch(currentUserProvider)
                     ?.providerData
@@ -820,6 +823,57 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
               : const Text('Update Password'),
         ),
       ],
+    );
+  }
+}
+
+// ── Export data button ─────────────────────────────────────────────────────────
+
+class _ExportDataButton extends ConsumerStatefulWidget {
+  const _ExportDataButton();
+
+  @override
+  ConsumerState<_ExportDataButton> createState() => _ExportDataButtonState();
+}
+
+class _ExportDataButtonState extends ConsumerState<_ExportDataButton> {
+  bool _exporting = false;
+
+  Future<void> _export() async {
+    setState(() => _exporting = true);
+    try {
+      final fn = FirebaseFunctions.instanceFor(region: 'northamerica-northeast1');
+      final result = await fn.httpsCallable('exportUserData').call();
+      final json = const JsonEncoder.withIndent('  ').convert(result.data);
+      await SharePlus.instance.share(
+        ShareParams(
+          text:    json,
+          subject: 'Sport Rosters — My Data',
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: _exporting
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.download_outlined),
+      title:    const Text('Export My Data'),
+      subtitle: const Text('Download a copy of your personal data'),
+      onTap:    _exporting ? null : _export,
     );
   }
 }
