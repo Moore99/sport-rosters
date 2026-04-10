@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../services/analytics_service.dart';
 
+import '../../features/auth/presentation/screens/app_tour_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
@@ -61,6 +62,7 @@ class AppRoutes {
   static const terms = '/terms';
   static const help = '/help';
   static const accessibility = '/accessibility';
+  static const tour = '/tour';
   static const spareResponse = '/spare-response/:eventId/:teamId';
   static const playerAttendance = '/teams/:teamId/attendance/:userId';
 }
@@ -81,7 +83,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           currentPath == AppRoutes.forgotPassword ||
           currentPath == AppRoutes.privacy ||
           currentPath == AppRoutes.terms ||
-          currentPath == AppRoutes.accessibility;
+          currentPath == AppRoutes.accessibility ||
+          currentPath == AppRoutes.tour;
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
 
@@ -238,6 +241,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: AppRoutes.accessibility,
           builder: (_, __) => const AccessibilityScreen()),
+      GoRoute(
+          path: AppRoutes.tour,
+          builder: (_, __) => const AppTourScreen()),
       GoRoute(
         path: AppRoutes.spareResponse,
         builder: (_, state) => SpareResponseScreen(

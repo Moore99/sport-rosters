@@ -124,6 +124,39 @@ async function _deleteDocRefs(db, refs) {
 }
 
 /**
+ * previewTeam — public team lookup for pre-registration UX.
+ *
+ * Intentionally requires no auth — allows prospective members to verify
+ * a Team ID before creating an account. Returns only non-sensitive info.
+ *
+ * Params: { teamId }
+ * Returns: { name, sport }
+ */
+exports.previewTeam = onCall(
+  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  async (request) => {
+    const { teamId } = request.data;
+    if (!teamId || typeof teamId !== 'string' || teamId.trim().length === 0) {
+      throw new HttpsError('invalid-argument', 'teamId is required.');
+    }
+
+    const db       = getFirestore();
+    const teamSnap = await db.collection('teams').doc(teamId.trim()).get();
+
+    if (!teamSnap.exists) {
+      throw new HttpsError('not-found',
+        'Team not found. Check the ID and try again.');
+    }
+
+    const data = teamSnap.data();
+    return {
+      name:  data.name  ?? '',
+      sport: data.sport ?? '',
+    };
+  }
+);
+
+/**
  * exportUserData — GDPR/PIPEDA data portability export.
  *
  * Returns a JSON object containing the calling user's personal data:

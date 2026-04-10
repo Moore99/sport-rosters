@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -204,6 +205,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ],
                     ),
 
+                    // ── Discovery links ───────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                              textStyle: const TextStyle(fontSize: 12)),
+                          onPressed: () => context.push(AppRoutes.tour),
+                          child: const Text('See how it works'),
+                        ),
+                        Text('·',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.outline)),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                              textStyle: const TextStyle(fontSize: 12)),
+                          onPressed: () => showDialog(
+                            context: context,
+                            builder: (_) => const _TeamPreviewDialog(),
+                          ),
+                          child: const Text('Have a Team ID?'),
+                        ),
+                      ],
+                    ),
+
                     // ── Legal links ───────────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -226,6 +253,157 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Team Preview Dialog ────────────────────────────────────────────────────────
+
+class _TeamPreviewDialog extends StatefulWidget {
+  const _TeamPreviewDialog();
+
+  @override
+  State<_TeamPreviewDialog> createState() => _TeamPreviewDialogState();
+}
+
+class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
+  final _idCtrl = TextEditingController();
+  bool    _loading = false;
+  String? _teamName;
+  String? _teamSport;
+  String? _error;
+
+  @override
+  void dispose() {
+    _idCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _lookup() async {
+    final id = _idCtrl.text.trim();
+    if (id.isEmpty) return;
+    setState(() { _loading = true; _error = null; _teamName = null; });
+    try {
+      final fn     = FirebaseFunctions.instanceFor(region: 'northamerica-northeast1');
+      final result = await fn.httpsCallable('previewTeam').call({'teamId': id});
+      setState(() {
+        _teamName  = result.data['name']  as String?;
+        _teamSport = result.data['sport'] as String?;
+      });
+    } on FirebaseFunctionsException catch (e) {
+      setState(() => _error = e.code == 'not-found'
+          ? 'Team not found. Check the ID and try again.'
+          : 'Something went wrong. Please try again.');
+    } catch (_) {
+      setState(() => _error = 'Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPreview = _teamName != null;
+
+    return AlertDialog(
+      title: const Text('Find Your Team'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Enter the Team ID your coach shared with you.',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller:     _idCtrl,
+                  autocorrect:    false,
+                  textCapitalization: TextCapitalization.none,
+                  decoration: const InputDecoration(
+                    labelText:   'Team ID',
+                    border:      OutlineInputBorder(),
+                    prefixIcon:  Icon(Icons.tag),
+                  ),
+                  onSubmitted: (_) => _lookup(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                icon: _loading
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.search),
+                onPressed: _loading ? null : _lookup,
+              ),
+            ],
+          ),
+
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(_error!,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 13)),
+          ],
+
+          if (hasPreview) ...[
+            const SizedBox(height: 16),
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.groups,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_teamName!,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer)),
+                          if (_teamSport != null)
+                            Text(_teamSport!,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        if (hasPreview)
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push(AppRoutes.register);
+            },
+            child: const Text('Create Account'),
+          ),
+      ],
     );
   }
 }
