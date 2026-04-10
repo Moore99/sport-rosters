@@ -34,6 +34,7 @@ import '../../features/teams/presentation/screens/send_notification_screen.dart'
 import '../../features/teams/presentation/screens/notification_inbox_screen.dart';
 import '../../features/teams/presentation/screens/manage_spares_screen.dart';
 import '../../features/events/presentation/screens/player_attendance_screen.dart';
+import '../../features/events/presentation/screens/my_schedule_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -63,6 +64,7 @@ class AppRoutes {
   static const help = '/help';
   static const accessibility = '/accessibility';
   static const tour = '/tour';
+  static const mySchedule = '/schedule';
   static const spareResponse = '/spare-response/:eventId/:teamId';
   static const playerAttendance = '/teams/:teamId/attendance/:userId';
 }
@@ -244,6 +246,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: AppRoutes.tour,
           builder: (_, __) => const AppTourScreen()),
+      GoRoute(
+          path: AppRoutes.mySchedule,
+          builder: (_, __) => const MyScheduleScreen()),
       GoRoute(
         path: AppRoutes.spareResponse,
         builder: (_, state) => SpareResponseScreen(

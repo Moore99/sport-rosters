@@ -20,6 +20,7 @@ class EditEventScreen extends ConsumerStatefulWidget {
 class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   final _formKey      = GlobalKey<FormState>();
   final _locationCtrl = TextEditingController();
+  final _notesCtrl    = TextEditingController();
 
   late EventType _type;
   late DateTime  _date;
@@ -50,6 +51,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     _allowSignups = e.allowSignups;
     _rsvpDeadline = e.rsvpDeadline;
     _locationCtrl.text = e.location;
+    _notesCtrl.text    = e.notes ?? '';
 
     _numSubTeams  = e.numSubTeams;
 
@@ -60,7 +62,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
   }
 
   @override
-  void dispose() { _locationCtrl.dispose(); super.dispose(); }
+  void dispose() { _locationCtrl.dispose(); _notesCtrl.dispose(); super.dispose(); }
 
   DateTime get _eventDateTime => DateTime(
     _date.year, _date.month, _date.day, _time.hour, _time.minute,
@@ -121,6 +123,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               hasDrummer:   _hasDrummer)
           : null,
       numSubTeams:  sport == 'Dragon Boating' ? 1 : _numSubTeams,
+      notes:        _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       createdAt:    widget.event.createdAt,
     );
 
@@ -342,6 +345,22 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       const SizedBox(height: 16),
                     ],
 
+                    const SizedBox(height: 16),
+
+                    // ── Notes / description ───────────────────────────────
+                    TextFormField(
+                      controller:  _notesCtrl,
+                      maxLines:    4,
+                      minLines:    2,
+                      textInputAction: TextInputAction.newline,
+                      decoration:  const InputDecoration(
+                        labelText:   'Notes (optional)',
+                        hintText:    'Any details for players — location tips, what to bring, etc.',
+                        prefixIcon:  Icon(Icons.notes_outlined),
+                        border:      OutlineInputBorder(),
+                        alignLabelWithHint: true,
+                      ),
+                    ),
                     const SizedBox(height: 16),
 
                     FilledButton(

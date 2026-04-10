@@ -16,6 +16,11 @@ final pendingSpareNavigationProvider = StateProvider<PendingNavigation>(
   (ref) => const PendingNavigation(),
 );
 
+// ── Pending navigation state for event detail (from notification taps) ────────
+final pendingEventNavigationProvider = StateProvider<PendingNavigation>(
+  (ref) => const PendingNavigation(),
+);
+
 // ── Background message handler — must be top-level ───────────────────────────
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -118,16 +123,18 @@ class NotificationService {
   void _handleNotificationTap(RemoteMessage? message) {
     if (message == null) return;
     final data = message.data;
-    if (data['type'] == 'spareNeeded') {
-      final eventId = data['eventId'];
-      final teamId = data['teamId'];
-      if (eventId != null && teamId != null) {
-        _ref.read(pendingSpareNavigationProvider.notifier).state =
-            PendingNavigation(
-          eventId: eventId,
-          teamId: teamId,
-        );
-      }
+    final type    = data['type'] as String?;
+    final eventId = data['eventId'] as String?;
+    final teamId  = data['teamId']  as String?;
+
+    if (type == 'spareNeeded' && eventId != null && teamId != null) {
+      _ref.read(pendingSpareNavigationProvider.notifier).state =
+          PendingNavigation(eventId: eventId, teamId: teamId);
+    } else if ((type == 'eventReminder' || type == 'teamNotification') &&
+        eventId != null && teamId != null) {
+      // Navigate to event detail so user can RSVP
+      _ref.read(pendingEventNavigationProvider.notifier).state =
+          PendingNavigation(eventId: eventId, teamId: teamId);
     }
   }
 

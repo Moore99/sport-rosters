@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/services/export_service.dart';
@@ -222,6 +223,16 @@ class _EventDetailView extends ConsumerWidget {
                     unawaited(ref
                         .read(analyticsServiceProvider)
                         .logAvailabilitySet(r.name));
+                    // Prompt for in-app review after a positive RSVP (OS
+                    // decides whether to actually show the dialog).
+                    if (r == AvailabilityResponse.yes) {
+                      unawaited(() async {
+                        final review = InAppReview.instance;
+                        if (await review.isAvailable()) {
+                          await review.requestReview();
+                        }
+                      }());
+                    }
                   },
                 ),
                 const SizedBox(height: 24),
@@ -411,6 +422,10 @@ class _HeaderCard extends StatelessWidget {
             const SizedBox(height: 8),
             _InfoRow(Icons.people_outline,
                 '${event.minPlayers}–${event.maxPlayers} players'),
+            if (event.notes?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              _InfoRow(Icons.notes_outlined, event.notes!),
+            ],
           ],
         ),
       ),
