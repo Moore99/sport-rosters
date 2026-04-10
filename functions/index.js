@@ -133,7 +133,7 @@ async function _deleteDocRefs(db, refs) {
  * Returns: { name, sport }
  */
 exports.previewTeam = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  { region: 'northamerica-northeast1', enforceAppCheck: false },
   async (request) => {
     const { teamId } = request.data;
     if (!teamId || typeof teamId !== 'string' || teamId.trim().length === 0) {
