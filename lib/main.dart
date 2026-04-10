@@ -111,12 +111,24 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final eventId = pendingNav.eventId;
         final teamId = pendingNav.teamId;
-        // Clear the pending navigation
         ref.read(pendingSpareNavigationProvider.notifier).state =
             const PendingNavigation();
-        // Navigate to spare response screen
         if (eventId != null && teamId != null) {
           router.push('/spare-response/$eventId/$teamId');
+        }
+      });
+    }
+
+    // Check for pending event detail navigation (event reminder / team notification taps)
+    final pendingEvent = ref.watch(pendingEventNavigationProvider);
+    if (pendingEvent.eventId != null && pendingEvent.teamId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final eventId = pendingEvent.eventId;
+        final teamId  = pendingEvent.teamId;
+        ref.read(pendingEventNavigationProvider.notifier).state =
+            const PendingNavigation();
+        if (eventId != null && teamId != null) {
+          router.push('/teams/$teamId/events/$eventId');
         }
       });
     }

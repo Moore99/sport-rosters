@@ -25,6 +25,11 @@ class TeamsScreen extends ConsumerWidget {
         title: const Text('My Teams'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.calendar_month_outlined),
+            tooltip: 'My Schedule',
+            onPressed: () => context.push(AppRoutes.mySchedule),
+          ),
+          IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () => context.push(AppRoutes.profile),

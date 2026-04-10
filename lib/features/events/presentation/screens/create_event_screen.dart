@@ -25,6 +25,7 @@ class CreateEventScreen extends ConsumerStatefulWidget {
 class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _locationCtrl;
+  late final TextEditingController _notesCtrl;
 
   late EventType _type;
   DateTime  _date        = DateTime.now().add(const Duration(days: 1));
@@ -50,6 +51,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
     final src = widget.copyFrom;
     if (src != null) {
       _locationCtrl = TextEditingController(text: src.location);
+      _notesCtrl    = TextEditingController(text: src.notes ?? '');
       _type         = src.type;
       _time         = TimeOfDay.fromDateTime(src.date);
       _minPlayers   = src.minPlayers;
@@ -61,6 +63,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       _hasDrummer   = src.boatConfig?.hasDrummer   ?? true;
     } else {
       _locationCtrl = TextEditingController();
+      _notesCtrl    = TextEditingController();
       _type         = EventType.practice;
       _time         = const TimeOfDay(hour: 18, minute: 0);
       _minPlayers   = 1;
@@ -74,7 +77,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   }
 
   @override
-  void dispose() { _locationCtrl.dispose(); super.dispose(); }
+  void dispose() { _locationCtrl.dispose(); _notesCtrl.dispose(); super.dispose(); }
 
   DateTime get _eventDateTime => DateTime(
     _date.year, _date.month, _date.day, _time.hour, _time.minute,
@@ -135,6 +138,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
           ? BoatConfig(numBoats: _numBoats, seatsPerBoat: _seatsPerBoat, hasDrummer: _hasDrummer)
           : null,
       numSubTeams:  sport == 'Dragon Boating' ? 1 : _numSubTeams,
+      notes:       _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       createdAt:   DateTime.now(),
     );
 
@@ -378,6 +382,22 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                       const SizedBox(height: 16),
                     ],
 
+                    const SizedBox(height: 16),
+
+                    // ── Notes / description ───────────────────────────────
+                    TextFormField(
+                      controller:  _notesCtrl,
+                      maxLines:    4,
+                      minLines:    2,
+                      textInputAction: TextInputAction.newline,
+                      decoration:  const InputDecoration(
+                        labelText:   'Notes (optional)',
+                        hintText:    'Any details for players — location tips, what to bring, etc.',
+                        prefixIcon:  Icon(Icons.notes_outlined),
+                        border:      OutlineInputBorder(),
+                        alignLabelWithHint: true,
+                      ),
+                    ),
                     const SizedBox(height: 16),
 
                     FilledButton(

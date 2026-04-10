@@ -75,6 +75,20 @@ class EventRepository {
   Future<void> setAvailability(Availability avail) =>
       _avail(avail.eventId).doc(avail.userId).set(avail.toFirestore());
 
+  /// Upcoming events for a team (date ≥ now), sorted ascending.
+  Future<List<Event>> fetchUpcomingTeamEvents(String teamId) async {
+    final snap = await _events
+        .where('teamId', isEqualTo: teamId)
+        .get();
+    final now = DateTime.now();
+    final upcoming = snap.docs
+        .map(Event.fromFirestore)
+        .where((e) => e.date.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+    return upcoming;
+  }
+
   /// All past events for a team, most recent first.
   /// Uses only a single-field equality filter (no orderBy) to avoid requiring
   /// a composite index. Filtering and sorting done client-side.

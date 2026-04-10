@@ -60,6 +60,7 @@ class Event {
   final DateTime?   rsvpDeadline; // null = no deadline
   final BoatConfig? boatConfig;   // Dragon Boating only
   final int         numSubTeams;  // 1 = single roster (default), 2+ = balanced sub-teams
+  final String?     notes;        // optional coach notes / description
   final DateTime    createdAt;
 
   const Event({
@@ -74,6 +75,7 @@ class Event {
     this.rsvpDeadline,
     this.boatConfig,
     this.numSubTeams = 1,
+    this.notes,
     required this.createdAt,
   });
 
@@ -93,6 +95,7 @@ class Event {
           ? BoatConfig.fromMap(Map<String, dynamic>.from(d['boatConfig'] as Map))
           : null,
       numSubTeams:  (d['numSubTeams'] as num?)?.toInt() ?? 1,
+      notes:        d['notes'] as String?,
       createdAt:    (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -108,6 +111,7 @@ class Event {
     if (rsvpDeadline != null) 'rsvpDeadline': Timestamp.fromDate(rsvpDeadline!),
     if (boatConfig != null) 'boatConfig': boatConfig!.toMap(),
     if (numSubTeams != 1) 'numSubTeams': numSubTeams,
+    if (notes?.isNotEmpty == true) 'notes': notes,
     'createdAt':   Timestamp.fromDate(createdAt),
   };
 
