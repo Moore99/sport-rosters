@@ -33,11 +33,25 @@ class EventRepository {
     return event.eventId;
   }
 
+  /// Batch-creates multiple events (used for recurring series).
+  Future<void> createEvents(List<Event> events) async {
+    final batch = _db.batch();
+    for (final e in events) {
+      batch.set(_events.doc(e.eventId), e.toFirestore());
+    }
+    await batch.commit();
+  }
+
   Future<void> updateEvent(Event event) =>
       _events.doc(event.eventId).update(event.toFirestore());
 
   Future<void> deleteEvent(String eventId) =>
       _events.doc(eventId).delete();
+
+  Future<void> updateGameResult(String eventId, GameResult? result) =>
+      _events.doc(eventId).update({
+        'gameResult': result != null ? result.toMap() : FieldValue.delete(),
+      });
 
   /// Returns the boatConfig from the most recent Dragon Boating event for a team.
   /// Used in CreateEventScreen to pre-fill boat config fields.

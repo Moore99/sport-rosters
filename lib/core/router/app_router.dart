@@ -35,6 +35,7 @@ import '../../features/teams/presentation/screens/notification_inbox_screen.dart
 import '../../features/teams/presentation/screens/manage_spares_screen.dart';
 import '../../features/events/presentation/screens/player_attendance_screen.dart';
 import '../../features/events/presentation/screens/my_schedule_screen.dart';
+import '../../features/teams/presentation/screens/team_announcements_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -58,6 +59,7 @@ class AppRoutes {
   static const sendNotification = '/teams/:teamId/notify';
   static const notificationInbox = '/teams/:teamId/inbox';
   static const manageSpares = '/teams/:teamId/spares';
+  static const announcements = '/teams/:teamId/announcements';
   static const profile = '/profile';
   static const privacy = '/privacy';
   static const terms = '/terms';
@@ -171,6 +173,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'spares',
             builder: (_, state) => ManageSparesScreen(
+              teamId: state.pathParameters['teamId']!,
+            ),
+          ),
+          GoRoute(
+            path: 'announcements',
+            builder: (_, state) => TeamAnnouncementsScreen(
               teamId: state.pathParameters['teamId']!,
             ),
           ),

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/app_user.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/spares_repository.dart';
+import '../../domain/spare_request.dart';
 import '../../domain/spares.dart';
 import '../providers/spares_provider.dart';
 import '../providers/teams_provider.dart';
@@ -20,7 +20,9 @@ class ManageSparesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sparesAsync = ref.watch(teamSparesProvider(teamId));
+    final sparesAsync    = ref.watch(teamSparesProvider(teamId));
+    final requestsAsync  = ref.watch(spareRequestsProvider(teamId));
+    final pendingCount   = requestsAsync.valueOrNull?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -33,19 +35,49 @@ class ManageSparesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: sparesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (spares) => spares.isEmpty
-            ? const Center(
-                child: Text('No spares on file.\nTap + to add players.'))
-            : ListView.builder(
-                itemCount: spares.length,
-                itemBuilder: (context, index) {
-                  final spare = spares[index];
-                  return _SpareTile(spare: spare, teamId: teamId);
-                },
+      body: ListView(
+        children: [
+          // ── Pending requests ──────────────────────────────────────────────
+          if (pendingCount > 0) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text('Requests',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(width: 8),
+                  Badge(label: Text('$pendingCount')),
+                ],
               ),
+            ),
+            ...requestsAsync.valueOrNull!.map((req) => _SpareRequestTile(
+                  request: req,
+                  teamId: teamId,
+                )),
+            const Divider(),
+          ],
+
+          // ── Active spares ─────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text('Spares',
+                style: Theme.of(context).textTheme.titleMedium),
+          ),
+          sparesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (spares) => spares.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text('No spares on file. Tap + to add players.'),
+                  )
+                : Column(
+                    children: spares
+                        .map((s) => _SpareTile(spare: s, teamId: teamId))
+                        .toList(),
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -58,6 +90,62 @@ class ManageSparesScreen extends ConsumerWidget {
     );
   }
 }
+
+// ── Spare request tile ─────────────────────────────────────────────────────────
+
+class _SpareRequestTile extends ConsumerWidget {
+  final SpareRequest request;
+  final String teamId;
+  const _SpareRequestTile({required this.request, required this.teamId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: ListTile(
+        leading: CircleAvatar(
+          child: Text(request.userName.isNotEmpty
+              ? request.userName[0].toUpperCase()
+              : '?'),
+        ),
+        title: Text(request.userName),
+        subtitle: Text(request.userEmail),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.check_circle_outline, color: Colors.green),
+              tooltip: 'Approve',
+              onPressed: () async {
+                await ref
+                    .read(sparesRepositoryProvider)
+                    .approveSpareRequest(teamId, request.userId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('${request.userName} added to spares.')),
+                  );
+                }
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.cancel_outlined,
+                  color: Theme.of(context).colorScheme.error),
+              tooltip: 'Deny',
+              onPressed: () async {
+                await ref
+                    .read(sparesRepositoryProvider)
+                    .denySpareRequest(teamId, request.userId);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Active spare tile ──────────────────────────────────────────────────────────
 
 class _SpareTile extends ConsumerWidget {
   final TeamSpare spare;

@@ -333,13 +333,17 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 8 | Player attendance history screen | ✅ Done |
 | 8 | Change password (email/password accounts, Profile screen) | ✅ Done |
 | 8 | Accessibility screen (in-app + website) | ✅ Done |
+| 9 | GDPR/PIPEDA data export (`exportUserData` Cloud Function + Profile screen UI) | ✅ Done |
+| 9 | Recurring events (weekly/biweekly, batch-created with shared recurrenceGroupId) | ✅ Done |
+| 9 | Game results (admin logs score + opponent after a game; shown on event detail) | ✅ Done |
+| 9 | Team announcements feed (coach posts, all members read, pin support) | ✅ Done |
 
 ## Current Production Versions
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.1.1 | 19 | In review |
-| iOS (App Store) | 1.1.1 | 31 | Under review |
+| Android (Play Store) | 1.1.3 | 22 | In review |
+| iOS (App Store) | 1.1.3 | 35 | Codemagic build in progress |
 
 ## Known Issues / Blockers
 
