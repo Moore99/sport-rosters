@@ -238,6 +238,12 @@ class _EventDetailView extends ConsumerWidget {
                 const SizedBox(height: 24),
               ],
 
+              // ── Game result (game events only) ────────────────────────────
+              if (event.type == EventType.game) ...[
+                _GameResultSection(event: event, isAdmin: isAdmin),
+                const SizedBox(height: 8),
+              ],
+
               // ── Availability summary (admin) ────────────────────────────────
               if (isAdmin) ...[
                 Row(
@@ -426,6 +432,10 @@ class _HeaderCard extends StatelessWidget {
               const SizedBox(height: 8),
               _InfoRow(Icons.notes_outlined, event.notes!),
             ],
+            if (event.gameResult != null) ...[
+              const Divider(height: 24),
+              _GameResultBadge(result: event.gameResult!),
+            ],
           ],
         ),
       ),
@@ -561,6 +571,207 @@ class _ResponseGroup extends StatelessWidget {
         ),
         ...responses.map((a) => _UserNameTile(userId: a.userId, ref: ref)),
         const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+// ── Game result badge (inside header card) ────────────────────────────────────
+
+class _GameResultBadge extends StatelessWidget {
+  final GameResult result;
+  const _GameResultBadge({required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = result.isWin
+        ? Colors.green
+        : result.isLoss
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.outline;
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+          ),
+          child: Text(
+            result.resultLabel,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            '${result.ourScore} – ${result.opponentScore} vs ${result.opponentName}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Game result section (body) ─────────────────────────────────────────────────
+
+class _GameResultSection extends ConsumerWidget {
+  final Event  event;
+  final bool   isAdmin;
+  const _GameResultSection({required this.event, required this.isAdmin});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasResult  = event.gameResult != null;
+    final isPast     = !event.isUpcoming;
+
+    // Players only see this section if there's a result to show.
+    if (!isAdmin && !hasResult) return const SizedBox.shrink();
+    // Admins see it for past games only.
+    if (isAdmin && !isPast && !hasResult) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Result', style: Theme.of(context).textTheme.titleMedium),
+            const Spacer(),
+            if (isAdmin && isPast)
+              TextButton.icon(
+                icon: Icon(hasResult ? Icons.edit_outlined : Icons.add),
+                label: Text(hasResult ? 'Edit' : 'Log Result'),
+                onPressed: () => _showResultDialog(context, ref),
+              ),
+          ],
+        ),
+        if (!hasResult)
+          Text('No result logged yet.',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline)),
+      ],
+    );
+  }
+
+  Future<void> _showResultDialog(BuildContext context, WidgetRef ref) async {
+    final existing     = event.gameResult;
+    final opponentCtrl = TextEditingController(text: existing?.opponentName ?? '');
+    var ourScore       = existing?.ourScore ?? 0;
+    var theirScore     = existing?.opponentScore ?? 0;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text(existing != null ? 'Edit Result' : 'Log Result'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: opponentCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Opponent name',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _ScoreCounter(
+                      label: 'Us',
+                      value: ourScore,
+                      onChanged: (v) => setLocal(() => ourScore = v),
+                    ),
+                    Text('–',
+                        style: Theme.of(ctx).textTheme.headlineMedium),
+                    _ScoreCounter(
+                      label: 'Them',
+                      value: theirScore,
+                      onChanged: (v) => setLocal(() => theirScore = v),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            if (existing != null)
+              TextButton(
+                style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(ctx).colorScheme.error),
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  await ref
+                      .read(eventRepositoryProvider)
+                      .updateGameResult(event.eventId, null);
+                },
+                child: const Text('Clear'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final name = opponentCtrl.text.trim();
+                if (name.isEmpty) return;
+                Navigator.of(ctx).pop();
+                await ref.read(eventRepositoryProvider).updateGameResult(
+                      event.eventId,
+                      GameResult(
+                        opponentName:  name,
+                        ourScore:      ourScore,
+                        opponentScore: theirScore,
+                      ),
+                    );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    opponentCtrl.dispose();
+  }
+}
+
+class _ScoreCounter extends StatelessWidget {
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+  const _ScoreCounter(
+      {required this.label, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: value > 0 ? () => onChanged(value - 1) : null,
+            ),
+            SizedBox(
+              width: 36,
+              child: Text('$value',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => onChanged(value + 1),
+            ),
+          ],
+        ),
       ],
     );
   }

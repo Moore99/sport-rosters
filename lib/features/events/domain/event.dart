@@ -1,5 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// ── Game result ────────────────────────────────────────────────────────────────
+
+class GameResult {
+  final String opponentName;
+  final int    ourScore;
+  final int    opponentScore;
+
+  const GameResult({
+    required this.opponentName,
+    required this.ourScore,
+    required this.opponentScore,
+  });
+
+  factory GameResult.fromMap(Map<String, dynamic> m) => GameResult(
+    opponentName:  m['opponentName']  as String? ?? '',
+    ourScore:      (m['ourScore']     as num?)?.toInt() ?? 0,
+    opponentScore: (m['opponentScore'] as num?)?.toInt() ?? 0,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'opponentName':  opponentName,
+    'ourScore':      ourScore,
+    'opponentScore': opponentScore,
+  };
+
+  bool get isWin  => ourScore > opponentScore;
+  bool get isLoss => ourScore < opponentScore;
+  bool get isTie  => ourScore == opponentScore;
+  String get resultLabel => isWin ? 'W' : (isLoss ? 'L' : 'T');
+}
+
 // ── Boat configuration (Dragon Boating only) ───────────────────────────────────
 
 class BoatConfig {
@@ -60,7 +91,9 @@ class Event {
   final DateTime?   rsvpDeadline; // null = no deadline
   final BoatConfig? boatConfig;   // Dragon Boating only
   final int         numSubTeams;  // 1 = single roster (default), 2+ = balanced sub-teams
-  final String?     notes;        // optional coach notes / description
+  final String?     notes;              // optional coach notes / description
+  final String?     recurrenceGroupId;  // shared ID for events in a recurring series
+  final GameResult? gameResult;         // set by admin after a game event
   final DateTime    createdAt;
 
   const Event({
@@ -76,6 +109,8 @@ class Event {
     this.boatConfig,
     this.numSubTeams = 1,
     this.notes,
+    this.recurrenceGroupId,
+    this.gameResult,
     required this.createdAt,
   });
 
@@ -94,9 +129,13 @@ class Event {
       boatConfig:    d['boatConfig'] != null
           ? BoatConfig.fromMap(Map<String, dynamic>.from(d['boatConfig'] as Map))
           : null,
-      numSubTeams:  (d['numSubTeams'] as num?)?.toInt() ?? 1,
-      notes:        d['notes'] as String?,
-      createdAt:    (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      numSubTeams:        (d['numSubTeams'] as num?)?.toInt() ?? 1,
+      notes:              d['notes'] as String?,
+      recurrenceGroupId:  d['recurrenceGroupId'] as String?,
+      gameResult:         d['gameResult'] != null
+          ? GameResult.fromMap(Map<String, dynamic>.from(d['gameResult'] as Map))
+          : null,
+      createdAt:          (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
@@ -111,7 +150,9 @@ class Event {
     if (rsvpDeadline != null) 'rsvpDeadline': Timestamp.fromDate(rsvpDeadline!),
     if (boatConfig != null) 'boatConfig': boatConfig!.toMap(),
     if (numSubTeams != 1) 'numSubTeams': numSubTeams,
-    if (notes?.isNotEmpty == true) 'notes': notes,
+    if (notes?.isNotEmpty == true)        'notes':             notes,
+    if (recurrenceGroupId != null)        'recurrenceGroupId': recurrenceGroupId,
+    if (gameResult != null)               'gameResult':        gameResult!.toMap(),
     'createdAt':   Timestamp.fromDate(createdAt),
   };
 

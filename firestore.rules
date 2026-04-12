@@ -108,6 +108,19 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create, update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
       }
+
+      // Announcements subcollection — coach posts, all members read
+      match /announcements/{announcementId} {
+        allow read: if isTeamMember(teamId) || isSystemAdmin();
+        allow create, update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
+      }
+
+      // Spare requests — players request themselves; admins approve/deny
+      match /spareRequests/{userId} {
+        allow create: if isSignedIn() && isSelf(userId) && isTeamMember(teamId);
+        allow read: if isSignedIn();
+        allow delete: if isTeamAdmin(teamId) || isSystemAdmin() || isSelf(userId);
+      }
     }
 
     // ── events ───────────────────────────────────────────────────────────────

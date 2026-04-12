@@ -122,9 +122,11 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
               seatsPerBoat: _seatsPerBoat,
               hasDrummer:   _hasDrummer)
           : null,
-      numSubTeams:  sport == 'Dragon Boating' ? 1 : _numSubTeams,
-      notes:        _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-      createdAt:    widget.event.createdAt,
+      numSubTeams:       sport == 'Dragon Boating' ? 1 : _numSubTeams,
+      notes:             _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      recurrenceGroupId: widget.event.recurrenceGroupId,
+      gameResult:        widget.event.gameResult,
+      createdAt:         widget.event.createdAt,
     );
 
     try {

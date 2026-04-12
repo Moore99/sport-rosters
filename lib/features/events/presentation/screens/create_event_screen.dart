@@ -13,6 +13,8 @@ import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/event.dart';
 
+enum _Recurrence { none, weekly, biweekly }
+
 class CreateEventScreen extends ConsumerStatefulWidget {
   final String teamId;
   final Event? copyFrom;
@@ -33,8 +35,12 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
   late int  _minPlayers;
   late int  _maxPlayers;
   late bool _allowSignups;
-  DateTime? _rsvpDeadline;
-  bool      _loading       = false;
+  DateTime?     _rsvpDeadline;
+  bool          _loading       = false;
+
+  // Recurrence
+  _Recurrence   _recurrence        = _Recurrence.none;
+  DateTime?     _recurrenceEndDate;
 
   // Sub-teams (non-Dragon Boating sports)
   late int _numSubTeams;
@@ -119,31 +125,61 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       );
       return;
     }
+    if (_recurrence != _Recurrence.none && _recurrenceEndDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select a repeat end date.')),
+      );
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
-    final docRef = FirebaseFirestore.instance.collection('events').doc();
     final sport = ref.read(teamProvider(widget.teamId)).valueOrNull?.sport ?? '';
-    final event  = Event(
-      eventId:     docRef.id,
-      teamId:      widget.teamId,
-      type:        _type,
-      date:        _eventDateTime,
-      location:    _locationCtrl.text.trim(),
-      minPlayers:  _minPlayers,
-      maxPlayers:  _maxPlayers,
-      allowSignups:  _allowSignups,
-      rsvpDeadline:  _rsvpDeadline,
-      boatConfig:    sport == 'Dragon Boating'
-          ? BoatConfig(numBoats: _numBoats, seatsPerBoat: _seatsPerBoat, hasDrummer: _hasDrummer)
-          : null,
-      numSubTeams:  sport == 'Dragon Boating' ? 1 : _numSubTeams,
-      notes:       _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-      createdAt:   DateTime.now(),
+    final location  = _locationCtrl.text.trim();
+    final notes     = _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim();
+    final boatCfg   = sport == 'Dragon Boating'
+        ? BoatConfig(numBoats: _numBoats, seatsPerBoat: _seatsPerBoat, hasDrummer: _hasDrummer)
+        : null;
+    final subTeams  = sport == 'Dragon Boating' ? 1 : _numSubTeams;
+    final now       = DateTime.now();
+
+    Event makeEvent(String id, DateTime date, {String? groupId}) => Event(
+      eventId:           id,
+      teamId:            widget.teamId,
+      type:              _type,
+      date:              date,
+      location:          location,
+      minPlayers:        _minPlayers,
+      maxPlayers:        _maxPlayers,
+      allowSignups:      _allowSignups,
+      rsvpDeadline:      _rsvpDeadline,
+      boatConfig:        boatCfg,
+      numSubTeams:       subTeams,
+      notes:             notes,
+      recurrenceGroupId: groupId,
+      createdAt:         now,
     );
 
     try {
-      await ref.read(eventRepositoryProvider).createEvent(event);
+      if (_recurrence == _Recurrence.none) {
+        final docRef = FirebaseFirestore.instance.collection('events').doc();
+        await ref.read(eventRepositoryProvider).createEvent(makeEvent(docRef.id, _eventDateTime));
+      } else {
+        final interval  = _recurrence == _Recurrence.weekly ? 7 : 14;
+        final groupId   = FirebaseFirestore.instance.collection('events').doc().id;
+        final endMoment = DateTime(
+          _recurrenceEndDate!.year, _recurrenceEndDate!.month,
+          _recurrenceEndDate!.day, 23, 59, 59,
+        );
+        final events = <Event>[];
+        var current  = _eventDateTime;
+        while (!current.isAfter(endMoment)) {
+          final docId = FirebaseFirestore.instance.collection('events').doc().id;
+          events.add(makeEvent(docId, current, groupId: groupId));
+          current = current.add(Duration(days: interval));
+        }
+        await ref.read(eventRepositoryProvider).createEvents(events);
+      }
       unawaited(ref.read(analyticsServiceProvider).logEventCreated(sport));
       if (mounted) context.pop();
     } catch (e) {
@@ -398,7 +434,58 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
                         alignLabelWithHint: true,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
+
+                    // ── Recurrence ────────────────────────────────────────
+                    if (widget.copyFrom == null) ...[
+                      Text('Repeat', style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      SegmentedButton<_Recurrence>(
+                        segments: const [
+                          ButtonSegment(value: _Recurrence.none,     label: Text('None')),
+                          ButtonSegment(value: _Recurrence.weekly,   label: Text('Weekly')),
+                          ButtonSegment(value: _Recurrence.biweekly, label: Text('Biweekly')),
+                        ],
+                        selected: {_recurrence},
+                        showSelectedIcon: false,
+                        onSelectionChanged: (s) => setState(() {
+                          _recurrence = s.first;
+                          if (_recurrence == _Recurrence.none) _recurrenceEndDate = null;
+                        }),
+                      ),
+                      if (_recurrence != _Recurrence.none) ...[
+                        const SizedBox(height: 8),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.event_repeat_outlined),
+                          title: Text(_recurrenceEndDate == null
+                              ? 'End date — required'
+                              : 'Ends ${DateFormat('EEE, MMM d, yyyy').format(_recurrenceEndDate!)}'),
+                          trailing: _recurrenceEndDate != null
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () =>
+                                      setState(() => _recurrenceEndDate = null),
+                                )
+                              : null,
+                          onTap: () async {
+                            final interval = _recurrence == _Recurrence.weekly ? 7 : 14;
+                            final picked = await showDatePicker(
+                              context:          context,
+                              initialDate:      _date.add(Duration(days: interval)),
+                              firstDate:        _date.add(Duration(days: interval)),
+                              lastDate:         DateTime.now().add(const Duration(days: 365 * 2)),
+                              initialEntryMode: DatePickerEntryMode.input,
+                              builder:          _pickerMediaQuery,
+                            );
+                            if (picked != null) {
+                              setState(() => _recurrenceEndDate = picked);
+                            }
+                          },
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                    ],
 
                     FilledButton(
                       onPressed: _loading ? null : _submit,
