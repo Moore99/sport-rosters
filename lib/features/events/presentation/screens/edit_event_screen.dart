@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +10,17 @@ import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/event.dart';
 
+/// Passed as GoRouter `extra` when editing a recurring series.
+class EditEventArgs {
+  final Event event;
+  final bool editSeries;
+  const EditEventArgs({required this.event, this.editSeries = false});
+}
+
 class EditEventScreen extends ConsumerStatefulWidget {
   final Event event;
-  const EditEventScreen({super.key, required this.event});
+  final bool editSeries;
+  const EditEventScreen({super.key, required this.event, this.editSeries = false});
 
   @override
   ConsumerState<EditEventScreen> createState() => _EditEventScreenState();
@@ -131,6 +140,30 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
     try {
       await ref.read(eventRepositoryProvider).updateEvent(updated);
+      // If editing the whole series, propagate non-date fields to all siblings.
+      if (widget.editSeries && updated.recurrenceGroupId != null) {
+        final seriesFields = <String, dynamic>{
+          'type':         updated.type.name,
+          'location':     updated.location,
+          'minPlayers':   updated.minPlayers,
+          'maxPlayers':   updated.maxPlayers,
+          'allowSignups': updated.allowSignups,
+          if (updated.rsvpDeadline != null)
+            'rsvpDeadline': Timestamp.fromDate(updated.rsvpDeadline!)
+          else
+            'rsvpDeadline': FieldValue.delete(),
+          if (updated.boatConfig != null)
+            'boatConfig': updated.boatConfig!.toMap()
+          else
+            'boatConfig': FieldValue.delete(),
+          if (updated.numSubTeams != 1) 'numSubTeams': updated.numSubTeams
+          else 'numSubTeams': FieldValue.delete(),
+          if (updated.notes?.isNotEmpty == true) 'notes': updated.notes
+          else 'notes': FieldValue.delete(),
+        };
+        await ref.read(eventRepositoryProvider)
+            .updateEventSeriesFields(updated.recurrenceGroupId!, seriesFields);
+      }
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
@@ -150,7 +183,7 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     final sport     = teamAsync.valueOrNull?.sport ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Event')),
+      appBar: AppBar(title: Text(widget.editSeries ? 'Edit All in Series' : 'Edit Event')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

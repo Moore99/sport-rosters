@@ -17,6 +17,7 @@ import '../../../../core/services/analytics_service.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';
+import 'edit_event_screen.dart';
 import '../providers/events_provider.dart';
 
 class EventDetailScreen extends ConsumerWidget {
@@ -108,42 +109,112 @@ class _EventDetailView extends ConsumerWidget {
             PopupMenuButton<String>(
               onSelected: (v) async {
                 if (v == 'edit') {
-                  context.push(
-                    '/teams/$teamId/events/${event.eventId}/edit',
-                    extra: event,
-                  );
+                  if (event.recurrenceGroupId != null) {
+                    final editAll = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Edit Recurring Event'),
+                        content: const Text(
+                            'Edit just this event, or update all events in the series?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(null),
+                            child: const Text('Cancel'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('This Event'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('All in Series'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (editAll == null || !context.mounted) return;
+                    context.push(
+                      '/teams/$teamId/events/${event.eventId}/edit',
+                      extra: editAll
+                          ? EditEventArgs(event: event, editSeries: true)
+                          : event,
+                    );
+                  } else {
+                    context.push(
+                      '/teams/$teamId/events/${event.eventId}/edit',
+                      extra: event,
+                    );
+                  }
                 } else if (v == 'copy') {
                   context.push(
                     '/teams/$teamId/events/create',
                     extra: event,
                   );
                 } else if (v == 'delete') {
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Delete Event?'),
-                      content: const Text(
-                          'This will permanently delete the event and all availability records.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Theme.of(ctx).colorScheme.error,
+                  if (event.recurrenceGroupId != null) {
+                    final deleteAll = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Recurring Event'),
+                        content: const Text(
+                            'Delete just this event, or all events in the series?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(null),
+                            child: const Text('Cancel'),
                           ),
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text('Delete'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirmed == true) {
-                    await ref
-                        .read(eventRepositoryProvider)
-                        .deleteEvent(event.eventId);
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                                foregroundColor: Theme.of(ctx).colorScheme.error),
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('This Event'),
+                          ),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                                backgroundColor: Theme.of(ctx).colorScheme.error),
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('All in Series'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (deleteAll == null || !context.mounted) return;
+                    if (deleteAll) {
+                      await ref.read(eventRepositoryProvider)
+                          .deleteEventSeries(event.recurrenceGroupId!);
+                    } else {
+                      await ref.read(eventRepositoryProvider)
+                          .deleteEvent(event.eventId);
+                    }
                     if (context.mounted) context.pop();
+                  } else {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Event?'),
+                        content: const Text(
+                            'This will permanently delete the event and all availability records.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Theme.of(ctx).colorScheme.error,
+                            ),
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref
+                          .read(eventRepositoryProvider)
+                          .deleteEvent(event.eventId);
+                      if (context.mounted) context.pop();
+                    }
                   }
                 }
               },

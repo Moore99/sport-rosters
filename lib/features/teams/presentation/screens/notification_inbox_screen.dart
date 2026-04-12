@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ── Domain ────────────────────────────────────────────────────────────────────
 
@@ -47,13 +48,42 @@ final _inboxProvider = StreamProvider.family<List<_TeamNotification>, String>(
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-class NotificationInboxScreen extends ConsumerWidget {
+class NotificationInboxScreen extends ConsumerStatefulWidget {
   final String teamId;
   const NotificationInboxScreen({super.key, required this.teamId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final inboxAsync = ref.watch(_inboxProvider(teamId));
+  ConsumerState<NotificationInboxScreen> createState() =>
+      _NotificationInboxScreenState();
+}
+
+class _NotificationInboxScreenState
+    extends ConsumerState<NotificationInboxScreen> {
+  /// Timestamp of the last time the inbox was opened — messages newer than
+  /// this are shown as unread. Epoch 0 means never opened before.
+  DateTime _lastReadAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAndMarkRead();
+  }
+
+  Future<void> _loadAndMarkRead() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key   = 'inbox_last_read_${widget.teamId}';
+    final stored = prefs.getString(key);
+    final prev   = stored != null
+        ? (DateTime.tryParse(stored) ?? DateTime.fromMillisecondsSinceEpoch(0))
+        : DateTime.fromMillisecondsSinceEpoch(0);
+    if (mounted) setState(() => _lastReadAt = prev);
+    // Stamp now so next visit treats all current messages as read.
+    await prefs.setString(key, DateTime.now().toIso8601String());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inboxAsync = ref.watch(_inboxProvider(widget.teamId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Team Notifications')),
@@ -81,7 +111,10 @@ class NotificationInboxScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: messages.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, i) => _NotificationTile(msg: messages[i]),
+            itemBuilder: (context, i) => _NotificationTile(
+              msg:   messages[i],
+              isNew: messages[i].sentAt.isAfter(_lastReadAt),
+            ),
           );
         },
       )),
@@ -89,22 +122,34 @@ class NotificationInboxScreen extends ConsumerWidget {
   }
 }
 
+// ── Tile ──────────────────────────────────────────────────────────────────────
+
 class _NotificationTile extends StatelessWidget {
   final _TeamNotification msg;
-  const _NotificationTile({required this.msg});
+  final bool isNew;
+  const _NotificationTile({required this.msg, required this.isNew});
 
   @override
   Widget build(BuildContext context) {
-    final fmt = DateFormat('MMM d, h:mm a');
+    final fmt    = DateFormat('MMM d, h:mm a');
+    final scheme = Theme.of(context).colorScheme;
     return ListTile(
-      leading: CircleAvatar(
-        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        child: Icon(Icons.notifications_outlined,
-            color: Theme.of(context).colorScheme.onPrimaryContainer),
+      tileColor: isNew ? scheme.primaryContainer.withValues(alpha: 0.18) : null,
+      leading: Badge(
+        isLabelVisible: isNew,
+        backgroundColor: scheme.primary,
+        child: CircleAvatar(
+          radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+          backgroundColor: scheme.primaryContainer,
+          child: Icon(Icons.notifications_outlined,
+              color: scheme.onPrimaryContainer),
+        ),
       ),
-      title:    Text(msg.title,
-          style: const TextStyle(fontWeight: FontWeight.w600)),
+      title: Text(
+        msg.title,
+        style: TextStyle(
+            fontWeight: isNew ? FontWeight.w700 : FontWeight.w600),
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -112,7 +157,7 @@ class _NotificationTile extends StatelessWidget {
           const SizedBox(height: 2),
           Text(fmt.format(msg.sentAt),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.outline)),
+                  color: scheme.outline)),
         ],
       ),
       isThreeLine: true,

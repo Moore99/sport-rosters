@@ -48,6 +48,32 @@ class EventRepository {
   Future<void> deleteEvent(String eventId) =>
       _events.doc(eventId).delete();
 
+  /// Deletes all events sharing [groupId] (a recurring series).
+  Future<void> deleteEventSeries(String groupId) async {
+    final snap = await _events
+        .where('recurrenceGroupId', isEqualTo: groupId)
+        .get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  /// Updates non-date fields on all events sharing [groupId].
+  /// Each event keeps its own date; only shared fields are overwritten.
+  Future<void> updateEventSeriesFields(
+      String groupId, Map<String, dynamic> fields) async {
+    final snap = await _events
+        .where('recurrenceGroupId', isEqualTo: groupId)
+        .get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, fields);
+    }
+    await batch.commit();
+  }
+
   Future<void> updateGameResult(String eventId, GameResult? result) =>
       _events.doc(eventId).update({
         'gameResult': result != null ? result.toMap() : FieldValue.delete(),

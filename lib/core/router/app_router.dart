@@ -211,9 +211,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'edit',
-                    builder: (_, state) => EditEventScreen(
-                      event: state.extra as Event,
-                    ),
+                    builder: (_, state) {
+                      final x = state.extra;
+                      if (x is EditEventArgs) {
+                        return EditEventScreen(event: x.event, editSeries: x.editSeries);
+                      }
+                      return EditEventScreen(event: x as Event);
+                    },
                   ),
                   GoRoute(
                     path: 'lineup',
