@@ -59,6 +59,7 @@ class _CreateEventScreenState extends ConsumerState<CreateEventScreen> {
       _locationCtrl = TextEditingController(text: src.location);
       _notesCtrl    = TextEditingController(text: src.notes ?? '');
       _type         = src.type;
+      _date         = src.date;
       _time         = TimeOfDay.fromDateTime(src.date);
       _minPlayers   = src.minPlayers;
       _maxPlayers   = src.maxPlayers;
