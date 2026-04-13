@@ -4,6 +4,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../features/events/domain/event.dart';
+
 class ExportService {
   ExportService._();
 
@@ -27,8 +29,8 @@ class ExportService {
 
     final dateStr = _dateFmt.format(eventDate);
     final timeStr = _timeFmt.format(eventDate);
-    final rows    = assignments.entries.toList();
-    final filled  = rows.where((e) => e.value.isNotEmpty).length;
+    final rows = assignments.entries.toList();
+    final filled = rows.where((e) => e.value.isNotEmpty).length;
 
     pdf.addPage(
       pw.Page(
@@ -39,14 +41,16 @@ class ExportService {
           children: [
             // Header
             pw.Text(teamName,
-                style: pw.TextStyle(
-                    fontSize: 22, fontWeight: pw.FontWeight.bold)),
+                style:
+                    pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 4),
             pw.Text('$eventLabel — $dateStr at $timeStr',
-                style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+                style:
+                    const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
             pw.SizedBox(height: 4),
             pw.Text('$filled / ${rows.length} positions filled',
-                style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey600)),
+                style:
+                    const pw.TextStyle(fontSize: 11, color: PdfColors.grey600)),
             pw.SizedBox(height: 20),
             pw.Divider(),
             pw.SizedBox(height: 12),
@@ -64,7 +68,7 @@ class ExportService {
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                   children: [
                     _cell('Position', bold: true),
-                    _cell('Player',   bold: true),
+                    _cell('Player', bold: true),
                   ],
                 ),
                 // Data rows
@@ -153,12 +157,12 @@ class ExportService {
         build: (ctx) => [
           // Header
           pw.Text(teamName,
-              style: pw.TextStyle(
-                  fontSize: 20, fontWeight: pw.FontWeight.bold)),
+              style:
+                  pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 4),
           pw.Text('Boat Seating — $eventLabel — $dateStr at $timeStr',
-              style: const pw.TextStyle(
-                  fontSize: 11, color: PdfColors.grey700)),
+              style:
+                  const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
           pw.SizedBox(height: 20),
 
           // One section per boat
@@ -167,31 +171,31 @@ class ExportService {
               decoration: const pw.BoxDecoration(
                   color: PdfColors.blue50,
                   borderRadius: pw.BorderRadius.all(pw.Radius.circular(4))),
-              padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 6),
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               child: pw.Text('Boat $b',
                   style: pw.TextStyle(
-                      fontSize: 13, fontWeight: pw.FontWeight.bold,
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
                       color: PdfColors.blue800)),
             ),
             pw.SizedBox(height: 6),
 
             // Drummer row
             if (hasDrummer)
-              _boatRow('Drummer',
-                  assignments['Boat $b Drummer'] ?? '—', ''),
+              _boatRow('Drummer', assignments['Boat $b Drummer'] ?? '—', ''),
 
             // Paddler rows
             for (int r = 1; r <= rowsPerBoat; r++)
               _boatRow(
                 'Row $r',
-                assignments['Boat $b Row $r Left']  ?? '—',
+                assignments['Boat $b Row $r Left'] ?? '—',
                 assignments['Boat $b Row $r Right'] ?? '—',
               ),
 
             // Steersperson
-            _boatRow('Steersperson',
-                assignments['Boat $b Steersperson'] ?? '—', ''),
+            _boatRow(
+                'Steersperson', assignments['Boat $b Steersperson'] ?? '—', ''),
 
             pw.SizedBox(height: 16),
           ],
@@ -199,8 +203,7 @@ class ExportService {
           pw.Divider(),
           pw.Text(
             'Generated ${DateFormat('MMM d, yyyy h:mm a').format(DateTime.now())}',
-            style: const pw.TextStyle(
-                fontSize: 9, color: PdfColors.grey500),
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey500),
           ),
         ],
       ),
@@ -229,11 +232,10 @@ class ExportService {
           ),
           pw.Expanded(
             child: pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 4),
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: pw.BoxDecoration(
-                border: pw.Border.all(
-                    color: PdfColors.grey300, width: 0.5),
+                border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
                 color: PdfColors.grey50,
               ),
               child: pw.Text(left, style: const pw.TextStyle(fontSize: 10)),
@@ -243,15 +245,13 @@ class ExportService {
             pw.SizedBox(width: 4),
             pw.Expanded(
               child: pw.Container(
-                padding: const pw.EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding:
+                    const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: pw.BoxDecoration(
-                  border: pw.Border.all(
-                      color: PdfColors.grey300, width: 0.5),
+                  border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
                   color: PdfColors.grey50,
                 ),
-                child: pw.Text(right,
-                    style: const pw.TextStyle(fontSize: 10)),
+                child: pw.Text(right, style: const pw.TextStyle(fontSize: 10)),
               ),
             ),
           ],
@@ -281,4 +281,57 @@ class ExportService {
 
   static String _sanitize(String s) =>
       s.replaceAll(RegExp(r'[^\w\s-]'), '').replaceAll(RegExp(r'\s+'), '_');
+
+  // ── Calendar (.ics) export ──────────────────────────────────────────────────
+
+  static Future<void> shareEventToCalendar({
+    required String teamName,
+    required Event event,
+  }) async {
+    final startDate = event.date;
+    final endDate = startDate.add(const Duration(hours: 1));
+    final now = DateTime.now();
+
+    final dateFormatter = DateFormat('yyyyMMddTHHmmss');
+
+    final uid = '${event.eventId}@sportsrostering.app';
+    final summary = '$teamName - ${event.type.label}';
+    final description =
+        event.notes?.isNotEmpty == true ? event.notes! : 'Sport Rosters event';
+
+    final ics = '''
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Sport Rosters//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:$uid
+DTSTAMP:${dateFormatter.format(now)}Z
+DTSTART:${dateFormatter.format(startDate)}
+DTEND:${dateFormatter.format(endDate)}
+SUMMARY:$summary
+LOCATION:${_escapeIcs(event.location)}
+DESCRIPTION:$description
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR
+''';
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: ics,
+        subject: summary,
+      ),
+    );
+  }
+
+  static String _escapeIcs(String s) {
+    return s
+        .replaceAll('\\', '\\\\')
+        .replaceAll(',', '\\,')
+        .replaceAll(';', '\\;')
+        .replaceAll('\n', '\\n');
+  }
 }

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
@@ -51,26 +53,25 @@ class _TeamDetailView extends ConsumerWidget {
         isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
     final pendingCount = requestsAsync?.valueOrNull?.length ?? 0;
 
-    final sparesAsync       = ref.watch(teamSparesProvider(team.teamId));
-    final spareRequestsAsync = isAdmin
-        ? ref.watch(spareRequestsProvider(team.teamId))
-        : null;
+    final sparesAsync = ref.watch(teamSparesProvider(team.teamId));
+    final spareRequestsAsync =
+        isAdmin ? ref.watch(spareRequestsProvider(team.teamId)) : null;
     final pendingSpareCount = spareRequestsAsync?.valueOrNull?.length ?? 0;
-    final isAlreadySpare    = sparesAsync.valueOrNull?.any((s) => s.userId == uid) ?? false;
-    final myRequestAsync    = !isAdmin
-        ? ref.watch(mySpareRequestProvider(team.teamId))
-        : null;
+    final isAlreadySpare =
+        sparesAsync.valueOrNull?.any((s) => s.userId == uid) ?? false;
+    final myRequestAsync =
+        !isAdmin ? ref.watch(mySpareRequestProvider(team.teamId)) : null;
     final hasPendingRequest = myRequestAsync?.valueOrNull != null;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(team.name),
         actions: [
-          // Show Team ID for sharing
+          // Show Team ID / QR code for sharing
           IconButton(
-            icon: const Icon(Icons.share),
-            tooltip: 'Share Team ID',
-            onPressed: () => _showTeamId(context, team.teamId),
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Share Team',
+            onPressed: () => _showTeamId(context, team.teamId, team.name),
           ),
           // Events button
           IconButton(
@@ -82,13 +83,20 @@ class _TeamDetailView extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.campaign_outlined),
             tooltip: 'Announcements',
-            onPressed: () => context.push('/teams/${team.teamId}/announcements'),
+            onPressed: () =>
+                context.push('/teams/${team.teamId}/announcements'),
           ),
           // Notification inbox — all members
           IconButton(
             icon: const Icon(Icons.inbox_outlined),
             tooltip: 'Notification Inbox',
             onPressed: () => context.push('/teams/${team.teamId}/inbox'),
+          ),
+          // Stats — all members
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Stats',
+            onPressed: () => context.push('/teams/${team.teamId}/stats'),
           ),
           // Notify team — admin only
           if (isAdmin)
@@ -112,8 +120,7 @@ class _TeamDetailView extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.people_outline),
                   tooltip: 'Manage Spares',
-                  onPressed: () =>
-                      context.push('/teams/${team.teamId}/spares'),
+                  onPressed: () => context.push('/teams/${team.teamId}/spares'),
                 ),
                 if (pendingSpareCount > 0)
                   Positioned(
@@ -172,8 +179,8 @@ class _TeamDetailView extends ConsumerWidget {
               // ── Spare request (non-admin players) ─────────────────────────
               if (!isAdmin && !isAlreadySpare)
                 _SpareRequestButton(
-                  teamId:           team.teamId,
-                  uid:              uid,
+                  teamId: team.teamId,
+                  uid: uid,
                   hasPendingRequest: hasPendingRequest,
                 ),
               const SizedBox(height: 20),
@@ -201,7 +208,8 @@ class _TeamDetailView extends ConsumerWidget {
                               )
                           : null,
                       onAttendance: isAdmin
-                          ? () => context.push('/teams/${team.teamId}/attendance/$id')
+                          ? () => context
+                              .push('/teams/${team.teamId}/attendance/$id')
                           : null,
                     )),
                 ...team.players.map((id) => _MemberTile(
@@ -221,7 +229,8 @@ class _TeamDetailView extends ConsumerWidget {
                               )
                           : null,
                       onAttendance: isAdmin
-                          ? () => context.push('/teams/${team.teamId}/attendance/$id')
+                          ? () => context
+                              .push('/teams/${team.teamId}/attendance/$id')
                           : null,
                     )),
               ],
@@ -230,33 +239,58 @@ class _TeamDetailView extends ConsumerWidget {
     );
   }
 
-  void _showTeamId(BuildContext context, String teamId) {
+  void _showTeamId(BuildContext context, String teamId, String teamName) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Team ID'),
+        title: Text('Join $teamName'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-                'Share this ID with players so they can request to join:'),
-            const SizedBox(height: 12),
+            const Text('Scan this QR code or share the Team ID:'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: QrImageView(
+                data: 'sportsrostering://join/$teamId',
+                version: QrVersions.auto,
+                size: 200,
+              ),
+            ),
+            const SizedBox(height: 16),
             SelectableText(
               teamId,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: teamId));
-              Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Team ID copied to clipboard')),
               );
             },
-            child: const Text('Copy'),
+            icon: const Icon(Icons.copy, size: 18),
+            label: const Text('Copy ID'),
+          ),
+          TextButton.icon(
+            onPressed: () {
+              SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      'Join my team "$teamName" on Sport Rosters! Team ID: $teamId',
+                  subject: 'Join $teamName',
+                ),
+              );
+            },
+            icon: const Icon(Icons.share, size: 18),
+            label: const Text('Share'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -593,7 +627,7 @@ final _userNameProvider =
 class _SpareRequestButton extends ConsumerStatefulWidget {
   final String teamId;
   final String uid;
-  final bool   hasPendingRequest;
+  final bool hasPendingRequest;
   const _SpareRequestButton({
     required this.teamId,
     required this.uid,
@@ -637,16 +671,17 @@ class _SpareRequestButtonState extends ConsumerState<_SpareRequestButton> {
           await ref.read(userRepositoryProvider).getUser(widget.uid);
       await ref.read(sparesRepositoryProvider).createSpareRequest(
             SpareRequest(
-              userId:      widget.uid,
-              teamId:      widget.teamId,
-              userName:    profile?.name    ?? '',
-              userEmail:   profile?.email   ?? '',
+              userId: widget.uid,
+              teamId: widget.teamId,
+              userName: profile?.name ?? '',
+              userEmail: profile?.email ?? '',
               requestedAt: DateTime.now(),
             ),
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Request sent — waiting for coach approval.')),
+          const SnackBar(
+              content: Text('Request sent — waiting for coach approval.')),
         );
       }
     } catch (e) {
@@ -672,39 +707,43 @@ class _SpareRequestButtonState extends ConsumerState<_SpareRequestButton> {
       return OutlinedButton.icon(
         icon: _loading
             ? const SizedBox(
-                width: 16, height: 16,
+                width: 16,
+                height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2))
             : const Icon(Icons.hourglass_top_outlined),
         label: const Text('Spare Request Pending'),
-        onPressed: _loading ? null : () async {
-          final cancel = await showDialog<bool>(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Cancel Request?'),
-              content: const Text('Withdraw your spare request?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(false),
-                  child: const Text('Keep'),
-                ),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                      backgroundColor: Theme.of(ctx).colorScheme.error),
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  child: const Text('Withdraw'),
-                ),
-              ],
-            ),
-          );
-          if (cancel == true) await _cancelRequest();
-        },
+        onPressed: _loading
+            ? null
+            : () async {
+                final cancel = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Cancel Request?'),
+                    content: const Text('Withdraw your spare request?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Keep'),
+                      ),
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                            backgroundColor: Theme.of(ctx).colorScheme.error),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Withdraw'),
+                      ),
+                    ],
+                  ),
+                );
+                if (cancel == true) await _cancelRequest();
+              },
       );
     }
 
     return OutlinedButton.icon(
       icon: _loading
           ? const SizedBox(
-              width: 16, height: 16,
+              width: 16,
+              height: 16,
               child: CircularProgressIndicator(strokeWidth: 2))
           : const Icon(Icons.person_add_outlined),
       label: const Text('Request Spare Status'),

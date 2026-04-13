@@ -254,7 +254,12 @@ class _EventDetailView extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               // ── Event header card ──────────────────────────────────────────
-              _HeaderCard(event: event, dateFmt: dateFmt, timeFmt: timeFmt),
+              _HeaderCard(
+                event: event,
+                dateFmt: dateFmt,
+                timeFmt: timeFmt,
+                teamName: teamAsync.valueOrNull?.name ?? 'Team',
+              ),
               const SizedBox(height: 20),
 
               // ── RSVP (players + admins can respond) ───────────────────────
@@ -457,8 +462,13 @@ Future<void> _exportCsv(
 class _HeaderCard extends StatelessWidget {
   final Event event;
   final DateFormat dateFmt, timeFmt;
-  const _HeaderCard(
-      {required this.event, required this.dateFmt, required this.timeFmt});
+  final String teamName;
+  const _HeaderCard({
+    required this.event,
+    required this.dateFmt,
+    required this.timeFmt,
+    required this.teamName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -488,6 +498,15 @@ class _HeaderCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (event.isUpcoming)
+                  TextButton.icon(
+                    onPressed: () => ExportService.shareEventToCalendar(
+                      teamName: teamName,
+                      event: event,
+                    ),
+                    icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                    label: const Text('Add to Calendar'),
+                  ),
               ],
             ),
             const Divider(height: 24),

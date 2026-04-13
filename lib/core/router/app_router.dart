@@ -34,6 +34,7 @@ import '../../features/teams/presentation/screens/send_notification_screen.dart'
 import '../../features/teams/presentation/screens/notification_inbox_screen.dart';
 import '../../features/teams/presentation/screens/manage_spares_screen.dart';
 import '../../features/events/presentation/screens/player_attendance_screen.dart';
+import '../../features/events/presentation/screens/team_stats_screen.dart';
 import '../../features/events/presentation/screens/my_schedule_screen.dart';
 import '../../features/teams/presentation/screens/team_announcements_screen.dart';
 
@@ -69,6 +70,7 @@ class AppRoutes {
   static const mySchedule = '/schedule';
   static const spareResponse = '/spare-response/:eventId/:teamId';
   static const playerAttendance = '/teams/:teamId/attendance/:userId';
+  static const teamStats = '/teams/:teamId/stats';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -103,14 +105,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Gate email/password accounts behind email verification
       final firebaseUser = authState.valueOrNull;
-      final isEmailUser  = firebaseUser?.providerData
-              .any((p) => p.providerId == 'password') ?? false;
-      if (isLoggedIn && !bioLocked && isEmailUser &&
+      final isEmailUser =
+          firebaseUser?.providerData.any((p) => p.providerId == 'password') ??
+              false;
+      if (isLoggedIn &&
+          !bioLocked &&
+          isEmailUser &&
           firebaseUser?.emailVerified == false &&
           currentPath != AppRoutes.emailVerify) {
         return AppRoutes.emailVerify;
       }
-      if (isLoggedIn && !bioLocked &&
+      if (isLoggedIn &&
+          !bioLocked &&
           currentPath == AppRoutes.emailVerify &&
           (!isEmailUser || firebaseUser?.emailVerified == true)) {
         return AppRoutes.teams;
@@ -190,6 +196,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ),
           ),
           GoRoute(
+            path: 'stats',
+            builder: (_, state) => TeamStatsScreen(
+              teamId: state.pathParameters['teamId']!,
+            ),
+          ),
+          GoRoute(
             path: 'events',
             builder: (_, state) =>
                 EventsScreen(teamId: state.pathParameters['teamId']!),
@@ -198,7 +210,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'create',
                 builder: (_, state) => CreateEventScreen(
-                  teamId:   state.pathParameters['teamId']!,
+                  teamId: state.pathParameters['teamId']!,
                   copyFrom: state.extra as Event?,
                 ),
               ),
@@ -214,7 +226,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (_, state) {
                       final x = state.extra;
                       if (x is EditEventArgs) {
-                        return EditEventScreen(event: x.event, editSeries: x.editSeries);
+                        return EditEventScreen(
+                            event: x.event, editSeries: x.editSeries);
                       }
                       return EditEventScreen(event: x as Event);
                     },
@@ -255,9 +268,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: AppRoutes.accessibility,
           builder: (_, __) => const AccessibilityScreen()),
-      GoRoute(
-          path: AppRoutes.tour,
-          builder: (_, __) => const AppTourScreen()),
+      GoRoute(path: AppRoutes.tour, builder: (_, __) => const AppTourScreen()),
       GoRoute(
           path: AppRoutes.mySchedule,
           builder: (_, __) => const MyScheduleScreen()),

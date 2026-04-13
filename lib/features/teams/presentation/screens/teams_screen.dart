@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/analytics_service.dart';
@@ -167,17 +168,28 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
   final _ctrl      = TextEditingController();
   bool  _loading   = false;
   String? _error;
+  bool _scanning   = false;
 
   @override
   void dispose() { _ctrl.dispose(); super.dispose(); }
 
-  Future<void> _submit() async {
-    final teamId = _ctrl.text.trim();
-    if (teamId.isEmpty) return;
+  String? _parseTeamId(String raw) {
+    if (raw.startsWith('sportsrostering://join/')) {
+      return raw.substring('sportsrostering://join/'.length);
+    }
+    if (raw.length > 5 && !raw.contains(' ')) {
+      return raw;
+    }
+    return null;
+  }
+
+  Future<void> _submit({String? teamId}) async {
+    final id = (teamId ?? _ctrl.text.trim());
+    if (id.isEmpty) return;
 
     setState(() { _loading = true; _error = null; });
 
-    final team = await ref.read(teamRepositoryProvider).getTeam(teamId);
+    final team = await ref.read(teamRepositoryProvider).getTeam(id);
     if (!mounted) return;
 
     if (team == null) {
@@ -195,7 +207,7 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
     }
 
     await ref.read(teamRepositoryProvider).requestToJoin(
-      teamId,
+      id,
       user.uid,
       profile?.name ?? user.email ?? '',
       user.email ?? '',
@@ -212,13 +224,48 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (_scanning) {
+      return AlertDialog(
+        title: const Text('Scan Team QR Code'),
+        content: SizedBox(
+          width: 300,
+          height: 300,
+          child: MobileScanner(
+            onDetect: (capture) {
+              final barcodes = capture.barcodes;
+              if (barcodes.isEmpty) return;
+              final raw = barcodes.first.rawValue;
+              if (raw == null) return;
+              final teamId = _parseTeamId(raw);
+              if (teamId != null) {
+                setState(() { _scanning = false; });
+                _submit(teamId: teamId);
+              }
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => setState(() { _scanning = false; }),
+            child: const Text('Cancel'),
+          ),
+        ],
+      );
+    }
+
     return AlertDialog(
       title: const Text('Join a Team'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ask your coach or team admin for the Team ID.'),
+          const Text('Scan the team QR code or ask your coach for the Team ID.'),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => setState(() { _scanning = true; }),
+            icon: const Icon(Icons.qr_code_scanner, size: 18),
+            label: const Text('Scan QR Code'),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller:    _ctrl,
@@ -239,7 +286,7 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
         FilledButton(
-          onPressed: _loading ? null : _submit,
+          onPressed: _loading ? null : () => _submit(),
           child: _loading
               ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Send Request'),

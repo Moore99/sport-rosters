@@ -72,6 +72,8 @@
 		<false/>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Sport Rosters uses Face ID to keep your account secure.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Sport Rosters uses the camera to scan team QR codes.</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
