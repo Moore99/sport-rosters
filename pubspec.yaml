@@ -71,6 +71,10 @@ dependencies:
   # Form validation
   form_builder_validators: ^11.0.0
 
+  # QR code generation and scanning
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.2.0
+
   # Google Places autocomplete
   google_places_flutter: ^2.0.8
 

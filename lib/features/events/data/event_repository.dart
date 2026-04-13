@@ -8,24 +8,24 @@ class EventRepository {
   final FirebaseFirestore _db;
   EventRepository(this._db);
 
-  CollectionReference<Map<String, dynamic>> get _events => _db.collection('events');
+  CollectionReference<Map<String, dynamic>> get _events =>
+      _db.collection('events');
 
   CollectionReference<Map<String, dynamic>> _avail(String eventId) =>
       _events.doc(eventId).collection('availability');
 
   // ── Events ─────────────────────────────────────────────────────────────────
 
-  Stream<List<Event>> watchTeamEvents(String teamId) =>
-      _events
-          .where('teamId', isEqualTo: teamId)
-          .orderBy('date')
-          .snapshots()
-          .map((s) => s.docs.map(Event.fromFirestore).toList());
+  Stream<List<Event>> watchTeamEvents(String teamId) => _events
+      .where('teamId', isEqualTo: teamId)
+      .orderBy('date')
+      .snapshots()
+      .map((s) => s.docs.map(Event.fromFirestore).toList());
 
   Stream<Event?> watchEvent(String eventId) =>
       _events.doc(eventId).snapshots().map(
-        (doc) => doc.exists ? Event.fromFirestore(doc) : null,
-      );
+            (doc) => doc.exists ? Event.fromFirestore(doc) : null,
+          );
 
   Future<String> createEvent(Event event) async {
     final ref = _events.doc(event.eventId);
@@ -45,14 +45,12 @@ class EventRepository {
   Future<void> updateEvent(Event event) =>
       _events.doc(event.eventId).update(event.toFirestore());
 
-  Future<void> deleteEvent(String eventId) =>
-      _events.doc(eventId).delete();
+  Future<void> deleteEvent(String eventId) => _events.doc(eventId).delete();
 
   /// Deletes all events sharing [groupId] (a recurring series).
   Future<void> deleteEventSeries(String groupId) async {
-    final snap = await _events
-        .where('recurrenceGroupId', isEqualTo: groupId)
-        .get();
+    final snap =
+        await _events.where('recurrenceGroupId', isEqualTo: groupId).get();
     final batch = _db.batch();
     for (final doc in snap.docs) {
       batch.delete(doc.reference);
@@ -64,9 +62,8 @@ class EventRepository {
   /// Each event keeps its own date; only shared fields are overwritten.
   Future<void> updateEventSeriesFields(
       String groupId, Map<String, dynamic> fields) async {
-    final snap = await _events
-        .where('recurrenceGroupId', isEqualTo: groupId)
-        .get();
+    final snap =
+        await _events.where('recurrenceGroupId', isEqualTo: groupId).get();
     final batch = _db.batch();
     for (final doc in snap.docs) {
       batch.update(doc.reference, fields);
@@ -99,13 +96,14 @@ class EventRepository {
   /// The current user's RSVP for one event.
   Stream<Availability?> watchMyAvailability(String eventId, String userId) =>
       _avail(eventId).doc(userId).snapshots().map(
-        (doc) => doc.exists ? Availability.fromFirestore(doc) : null,
-      );
+            (doc) => doc.exists ? Availability.fromFirestore(doc) : null,
+          );
 
   /// All RSVPs for an event — used by admins to see the full picture.
   /// teamId is included as a where-clause so Firestore security rules can
   /// evaluate resource.data.teamId against it during the list query.
-  Stream<List<Availability>> watchEventAvailability(String eventId, String teamId) =>
+  Stream<List<Availability>> watchEventAvailability(
+          String eventId, String teamId) =>
       _avail(eventId)
           .where('teamId', isEqualTo: teamId)
           .snapshots()
@@ -117,9 +115,7 @@ class EventRepository {
 
   /// Upcoming events for a team (date ≥ now), sorted ascending.
   Future<List<Event>> fetchUpcomingTeamEvents(String teamId) async {
-    final snap = await _events
-        .where('teamId', isEqualTo: teamId)
-        .get();
+    final snap = await _events.where('teamId', isEqualTo: teamId).get();
     final now = DateTime.now();
     final upcoming = snap.docs
         .map(Event.fromFirestore)
@@ -133,9 +129,7 @@ class EventRepository {
   /// Uses only a single-field equality filter (no orderBy) to avoid requiring
   /// a composite index. Filtering and sorting done client-side.
   Future<List<Event>> fetchPastTeamEvents(String teamId) async {
-    final snap = await _events
-        .where('teamId', isEqualTo: teamId)
-        .get();
+    final snap = await _events.where('teamId', isEqualTo: teamId).get();
     final now = DateTime.now();
     final past = snap.docs
         .map(Event.fromFirestore)
@@ -157,6 +151,19 @@ class EventRepository {
         .where((s) => s.exists)
         .map(Availability.fromFirestore)
         .toList();
+  }
+
+  /// Fetches all availability docs for a team's past events.
+  Future<List<Availability>> fetchAllAvailabilityForTeam(String teamId) async {
+    final pastEvents = await fetchPastTeamEvents(teamId);
+    if (pastEvents.isEmpty) return [];
+
+    final allAvail = <Availability>[];
+    for (final event in pastEvents) {
+      final snap = await _avail(event.eventId).get();
+      allAvail.addAll(snap.docs.map(Availability.fromFirestore));
+    }
+    return allAvail;
   }
 }
 
