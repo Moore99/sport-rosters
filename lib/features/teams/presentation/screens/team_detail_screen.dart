@@ -571,6 +571,11 @@ class _MemberTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(_userNameProvider(userId)).valueOrNull ?? userId;
     final displayName = isSelf ? '$name (you)' : name;
+    final hasMenu = onSetPrefs != null ||
+        onAttendance != null ||
+        onPromote != null ||
+        canRemove;
+
     return ListTile(
       leading: CircleAvatar(
         radius:
@@ -582,44 +587,67 @@ class _MemberTile extends ConsumerWidget {
       ),
       title: Text(displayName, overflow: TextOverflow.ellipsis),
       subtitle: Text(label),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (onSetPrefs != null)
-            IconButton(
-              icon: const Icon(Icons.tune, size: 20),
-              tooltip: 'Set position preferences',
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+      trailing: hasMenu
+          ? PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              iconSize: 20,
               padding: EdgeInsets.zero,
-              onPressed: onSetPrefs,
-            ),
-          if (onAttendance != null)
-            IconButton(
-              icon: const Icon(Icons.bar_chart_outlined, size: 20),
-              tooltip: 'Attendance history',
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              padding: EdgeInsets.zero,
-              onPressed: onAttendance,
-            ),
-          if (onPromote != null)
-            IconButton(
-              icon: const Icon(Icons.manage_accounts, size: 20),
-              tooltip: 'Promote to Admin',
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              padding: EdgeInsets.zero,
-              onPressed: onPromote,
-            ),
-          if (canRemove)
-            IconButton(
-              icon: Icon(Icons.remove_circle_outline,
-                  size: 20, color: Theme.of(context).colorScheme.error),
-              tooltip: 'Remove',
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              padding: EdgeInsets.zero,
-              onPressed: onRemove,
-            ),
-        ],
-      ),
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              onSelected: (value) {
+                switch (value) {
+                  case 'prefs':
+                    onSetPrefs?.call();
+                  case 'attendance':
+                    onAttendance?.call();
+                  case 'promote':
+                    onPromote?.call();
+                  case 'remove':
+                    onRemove?.call();
+                }
+              },
+              itemBuilder: (_) => [
+                if (onSetPrefs != null)
+                  const PopupMenuItem(
+                    value: 'prefs',
+                    child: ListTile(
+                      leading: Icon(Icons.tune),
+                      title: Text('Position Preferences'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                if (onAttendance != null)
+                  const PopupMenuItem(
+                    value: 'attendance',
+                    child: ListTile(
+                      leading: Icon(Icons.bar_chart_outlined),
+                      title: Text('Attendance History'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                if (onPromote != null)
+                  const PopupMenuItem(
+                    value: 'promote',
+                    child: ListTile(
+                      leading: Icon(Icons.manage_accounts),
+                      title: Text('Promote to Admin'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                if (canRemove)
+                  PopupMenuItem(
+                    value: 'remove',
+                    child: ListTile(
+                      leading: Icon(Icons.remove_circle_outline,
+                          color: Theme.of(context).colorScheme.error),
+                      title: Text('Remove from Team',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error)),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+              ],
+            )
+          : null,
     );
   }
 }
