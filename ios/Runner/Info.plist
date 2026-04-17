@@ -86,6 +86,16 @@
 					<string>com.googleusercontent.apps.363898653310-rfako4db7amsb2qu66p88d7prt83625u</string>
 				</array>
 			</dict>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.sportsrostering.app</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>sportsrostering</string>
+				</array>
+			</dict>
 		</array>
 	</dict>
 </plist>
