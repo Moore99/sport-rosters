@@ -345,6 +345,19 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | Android (Play Store) | 1.1.4 | 23 | In Review |
 | iOS (App Store) | 1.1.3 | 36 | Live |
 
+## Store URLs
+
+| Page | URL |
+|------|-----|
+| Privacy Policy (Android) | https://moore99.github.io/sport-rosters/privacy |
+| Privacy Policy (iOS) | https://nuclear-motd.com/privacy (combined policy, still live) |
+| Terms of Service | https://moore99.github.io/sport-rosters/terms |
+| Delete Account | https://moore99.github.io/sport-rosters/delete-account |
+
+**Note:** Android pages are served from GitHub Pages (`docs/` folder, `moore99/sport-rosters` repo). iOS uses the nuclear-motd.com combined privacy policy. The nuclear-motd.com/sports-rostering/* paths are dead (lost in Docker migration — do not use).
+
+---
+
 ## Known Issues / Blockers
 
 ### Android IAP Validation — ✅ Resolved (2026-04-02)
