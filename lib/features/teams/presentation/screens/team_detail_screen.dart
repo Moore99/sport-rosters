@@ -574,10 +574,10 @@ class _MemberTile extends ConsumerWidget {
     return ListTile(
       leading: CircleAvatar(
         radius:
-            20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+            16 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
       ),
       title: Text(displayName, overflow: TextOverflow.ellipsis),
@@ -587,27 +587,35 @@ class _MemberTile extends ConsumerWidget {
         children: [
           if (onSetPrefs != null)
             IconButton(
-              icon: const Icon(Icons.tune),
+              icon: const Icon(Icons.tune, size: 20),
               tooltip: 'Set position preferences',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
               onPressed: onSetPrefs,
             ),
           if (onAttendance != null)
             IconButton(
-              icon: const Icon(Icons.bar_chart_outlined),
+              icon: const Icon(Icons.bar_chart_outlined, size: 20),
               tooltip: 'Attendance history',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
               onPressed: onAttendance,
             ),
           if (onPromote != null)
             IconButton(
-              icon: const Icon(Icons.manage_accounts),
+              icon: const Icon(Icons.manage_accounts, size: 20),
               tooltip: 'Promote to Admin',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
               onPressed: onPromote,
             ),
           if (canRemove)
             IconButton(
               icon: Icon(Icons.remove_circle_outline,
-                  color: Theme.of(context).colorScheme.error),
+                  size: 20, color: Theme.of(context).colorScheme.error),
               tooltip: 'Remove',
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
               onPressed: onRemove,
             ),
         ],
