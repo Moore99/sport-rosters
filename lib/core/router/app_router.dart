@@ -37,6 +37,7 @@ import '../../features/events/presentation/screens/player_attendance_screen.dart
 import '../../features/events/presentation/screens/team_stats_screen.dart';
 import '../../features/events/presentation/screens/my_schedule_screen.dart';
 import '../../features/teams/presentation/screens/team_announcements_screen.dart';
+import '../../features/teams/presentation/screens/join_via_link_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -68,6 +69,7 @@ class AppRoutes {
   static const accessibility = '/accessibility';
   static const tour = '/tour';
   static const mySchedule = '/schedule';
+  static const joinViaLink = '/join/:teamId';
   static const spareResponse = '/spare-response/:eventId/:teamId';
   static const playerAttendance = '/teams/:teamId/attendance/:userId';
   static const teamStats = '/teams/:teamId/stats';
@@ -90,7 +92,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           currentPath == AppRoutes.privacy ||
           currentPath == AppRoutes.terms ||
           currentPath == AppRoutes.accessibility ||
-          currentPath == AppRoutes.tour;
+          currentPath == AppRoutes.tour ||
+          currentPath.startsWith('/join/');
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
 
@@ -269,6 +272,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.accessibility,
           builder: (_, __) => const AccessibilityScreen()),
       GoRoute(path: AppRoutes.tour, builder: (_, __) => const AppTourScreen()),
+      GoRoute(
+          path: AppRoutes.joinViaLink,
+          builder: (_, state) => JoinViaLinkScreen(
+              teamId: state.pathParameters['teamId']!)),
       GoRoute(
           path: AppRoutes.mySchedule,
           builder: (_, __) => const MyScheduleScreen()),
