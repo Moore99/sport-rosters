@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -224,6 +225,20 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   Future<void> signOut() async {
+    // Clear FCM token before sign-out so this device stops receiving
+    // notifications for the outgoing user. Without this, the token stays on
+    // the old user's Firestore doc and sendEventReminders delivers their
+    // team notifications to whoever signs in next on the same device.
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      try {
+        await _users.clearFcmToken(uid);
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (_) {
+        // Non-fatal — proceed with sign-out regardless.
+      }
+    }
+
     await _googleSignIn.signOut();
     await _auth.signOut();
     // Clear Firestore offline cache so the next user starts with a clean slate.
