@@ -524,9 +524,19 @@ exports.sendEventReminders = onSchedule(
         ...(team.players ?? []),
       ])];
 
+      // Exclude members who have explicitly said they cannot attend
+      const unavailSnap = await db.collection('events').doc(eventDoc.id)
+        .collection('availability')
+        .where('response', '==', 'no')
+        .get();
+      const unavailableUids = new Set(
+        unavailSnap.docs.map(d => d.data().userId || d.id)
+      );
+      const eligibleMembers = allMembers.filter(uid => !unavailableUids.has(uid));
+
       async function sendReminderToTeam(title, body) {
         const tokens = (await Promise.all(
-          allMembers.map(uid =>
+          eligibleMembers.map(uid =>
             db.collection('users').doc(uid).get()
               .then(s => s.data()?.fcmToken)
           )
