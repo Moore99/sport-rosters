@@ -508,6 +508,10 @@ exports.sendEventReminders = onSchedule(
 
     for (const eventDoc of snap.docs) {
       const event    = eventDoc.data();
+
+      // Skip cancelled events
+      if (event.cancelled === true) continue;
+
       const eventDate = event.date.toDate();
       const minsUntil = (eventDate - now) / 60000;
 
@@ -557,7 +561,7 @@ exports.sendEventReminders = onSchedule(
         const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
         await sendReminderToTeam(
           `${label} tomorrow`,
-          `Reminder: ${label} at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true })}. Have you RSVPed?`,
+          `Reminder: ${label} at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto' })}. Have you RSVPed?`,
         );
         await eventDoc.ref.update({ reminder24Sent: true });
       }
@@ -567,7 +571,7 @@ exports.sendEventReminders = onSchedule(
         const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
         await sendReminderToTeam(
           `${label} in 2 hours`,
-          `Starting soon at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true })}. See you there!`,
+          `Starting soon at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto' })}. See you there!`,
         );
         await eventDoc.ref.update({ reminder2Sent: true });
       }

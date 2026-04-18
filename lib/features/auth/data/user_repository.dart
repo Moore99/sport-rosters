@@ -51,6 +51,11 @@ class UserRepository {
   Future<void> updateFcmToken(String userId, String token) =>
       _users.doc(userId).update({'fcmToken': token});
 
+  /// Removes the FCM token on sign-out so stale tokens don't deliver
+  /// notifications to the wrong user on shared devices.
+  Future<void> clearFcmToken(String userId) =>
+      _users.doc(userId).update({'fcmToken': FieldValue.delete()});
+
   /// Soft-delete: sets deleted=true. Hard cascade handled by Cloud Function.
   /// GDPR/PIPEDA: triggers server-side deletion of all linked data.
   Future<void> softDeleteUser(String userId) =>
