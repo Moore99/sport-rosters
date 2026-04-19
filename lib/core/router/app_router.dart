@@ -84,6 +84,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.teams,
     observers: [analyticsObserver],
     redirect: (context, state) {
+      // Strip custom URI scheme so deep links like sportsrostering://join/teamId
+      // are converted to /join/teamId before GoRouter tries to match routes.
+      final fullUri = state.uri.toString();
+      if (fullUri.startsWith('sportsrostering://')) {
+        return fullUri.replaceFirst('sportsrostering:/', '');
+      }
+
       final isLoggedIn = authState.valueOrNull != null;
       final currentPath = state.matchedLocation;
       final isAuthRoute = currentPath == AppRoutes.login ||
