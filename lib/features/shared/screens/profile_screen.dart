@@ -223,6 +223,15 @@ class ProfileScreen extends ConsumerWidget {
             // ── Legal & Account ────────────────────────────────────────
             Text('Account', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_outlined),
+              title:     const Text('Push Notifications'),
+              subtitle:  const Text('Event reminders and team announcements'),
+              value:     user?.notificationsEnabled ?? true,
+              onChanged: (v) => ref
+                  .read(userRepositoryProvider)
+                  .updateNotificationsEnabled(uid, v),
+            ),
             if (bioAvailable)
               SwitchListTile(
                 secondary: const Icon(Icons.fingerprint),

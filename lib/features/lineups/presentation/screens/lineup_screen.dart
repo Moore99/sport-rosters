@@ -12,6 +12,7 @@ import '../../../../features/events/domain/event.dart';
 import '../../../../features/events/presentation/providers/events_provider.dart';
 import '../../../../features/rankings/data/ranking_repository.dart';
 import '../../../../features/rankings/domain/ranking.dart';
+import '../../../../features/teams/domain/admin_role.dart';
 import '../../../../features/teams/domain/team.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../data/lineup_repository.dart';
@@ -170,11 +171,19 @@ class _LineupScreenState extends ConsumerState<LineupScreen> {
     final rankMap       = ref.read(_teamRankingsMapProvider(team.teamId)).valueOrNull ?? {};
     final prefMap       = ref.read(teamPreferencesMapProvider(team.teamId)).valueOrNull ?? {};
     final numSubTeams   = ref.read(eventProvider(widget.eventId)).valueOrNull?.numSubTeams ?? 1;
+    final adminRoles    = ref.read(adminRolesProvider(widget.teamId)).valueOrNull ?? {};
 
-    // Only include players who said yes or maybe
+    // Admins with coachOnly participation are excluded from lineups
+    final coachOnlyUids = {
+      for (final e in adminRoles.entries)
+        if (e.value == AdminParticipation.coachOnly) e.key,
+    };
+
+    // Only include players who said yes or maybe (excluding coach-only admins)
     final availableUids = availList
         .where((a) => a.response.name == 'yes' || a.response.name == 'maybe')
         .map((a) => a.userId)
+        .where((uid) => !coachOnlyUids.contains(uid))
         .where((uid) => team.players.contains(uid) || team.admins.contains(uid))
         .toList();
 
@@ -242,6 +251,13 @@ class _LineupScreenState extends ConsumerState<LineupScreen> {
         .where((a) => a.response.name == 'yes' || a.response.name == 'maybe')
         .map((a) => a.userId)
         .toSet();
+
+    // Admin roles — coach-only admins are excluded from lineup
+    final adminRoles = ref.watch(adminRolesProvider(widget.teamId)).valueOrNull ?? {};
+    final coachOnlyUids = {
+      for (final e in adminRoles.entries)
+        if (e.value == AdminParticipation.coachOnly) e.key,
+    };
 
     return teamAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -354,12 +370,13 @@ class _LineupScreenState extends ConsumerState<LineupScreen> {
                     final position    = positions[i];
                     final assignedUid = _draft[position] ?? '';
                     return _PositionTile(
-                      position:    position,
-                      assignedUid: assignedUid,
-                      team:        team,
-                      isAdmin:     isAdmin,
-                      uidToPos:    uidToPos,
-                      yesUids:     yesUids,
+                      position:      position,
+                      assignedUid:   assignedUid,
+                      team:          team,
+                      isAdmin:       isAdmin,
+                      uidToPos:      uidToPos,
+                      yesUids:       yesUids,
+                      coachOnlyUids: coachOnlyUids,
                       onAssign: isAdmin
                           ? (uid) => setState(() {
                               if (uid.isNotEmpty) {
@@ -409,12 +426,13 @@ class _LineupScreenState extends ConsumerState<LineupScreen> {
                         final position    = positions[i];
                         final assignedUid = teamDraft[position] ?? '';
                         return _PositionTile(
-                          position:    position,
-                          assignedUid: assignedUid,
-                          team:        team,
-                          isAdmin:     isAdmin,
-                          uidToPos:    uidToPos,
-                          yesUids:     yesUids,
+                          position:      position,
+                          assignedUid:   assignedUid,
+                          team:          team,
+                          isAdmin:       isAdmin,
+                          uidToPos:      uidToPos,
+                          yesUids:       yesUids,
+                          coachOnlyUids: coachOnlyUids,
                           onAssign: isAdmin
                               ? (uid) => setState(() {
                                   if (uid.isNotEmpty) {
@@ -446,8 +464,9 @@ class _PositionTile extends ConsumerWidget {
   final String         assignedUid;
   final Team           team;
   final bool           isAdmin;
-  final Map<String, String> uidToPos; // uid → position name for already-placed display
-  final Set<String>    yesUids;       // yes/maybe RSVPs for picker filtering
+  final Map<String, String> uidToPos;    // uid → position name for already-placed display
+  final Set<String>    yesUids;          // yes/maybe RSVPs for picker filtering
+  final Set<String>    coachOnlyUids;    // excluded from lineup
   final ValueChanged<String>? onAssign;
 
   const _PositionTile({
@@ -457,6 +476,7 @@ class _PositionTile extends ConsumerWidget {
     required this.isAdmin,
     required this.uidToPos,
     required this.yesUids,
+    required this.coachOnlyUids,
     required this.onAssign,
   });
 
@@ -509,12 +529,13 @@ class _PositionTile extends ConsumerWidget {
       context:    context,
       isScrollControlled: true,
       builder:    (_) => _PlayerPickerSheet(
-        team:        team,
-        position:    position,
-        currentUid:  assignedUid,
-        uidToPos:    uidToPos,
-        yesUids:     yesUids,
-        onSelect:    onAssign!,
+        team:          team,
+        position:      position,
+        currentUid:    assignedUid,
+        uidToPos:      uidToPos,
+        yesUids:       yesUids,
+        coachOnlyUids: coachOnlyUids,
+        onSelect:      onAssign!,
       ),
     );
   }
@@ -525,8 +546,9 @@ class _PositionTile extends ConsumerWidget {
 class _PlayerPickerSheet extends ConsumerWidget {
   final Team   team;
   final String position, currentUid;
-  final Map<String, String> uidToPos; // uid → position name for already-placed display
-  final Set<String>         yesUids;  // yes/maybe RSVPs for filtering
+  final Map<String, String> uidToPos;    // uid → position name for already-placed display
+  final Set<String>         yesUids;     // yes/maybe RSVPs for filtering
+  final Set<String>         coachOnlyUids; // excluded from lineups
   final ValueChanged<String> onSelect;
 
   const _PlayerPickerSheet({
@@ -535,6 +557,7 @@ class _PlayerPickerSheet extends ConsumerWidget {
     required this.currentUid,
     required this.uidToPos,
     required this.yesUids,
+    required this.coachOnlyUids,
     required this.onSelect,
   });
 
@@ -544,7 +567,9 @@ class _PlayerPickerSheet extends ConsumerWidget {
     final rankMap = rankingsAsync.valueOrNull ?? {};
 
     // Only include players who said yes/maybe (plus whoever is already in this slot)
+    // Exclude coach-only admins — they don't play
     final eligible = [...team.admins, ...team.players]
+        .where((u) => !coachOnlyUids.contains(u))
         .where((u) => yesUids.contains(u) || u == currentUid)
         .toList()
       ..sort((a, b) {

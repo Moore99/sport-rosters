@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -77,6 +78,7 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
     final titleCtrl  = TextEditingController(text: existing?.title ?? '');
     final bodyCtrl   = TextEditingController(text: existing?.body  ?? '');
     var   pinned     = existing?.pinned ?? false;
+    var   notifyTeam = false; // only offered for new posts, not edits
     final formKey    = GlobalKey<FormState>();
     String? authorName;
 
@@ -127,6 +129,15 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
                     value: pinned,
                     onChanged: (v) => setLocal(() => pinned = v),
                   ),
+                  if (existing == null)
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.notifications_outlined),
+                      title: const Text('Notify team'),
+                      subtitle: const Text('Send a push notification to all members'),
+                      value: notifyTeam,
+                      onChanged: (v) => setLocal(() => notifyTeam = v),
+                    ),
                 ],
               ),
             ),
@@ -149,6 +160,8 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
                     pinned: pinned,
                   ));
                 } else {
+                  final title = titleCtrl.text.trim();
+                  final body  = bodyCtrl.text.trim();
                   final docId = FirebaseFirestore.instance
                       .collection('teams')
                       .doc(teamId)
@@ -158,13 +171,23 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
                   await repo.createAnnouncement(Announcement(
                     announcementId: docId,
                     teamId:         teamId,
-                    title:          titleCtrl.text.trim(),
-                    body:           bodyCtrl.text.trim(),
+                    title:          title,
+                    body:           body,
                     authorId:       uid,
                     authorName:     authorName ?? uid,
                     pinned:         pinned,
                     createdAt:      DateTime.now(),
                   ));
+                  if (notifyTeam) {
+                    try {
+                      await FirebaseFunctions
+                          .instanceFor(region: 'northamerica-northeast1')
+                          .httpsCallable('sendTeamNotification')
+                          .call({'teamId': teamId, 'title': title, 'body': body});
+                    } catch (_) {
+                      // Notification failure is non-fatal — announcement is saved
+                    }
+                  }
                 }
               },
               child: const Text('Save'),

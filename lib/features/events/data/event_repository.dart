@@ -58,6 +58,25 @@ class EventRepository {
     await batch.commit();
   }
 
+  /// Shifts every event date in a series by [delta].
+  /// Used when an admin reschedules a recurring series to a new day/time.
+  Future<void> shiftEventSeriesDates(String groupId, Duration delta) async {
+    final snap =
+        await _events.where('recurrenceGroupId', isEqualTo: groupId).get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      final event = Event.fromFirestore(doc);
+      final newDate = event.date.add(delta);
+      batch.update(doc.reference, {
+        'date': Timestamp.fromDate(newDate),
+        // Clear reminder flags so the shifted events re-trigger reminders
+        'reminder24Sent': false,
+        'reminder2Sent':  false,
+      });
+    }
+    await batch.commit();
+  }
+
   /// Updates non-date fields on all events sharing [groupId].
   /// Each event keeps its own date; only shared fields are overwritten.
   Future<void> updateEventSeriesFields(
@@ -67,6 +86,20 @@ class EventRepository {
     final batch = _db.batch();
     for (final doc in snap.docs) {
       batch.update(doc.reference, fields);
+    }
+    await batch.commit();
+  }
+
+  Future<void> cancelEvent(String eventId, {bool cancelled = true}) =>
+      _events.doc(eventId).update({'cancelled': cancelled});
+
+  /// Cancels (or restores) all events in a recurring series.
+  Future<void> cancelEventSeries(String groupId, {bool cancelled = true}) async {
+    final snap =
+        await _events.where('recurrenceGroupId', isEqualTo: groupId).get();
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'cancelled': cancelled});
     }
     await batch.commit();
   }

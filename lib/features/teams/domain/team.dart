@@ -11,6 +11,7 @@ class Team {
   final bool dropInEnabled;
   final DateTime createdAt;
   final String? logoUrl;
+  final String timezone; // IANA timezone ID, e.g. 'America/Toronto'
 
   const Team({
     required this.teamId,
@@ -23,6 +24,7 @@ class Team {
     required this.dropInEnabled,
     required this.createdAt,
     this.logoUrl,
+    this.timezone = 'America/Toronto',
   });
 
   factory Team.fromFirestore(DocumentSnapshot doc) {
@@ -38,6 +40,7 @@ class Team {
       dropInEnabled: d['dropInEnabled'] as bool? ?? false,
       createdAt:    (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       logoUrl:      d['logoUrl'] as String?,
+      timezone:     d['timezone'] as String? ?? 'America/Toronto',
     );
   }
 
@@ -51,6 +54,7 @@ class Team {
     'dropInEnabled': dropInEnabled,
     'createdAt':     Timestamp.fromDate(createdAt),
     if (logoUrl != null) 'logoUrl': logoUrl,
+    'timezone': timezone,
   };
 
   bool isAdmin(String uid)  => admins.contains(uid);

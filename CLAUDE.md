@@ -337,13 +337,18 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 9 | Recurring events (weekly/biweekly, batch-created with shared recurrenceGroupId) | ✅ Done |
 | 9 | Game results (admin logs score + opponent after a game; shown on event detail) | ✅ Done |
 | 9 | Team announcements feed (coach posts, all members read, pin support) | ✅ Done |
+| 10 | Event cancellation UX (soft-cancel with orange banner; single or whole series) | ✅ Done |
+| 10 | Announce + notify in one step (optional push toggle when posting) | ✅ Done |
+| 10 | Recurring series date shift (delta applied to all events; reminder flags cleared) | ✅ Done |
+| 10 | Spare self-removal (player leaves spares pool from team detail screen) | ✅ Done |
 
 ## Current Production Versions
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.1.6 | 25 | In Review |
-| iOS (App Store) | 1.1.5 | 39 | In Review |
+| Android (Play Store) | 1.1.8 | 28 | Internal Testing |
+| Android (Play Store) | 1.1.7 | 27 | Live |
+| iOS (App Store) | 1.1.6 | 39 | Live |
 
 ## Store URLs
 

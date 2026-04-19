@@ -139,9 +139,18 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     );
 
     try {
-      await ref.read(eventRepositoryProvider).updateEvent(updated);
-      // If editing the whole series, propagate non-date fields to all siblings.
+      final repo = ref.read(eventRepositoryProvider);
+      await repo.updateEvent(updated);
+
       if (widget.editSeries && updated.recurrenceGroupId != null) {
+        // Shift all event dates by the same delta when the date/time changed.
+        final delta = _eventDateTime.difference(widget.event.date);
+        if (delta != Duration.zero) {
+          await repo.shiftEventSeriesDates(
+              updated.recurrenceGroupId!, delta);
+        }
+
+        // Propagate non-date fields to all siblings.
         final seriesFields = <String, dynamic>{
           'type':         updated.type.name,
           'location':     updated.location,
@@ -161,8 +170,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
           if (updated.notes?.isNotEmpty == true) 'notes': updated.notes
           else 'notes': FieldValue.delete(),
         };
-        await ref.read(eventRepositoryProvider)
-            .updateEventSeriesFields(updated.recurrenceGroupId!, seriesFields);
+        await repo.updateEventSeriesFields(
+            updated.recurrenceGroupId!, seriesFields);
       }
       if (mounted) context.pop();
     } catch (e) {
@@ -232,6 +241,30 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                         ),
                       ],
                     ),
+                    if (widget.editSeries) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.outline),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Changing date or time shifts all events in the series by the same amount.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outline,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 16),
 
                     // ── Location ──────────────────────────────────────────

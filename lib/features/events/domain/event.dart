@@ -94,6 +94,7 @@ class Event {
   final String?     notes;              // optional coach notes / description
   final String?     recurrenceGroupId;  // shared ID for events in a recurring series
   final GameResult? gameResult;         // set by admin after a game event
+  final bool        cancelled;          // soft-cancel; reminders and UI skip cancelled events
   final DateTime    createdAt;
 
   const Event({
@@ -111,6 +112,7 @@ class Event {
     this.notes,
     this.recurrenceGroupId,
     this.gameResult,
+    this.cancelled = false,
     required this.createdAt,
   });
 
@@ -135,6 +137,7 @@ class Event {
       gameResult:         d['gameResult'] != null
           ? GameResult.fromMap(Map<String, dynamic>.from(d['gameResult'] as Map))
           : null,
+      cancelled:          d['cancelled'] as bool? ?? false,
       createdAt:          (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -153,11 +156,13 @@ class Event {
     if (notes?.isNotEmpty == true)        'notes':             notes,
     if (recurrenceGroupId != null)        'recurrenceGroupId': recurrenceGroupId,
     if (gameResult != null)               'gameResult':        gameResult!.toMap(),
+    if (cancelled)                        'cancelled':         true,
     'createdAt':   Timestamp.fromDate(createdAt),
   };
 
   bool get isUpcoming      => date.isAfter(DateTime.now());
   bool get isDropIn        => type == EventType.dropIn;
+  bool get isCancelled     => cancelled;
   bool get rsvpOpen        => allowSignups &&
       (rsvpDeadline == null || rsvpDeadline!.isAfter(DateTime.now()));
 
