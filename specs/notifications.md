@@ -17,7 +17,7 @@ Players who opted out globally (`notificationsEnabled = false`) or muted a speci
 
 ## Controls Available to Users
 - **Global opt-out** — toggle in Profile screen → "Push Notifications" switch. Writes `notificationsEnabled` to `users/{uid}`.
-- **Per-team mute** — bell icon in team AppBar. Writes `teamId` to `users/{uid}.mutedTeams` via `FieldValue.arrayUnion/arrayRemove`.
+- **Per-team mute** — bell icon in team AppBar. Writes `teamId` to `users/{uid}.mutedTeams` via `FieldValue.arrayUnion/arrayRemove`. When muted, the icon is a filled red `notifications_off`; when active, an outline `notifications_active`. Tooltip states the current state and the action tapping will take.
 
 ## Admin Participation & Reminder Copy
 `coachOnly` admins (see `teams.md`) receive reminders **without** the RSVP nudge:

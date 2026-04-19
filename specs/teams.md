@@ -67,7 +67,7 @@ Set by the admin for themselves. Affects lineup inclusion and notification copy.
 - `admins` and `players` are **separate arrays** (not a single `members` array with a role field). This simplifies Firestore rule checks (`isTeamAdmin` = `admins.hasAny([uid])`) and avoids map-in-array update complexity.
 - Team logo upload goes through a Cloud Function proxy — Storage rules deny all direct client writes to `team_logos/`. This prevents any non-admin from overwriting a team logo.
 - `timezone` is stored on the team, not derived from the device, so Cloud Functions can format reminder times correctly regardless of where the scheduler runs.
-- QR code encodes the `teamId` only. The join flow is the same as typing a Team ID.
+- QR code encodes the full custom URI (`sportsrostering://join/{teamId}`). When the phone camera opens the app via this scheme, GoRouter strips the scheme prefix in a top-level `redirect` and routes to `/join/:teamId`. In-app scanner parses both the full URI and a bare team ID. A `_loading` guard prevents `MobileScanner.onDetect` (which fires continuously) from submitting multiple concurrent join requests before the widget can rebuild.
 - Admin participation role (`adminRoles` subcollection) is set per admin at team-creation time via a dialog, and can be changed later from the team settings screen.
 
 ## Future / Deferred
