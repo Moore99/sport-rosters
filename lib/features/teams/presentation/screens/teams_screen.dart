@@ -185,40 +185,44 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
 
   Future<void> _submit({String? teamId}) async {
     final id = (teamId ?? _ctrl.text.trim());
-    if (id.isEmpty) return;
+    if (id.isEmpty || _loading) return;
 
     setState(() { _loading = true; _error = null; });
 
-    final team = await ref.read(teamRepositoryProvider).getTeam(id);
-    if (!mounted) return;
+    try {
+      final team = await ref.read(teamRepositoryProvider).getTeam(id);
+      if (!mounted) return;
 
-    if (team == null) {
-      setState(() { _loading = false; _error = 'Team not found. Check the ID and try again.'; });
-      return;
-    }
+      if (team == null) {
+        setState(() { _loading = false; _error = 'Team not found. Check the ID and try again.'; });
+        return;
+      }
 
-    final user    = ref.read(currentUserProvider)!;
-    final profile = await ref.read(userRepositoryProvider).getUser(user.uid);
-    if (!mounted) return;
+      final user    = ref.read(currentUserProvider)!;
+      final profile = await ref.read(userRepositoryProvider).getUser(user.uid);
+      if (!mounted) return;
 
-    if (team.isMember(user.uid)) {
-      setState(() { _loading = false; _error = 'You are already a member of this team.'; });
-      return;
-    }
+      if (team.isMember(user.uid)) {
+        setState(() { _loading = false; _error = 'You are already a member of this team.'; });
+        return;
+      }
 
-    await ref.read(teamRepositoryProvider).requestToJoin(
-      id,
-      user.uid,
-      profile?.name ?? user.email ?? '',
-      user.email ?? '',
-    );
-    unawaited(ref.read(analyticsServiceProvider).logTeamJoined(team.sport));
-
-    if (mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Join request sent to ${team.name}.')),
+      await ref.read(teamRepositoryProvider).requestToJoin(
+        id,
+        user.uid,
+        profile?.name ?? user.email ?? '',
+        user.email ?? '',
       );
+      unawaited(ref.read(analyticsServiceProvider).logTeamJoined(team.sport));
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Join request sent to ${team.name}.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() { _loading = false; _error = 'Something went wrong. Please try again.'; });
     }
   }
 
