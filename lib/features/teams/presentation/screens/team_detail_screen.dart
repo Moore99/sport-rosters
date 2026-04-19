@@ -71,10 +71,11 @@ class _TeamDetailView extends ConsumerWidget {
         actions: [
           // Mute/unmute team notifications
           IconButton(
-            icon: Icon(isMuted
-                ? Icons.notifications_off_outlined
-                : Icons.notifications_active_outlined),
-            tooltip: isMuted ? 'Unmute notifications' : 'Mute notifications',
+            icon: Icon(
+              isMuted ? Icons.notifications_off : Icons.notifications_active_outlined,
+              color: isMuted ? Theme.of(context).colorScheme.error : null,
+            ),
+            tooltip: isMuted ? 'Notifications off — tap to unmute' : 'Notifications on — tap to mute',
             onPressed: () async {
               final repo = ref.read(userRepositoryProvider);
               if (isMuted) {
