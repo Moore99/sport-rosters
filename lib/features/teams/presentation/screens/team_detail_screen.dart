@@ -49,6 +49,8 @@ class _TeamDetailView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final isAdmin = team.isAdmin(uid);
+    final userProfile = ref.watch(currentUserProfileProvider).valueOrNull;
+    final isMuted = userProfile?.mutedTeams.contains(team.teamId) ?? false;
     final requestsAsync =
         isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
     final pendingCount = requestsAsync?.valueOrNull?.length ?? 0;
@@ -67,6 +69,26 @@ class _TeamDetailView extends ConsumerWidget {
       appBar: AppBar(
         title: Text(team.name),
         actions: [
+          // Mute/unmute team notifications
+          IconButton(
+            icon: Icon(isMuted
+                ? Icons.notifications_off_outlined
+                : Icons.notifications_active_outlined),
+            tooltip: isMuted ? 'Unmute notifications' : 'Mute notifications',
+            onPressed: () async {
+              final repo = ref.read(userRepositoryProvider);
+              if (isMuted) {
+                await repo.unmuteTeam(uid, team.teamId);
+              } else {
+                await repo.muteTeam(uid, team.teamId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Notifications muted for this team.')),
+                  );
+                }
+              }
+            },
+          ),
           // Show Team ID / QR code for sharing
           IconButton(
             icon: const Icon(Icons.qr_code),
@@ -176,8 +198,10 @@ class _TeamDetailView extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              // ── Spare request (non-admin players) ─────────────────────────
-              if (!isAdmin && !isAlreadySpare)
+              // ── Spare request / leave (non-admin players) ────────────────
+              if (!isAdmin && isAlreadySpare)
+                _LeaveSpareButton(teamId: team.teamId, uid: uid)
+              else if (!isAdmin && !isAlreadySpare)
                 _SpareRequestButton(
                   teamId: team.teamId,
                   uid: uid,
@@ -657,6 +681,75 @@ final _userNameProvider =
   final user = await ref.read(userRepositoryProvider).getUser(uid);
   return user?.name.isNotEmpty == true ? user!.name : uid;
 });
+
+// ── Leave spares button ────────────────────────────────────────────────────────
+
+class _LeaveSpareButton extends ConsumerStatefulWidget {
+  final String teamId, uid;
+  const _LeaveSpareButton({required this.teamId, required this.uid});
+
+  @override
+  ConsumerState<_LeaveSpareButton> createState() => _LeaveSpareButtonState();
+}
+
+class _LeaveSpareButtonState extends ConsumerState<_LeaveSpareButton> {
+  bool _loading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.person_off_outlined),
+        title: const Text('You are on the spares list'),
+        subtitle: const Text('Available to fill in when the roster is short'),
+        trailing: _loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2))
+            : TextButton(
+                onPressed: _confirmLeave,
+                style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error),
+                child: const Text('Leave'),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _confirmLeave() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Leave Spares List?'),
+        content: const Text(
+            'You will no longer be called as a spare for this team. '
+            'You can request to rejoin at any time.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _loading = true);
+    try {
+      await ref
+          .read(sparesRepositoryProvider)
+          .leaveSpares(widget.teamId, widget.uid);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+}
 
 // ── Spare request button ───────────────────────────────────────────────────────
 

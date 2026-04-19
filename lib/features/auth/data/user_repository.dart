@@ -56,6 +56,18 @@ class UserRepository {
   Future<void> clearFcmToken(String userId) =>
       _users.doc(userId).update({'fcmToken': FieldValue.delete()});
 
+  /// Toggles whether push notifications are sent to this user.
+  Future<void> updateNotificationsEnabled(String userId, bool enabled) =>
+      _users.doc(userId).update({'notificationsEnabled': enabled});
+
+  /// Mutes notifications from a specific team for this user.
+  Future<void> muteTeam(String userId, String teamId) =>
+      _users.doc(userId).update({'mutedTeams': FieldValue.arrayUnion([teamId])});
+
+  /// Re-enables notifications from a specific team for this user.
+  Future<void> unmuteTeam(String userId, String teamId) =>
+      _users.doc(userId).update({'mutedTeams': FieldValue.arrayRemove([teamId])});
+
   /// Soft-delete: sets deleted=true. Hard cascade handled by Cloud Function.
   /// GDPR/PIPEDA: triggers server-side deletion of all linked data.
   Future<void> softDeleteUser(String userId) =>

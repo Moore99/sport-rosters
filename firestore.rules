@@ -106,7 +106,8 @@ service cloud.firestore {
       // Team admins read/write. Signed-in users read (to see if they're a spare).
       match /spares/{userId} {
         allow read: if isSignedIn();
-        allow create, update, delete: if isTeamAdmin(teamId) || isSystemAdmin();
+        allow create, update: if isTeamAdmin(teamId) || isSystemAdmin();
+        allow delete: if isTeamAdmin(teamId) || isSystemAdmin() || isSelf(userId);
       }
 
       // Announcements subcollection — coach posts, all members read
@@ -120,6 +121,12 @@ service cloud.firestore {
         allow create: if isSignedIn() && isSelf(userId) && isTeamMember(teamId);
         allow read: if isSignedIn();
         allow delete: if isTeamAdmin(teamId) || isSystemAdmin() || isSelf(userId);
+      }
+
+      // Admin participation roles — admins read/write their own; all team members read
+      match /adminRoles/{adminUid} {
+        allow read: if isTeamMember(teamId) || isSystemAdmin();
+        allow write: if isTeamAdmin(teamId) && isSelf(adminUid) || isSystemAdmin();
       }
     }
 

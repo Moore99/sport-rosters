@@ -150,6 +150,75 @@ class _EventDetailView extends ConsumerWidget {
                     '/teams/$teamId/events/create',
                     extra: event,
                   );
+                } else if (v == 'cancel') {
+                  final isCancelling = !event.isCancelled;
+                  if (event.recurrenceGroupId != null) {
+                    final scope = await showDialog<String>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(isCancelling
+                            ? 'Cancel Recurring Event'
+                            : 'Restore Recurring Event'),
+                        content: Text(isCancelling
+                            ? 'Cancel just this event, or all events in the series?'
+                            : 'Restore just this event, or all events in the series?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(null),
+                            child: const Text('Dismiss'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(ctx).pop('one'),
+                            child: const Text('This Event'),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.of(ctx).pop('all'),
+                            child: const Text('All in Series'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (scope == null || !context.mounted) return;
+                    final repo = ref.read(eventRepositoryProvider);
+                    if (scope == 'all') {
+                      await repo.cancelEventSeries(
+                          event.recurrenceGroupId!,
+                          cancelled: isCancelling);
+                    } else {
+                      await repo.cancelEvent(event.eventId,
+                          cancelled: isCancelling);
+                    }
+                  } else {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(
+                            isCancelling ? 'Cancel Event?' : 'Restore Event?'),
+                        content: Text(isCancelling
+                            ? 'Members will still see the event but it will be marked as cancelled. Reminders will not be sent.'
+                            : 'This will restore the event and re-enable reminders.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Dismiss'),
+                          ),
+                          FilledButton(
+                            style: isCancelling
+                                ? FilledButton.styleFrom(
+                                    backgroundColor: Colors.orange)
+                                : null,
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: Text(isCancelling ? 'Cancel Event' : 'Restore'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await ref.read(eventRepositoryProvider).cancelEvent(
+                          event.eventId,
+                          cancelled: isCancelling);
+                    }
+                  }
                 } else if (v == 'delete') {
                   if (event.recurrenceGroupId != null) {
                     final deleteAll = await showDialog<bool>(
@@ -218,8 +287,8 @@ class _EventDetailView extends ConsumerWidget {
                   }
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
+              itemBuilder: (_) => [
+                const PopupMenuItem(
                   value: 'edit',
                   child: ListTile(
                     leading: Icon(Icons.edit_outlined),
@@ -227,7 +296,7 @@ class _EventDetailView extends ConsumerWidget {
                     contentPadding: EdgeInsets.zero,
                   ),
                 ),
-                PopupMenuItem(
+                const PopupMenuItem(
                   value: 'copy',
                   child: ListTile(
                     leading: Icon(Icons.copy_outlined),
@@ -236,6 +305,23 @@ class _EventDetailView extends ConsumerWidget {
                   ),
                 ),
                 PopupMenuItem(
+                  value: 'cancel',
+                  child: ListTile(
+                    leading: Icon(
+                      event.isCancelled
+                          ? Icons.event_available_outlined
+                          : Icons.event_busy_outlined,
+                      color: event.isCancelled ? null : Colors.orange,
+                    ),
+                    title: Text(
+                      event.isCancelled ? 'Restore Event' : 'Cancel Event',
+                      style: TextStyle(
+                          color: event.isCancelled ? null : Colors.orange),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                const PopupMenuItem(
                   value: 'delete',
                   child: ListTile(
                     leading: Icon(Icons.delete_outline, color: Colors.red),
@@ -488,7 +574,17 @@ class _HeaderCard extends StatelessWidget {
                     children: [
                       Text(event.type.label,
                           style: Theme.of(context).textTheme.headlineSmall),
-                      if (!event.isUpcoming)
+                      if (event.isCancelled)
+                        Chip(
+                          label: const Text('Cancelled'),
+                          backgroundColor:
+                              Colors.orange.withValues(alpha: 0.15),
+                          side: BorderSide(
+                              color: Colors.orange.withValues(alpha: 0.5)),
+                          labelStyle:
+                              const TextStyle(color: Colors.orange),
+                        )
+                      else if (!event.isUpcoming)
                         Chip(
                           label: const Text('Past'),
                           backgroundColor: Theme.of(context)

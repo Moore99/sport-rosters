@@ -4,6 +4,7 @@ import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/auth/domain/app_user.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
+import '../../domain/admin_role.dart';
 import '../../domain/join_request.dart';
 import '../../domain/team.dart';
 
@@ -50,4 +51,14 @@ final pendingRequestsProvider =
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
   return ref.read(teamRepositoryProvider).watchPendingRequests(teamId);
+});
+
+// ── Admin participation roles for a team ──────────────────────────────────────
+// Maps adminUid → AdminParticipation. Missing entries default to player.
+
+final adminRolesProvider =
+    StreamProvider.family<Map<String, AdminParticipation>, String>((ref, teamId) {
+  final uid = ref.watch(currentUserProvider)?.uid;
+  if (uid == null) return Stream.value({});
+  return ref.read(teamRepositoryProvider).watchAdminRoles(teamId);
 });

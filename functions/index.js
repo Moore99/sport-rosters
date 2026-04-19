@@ -421,9 +421,13 @@ exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enfor
   const players = teamSnap.data().players ?? [];
   const allMembers = [...new Set([...admins, ...players])];
 
-  // Fetch FCM tokens (skip members with no token)
+  // Fetch FCM tokens — skip members with no token or with notifications disabled
   const tokenPromises = allMembers.map((memberId) =>
-    db.collection('users').doc(memberId).get().then((s) => s.data()?.fcmToken)
+    db.collection('users').doc(memberId).get().then((s) => {
+      const data = s.data();
+      if (data?.notificationsEnabled === false) return null;
+      return data?.fcmToken;
+    })
   );
   const allTokens = (await Promise.all(tokenPromises)).filter(Boolean);
 
@@ -519,6 +523,9 @@ exports.sendEventReminders = onSchedule(
       if (!teamSnap.exists) continue;
       const team = teamSnap.data();
 
+      // Use the team's configured timezone for reminder times (default Toronto)
+      const timeZone = team.timezone || 'America/Toronto';
+
       const allMembers = [...new Set([
         ...(team.admins ?? []),
         ...(team.players ?? []),
@@ -532,56 +539,127 @@ exports.sendEventReminders = onSchedule(
       const unavailableUids = new Set(
         unavailSnap.docs.map(d => d.data().userId || d.id)
       );
+
+      // Fetch admin participation roles (coachOnly admins skip the RSVP nudge)
+      const adminRolesSnap = await db.collection('teams').doc(event.teamId)
+        .collection('adminRoles').get();
+      const coachOnlyUids = new Set(
+        adminRolesSnap.docs
+          .filter(d => d.data().participates === 'coachOnly')
+          .map(d => d.id)
+      );
+
       const eligibleMembers = allMembers.filter(uid => !unavailableUids.has(uid));
 
-      async function sendReminderToTeam(title, body) {
-        const tokens = (await Promise.all(
-          eligibleMembers.map(uid =>
-            db.collection('users').doc(uid).get()
-              .then(s => s.data()?.fcmToken)
-          )
-        )).filter(Boolean);
+      // Fetch user docs once — fcmToken + notificationsEnabled + mutedTeams
+      const userDocs = await Promise.all(
+        eligibleMembers.map(uid => db.collection('users').doc(uid).get())
+      );
+      const userDataByUid = {};
+      for (const doc of userDocs) {
+        if (doc.exists) userDataByUid[doc.id] = doc.data();
+      }
 
+      function isNotifiable(uid) {
+        const u = userDataByUid[uid];
+        if (!u) return false;
+        if (u.notificationsEnabled === false) return false;
+        if ((u.mutedTeams ?? []).includes(event.teamId)) return false;
+        return true;
+      }
+
+      // Split into players/sometimes (full reminder) and coachOnly (no RSVP nudge)
+      const regularMembers   = eligibleMembers.filter(uid =>
+        !coachOnlyUids.has(uid) && isNotifiable(uid)
+      );
+      const coachOnlyMembers = eligibleMembers.filter(uid =>
+        coachOnlyUids.has(uid) && isNotifiable(uid)
+      );
+
+      // Helper: send to a group of UIDs, then clean up any stale FCM tokens
+      async function sendToGroup(uids, title, body) {
+        if (uids.length === 0) return;
+        const tokens = uids
+          .map(uid => userDataByUid[uid]?.fcmToken)
+          .filter(Boolean);
         if (tokens.length === 0) return;
 
         const BATCH = 500;
         for (let i = 0; i < tokens.length; i += BATCH) {
-          await getMessaging().sendEachForMulticast({
-            tokens: tokens.slice(i, i + BATCH),
+          const batchTokens = tokens.slice(i, i + BATCH);
+          const response = await getMessaging().sendEachForMulticast({
+            tokens: batchTokens,
             notification: { title, body },
             data: { teamId: event.teamId, eventId: eventDoc.id },
             android: { priority: 'high' },
             apns: { payload: { aps: { sound: 'default' } } },
           });
-        }
 
-        // Persist to inbox
-        await db.collection('teamNotifications').doc(event.teamId)
-          .collection('messages').add({
-            title,
-            body,
-            senderUid: 'system',
-            sentAt: new Date(),
-            eventId: eventDoc.id,
+          // Remove stale tokens so they don't accumulate on user docs
+          const staleTokens = [];
+          response.responses.forEach((r, idx) => {
+            if (!r.success && (
+              r.error?.code === 'messaging/registration-token-not-registered' ||
+              r.error?.code === 'messaging/invalid-registration-token'
+            )) {
+              staleTokens.push(batchTokens[idx]);
+            }
           });
+          if (staleTokens.length > 0) {
+            const staleBatch = db.batch();
+            for (const token of staleTokens) {
+              const userSnap = await db.collection('users')
+                .where('fcmToken', '==', token).limit(1).get();
+              userSnap.docs.forEach(d =>
+                staleBatch.update(d.ref, { fcmToken: FieldValue.delete() })
+              );
+            }
+            await staleBatch.commit();
+          }
+        }
+      }
+
+      async function sendReminderToTeam(regularTitle, regularBody, coachTitle, coachBody) {
+        await Promise.all([
+          sendToGroup(regularMembers, regularTitle, regularBody),
+          sendToGroup(coachOnlyMembers, coachTitle, coachBody),
+        ]);
+
+        // Persist one inbox message representing the primary reminder
+        if (regularMembers.length > 0 || coachOnlyMembers.length > 0) {
+          await db.collection('teamNotifications').doc(event.teamId)
+            .collection('messages').add({
+              title: regularTitle,
+              body:  regularBody,
+              senderUid: 'system',
+              sentAt: new Date(),
+              eventId: eventDoc.id,
+            });
+        }
       }
 
       // 24-hour reminder: event is 23–25h away and flag not set
       if (minsUntil >= 23 * 60 && minsUntil <= 25 * 60 && !event.reminder24Sent) {
-        const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const label   = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const timeStr = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
         await sendReminderToTeam(
           `${label} tomorrow`,
-          `Reminder: ${label} at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto' })}. Have you RSVPed?`,
+          `Reminder: ${label} at ${timeStr}. Have you RSVPed?`,
+          `${label} tomorrow`,
+          `Reminder: ${label} at ${timeStr}.`,
         );
         await eventDoc.ref.update({ reminder24Sent: true });
       }
 
       // 2-hour reminder: event is 1.5–2.5h away and flag not set
       if (minsUntil >= 90 && minsUntil <= 150 && !event.reminder2Sent) {
-        const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const label   = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const timeStr = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
         await sendReminderToTeam(
           `${label} in 2 hours`,
-          `Starting soon at ${eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/Toronto' })}. See you there!`,
+          `Starting soon at ${timeStr}. See you there!`,
+          `${label} in 2 hours`,
+          `Starting soon at ${timeStr}.`,
         );
         await eventDoc.ref.update({ reminder2Sent: true });
       }
@@ -600,7 +678,7 @@ exports.sendEventReminders = onSchedule(
  *   imageBase64 — JPEG image data, base64-encoded (max ~2.67 MB after encoding)
  */
 exports.uploadTeamLogo = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  { region: 'northamerica-northeast1', enforceAppCheck: false },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
@@ -620,25 +698,132 @@ exports.uploadTeamLogo = onCall(
       throw new HttpsError('permission-denied', 'Only team admins can upload a team logo.');
     }
 
-    // Write image to Storage via Admin SDK (bypasses client-facing rules)
-    const bucket = getStorage().bucket();
+    // Write image to Storage via Admin SDK (bypasses client-facing rules).
+    // Use a Firebase download token so the URL works regardless of bucket ACL settings.
+    const crypto  = require('crypto');
+    const bucket  = getStorage().bucket();
     const filePath = `team_logos/${teamId}.jpg`;
-    const file = bucket.file(filePath);
+    const file    = bucket.file(filePath);
 
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const downloadToken = crypto.randomUUID();
+    const imageBuffer   = Buffer.from(imageBase64, 'base64');
+
     await file.save(imageBuffer, {
-      metadata: { contentType: 'image/jpeg' },
-      public: false,
+      metadata: {
+        contentType: 'image/jpeg',
+        metadata: { firebaseStorageDownloadTokens: downloadToken },
+      },
+      resumable: false,
     });
 
-    // Make file publicly readable and get the URL
-    await file.makePublic();
-    const logoUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    // Construct Firebase Storage download URL (works without public ACL)
+    const encodedPath = encodeURIComponent(filePath);
+    const logoUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
 
     // Persist URL to Firestore
     await db.collection('teams').doc(teamId).update({ logoUrl });
 
     return { logoUrl };
+  }
+);
+
+/**
+ * onEventDateChanged — clears reminder flags when an event is rescheduled.
+ *
+ * Recurring events share reminder flags per-document. If an admin changes the
+ * event date, the flags must be cleared so reminders fire again for the new time.
+ */
+exports.onEventDateChanged = onDocumentUpdated(
+  { document: 'events/{eventId}', region: 'northamerica-northeast1' },
+  async (event) => {
+    const before = event.data.before.data();
+    const after  = event.data.after.data();
+
+    // Only act when the date actually changed
+    const beforeMs = before?.date?.toMillis?.() ?? 0;
+    const afterMs  = after?.date?.toMillis?.()  ?? 0;
+    if (beforeMs === afterMs) return;
+
+    // Clear both reminder flags so the rescheduled event triggers fresh reminders
+    const updates = {};
+    if (after.reminder24Sent) updates.reminder24Sent = false;
+    if (after.reminder2Sent)  updates.reminder2Sent  = false;
+    if (Object.keys(updates).length === 0) return;
+
+    await event.data.after.ref.update(updates);
+  }
+);
+
+/**
+ * onAvailabilityChanged — notifies team admins when a member cancels within 24h.
+ *
+ * Triggers whenever an availability doc is written. If the response flipped to
+ * 'no' and the event starts within 24h, each team admin receives an FCM push.
+ */
+exports.onAvailabilityChanged = onDocumentUpdated(
+  { document: 'events/{eventId}/availability/{userId}', region: 'northamerica-northeast1' },
+  async (event) => {
+    const before = event.data.before.data();
+    const after  = event.data.after.data();
+
+    // Only care about cancellations (response changed to 'no')
+    if (after?.response !== 'no' || before?.response === 'no') return;
+
+    const db      = getFirestore();
+    const eventId = event.params.eventId;
+    const userId  = event.params.userId;
+
+    // Fetch the event doc
+    const eventSnap = await db.collection('events').doc(eventId).get();
+    if (!eventSnap.exists) return;
+    const eventData = eventSnap.data();
+
+    // Only notify if the event is within the next 24h
+    const now      = new Date();
+    const eventDate = eventData.date?.toDate?.();
+    if (!eventDate) return;
+    const minsUntil = (eventDate - now) / 60000;
+    if (minsUntil < 0 || minsUntil > 24 * 60) return;
+
+    // Fetch the cancelling user's name
+    const userSnap = await db.collection('users').doc(userId).get();
+    const userName = userSnap.exists ? (userSnap.data().name ?? 'Someone') : 'Someone';
+
+    // Fetch team admins
+    const teamSnap = await db.collection('teams').doc(eventData.teamId).get();
+    if (!teamSnap.exists) return;
+    const admins = teamSnap.data().admins ?? [];
+
+    // Collect admin FCM tokens (skip the cancelling user if they are an admin)
+    const adminTokenPromises = admins
+      .filter(adminUid => adminUid !== userId)
+      .map(adminUid => db.collection('users').doc(adminUid).get().then(s => {
+        const d = s.data();
+        if (!d?.fcmToken) return null;
+        if (d.notificationsEnabled === false) return null;
+        return d.fcmToken;
+      }));
+    const adminTokens = (await Promise.all(adminTokenPromises)).filter(Boolean);
+    if (adminTokens.length === 0) return;
+
+    const label     = eventData.type
+      ? eventData.type.charAt(0).toUpperCase() + eventData.type.slice(1)
+      : 'Event';
+    const timeZone  = teamSnap.data().timezone || 'America/Toronto';
+    const timeStr   = eventDate.toLocaleTimeString('en-CA', {
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone,
+    });
+
+    await getMessaging().sendEachForMulticast({
+      tokens: adminTokens,
+      notification: {
+        title: `${userName} cancelled`,
+        body:  `${userName} can no longer attend the ${label} at ${timeStr}.`,
+      },
+      data: { teamId: eventData.teamId, eventId },
+      android: { priority: 'high' },
+      apns: { payload: { aps: { sound: 'default' } } },
+    });
   }
 );
 

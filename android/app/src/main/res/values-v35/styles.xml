@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 15 (API 35) enforces edge-to-edge for all activities.
+         UCrop's bottom toolbar (rotate, aspect ratio) would be covered by the
+         transparent navigation bar without this opt-out. -->
+    <style name="UCropTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>

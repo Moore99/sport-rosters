@@ -19,4 +19,6 @@
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+    <!-- UCrop image cropper theme — keeps toolbar visible and prevents nav bar overlap -->
+    <style name="UCropTheme" parent="Theme.AppCompat.Light.NoActionBar"/>
 </resources>

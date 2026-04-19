@@ -9,6 +9,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
+import '../../domain/admin_role.dart';
 import '../../domain/team.dart';
 
 class CreateTeamScreen extends ConsumerStatefulWidget {
@@ -18,10 +19,24 @@ class CreateTeamScreen extends ConsumerStatefulWidget {
   ConsumerState<CreateTeamScreen> createState() => _CreateTeamScreenState();
 }
 
+// Common North American IANA timezones shown with friendly labels
+const _kTimezones = [
+  ('America/Toronto',    'Eastern — Toronto / New York'),
+  ('America/Winnipeg',   'Central — Winnipeg / Chicago'),
+  ('America/Edmonton',   'Mountain — Calgary / Denver'),
+  ('America/Phoenix',    'Mountain — Phoenix (no DST)'),
+  ('America/Vancouver',  'Pacific — Vancouver / Los Angeles'),
+  ('America/Halifax',    'Atlantic — Halifax'),
+  ('America/St_Johns',   'Newfoundland — St. John\'s'),
+  ('America/Anchorage',  'Alaska — Anchorage'),
+  ('Pacific/Honolulu',   'Hawaii — Honolulu'),
+];
+
 class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   final _formKey    = GlobalKey<FormState>();
   final _nameCtrl   = TextEditingController();
   String  _sport    = AppConfig.defaultSports.first;
+  String  _timezone = 'America/Toronto';
   int     _minPlayers = 1;
   int     _maxPlayers = 20;
   bool    _dropIn   = false;
@@ -50,16 +65,24 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
       maxPlayers:   _maxPlayers,
       dropInEnabled: _dropIn,
       createdAt:    DateTime.now(),
+      timezone:     _timezone,
     );
 
     try {
       await ref.read(teamRepositoryProvider).createTeam(team, uid);
       unawaited(ref.read(analyticsServiceProvider).logTeamCreated(_sport));
       if (mounted) {
-        context.pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${team.name} created! Share the Team ID: ${team.teamId}')),
+        // Ask the new admin how they participate before navigating away
+        final participation = await _askParticipation(context);
+        await ref.read(teamRepositoryProvider).setAdminRole(
+          team.teamId, uid, participation,
         );
+        if (mounted) {
+          context.pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${team.name} created! Share the Team ID: ${team.teamId}')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -69,6 +92,15 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
         );
       }
     }
+  }
+
+  Future<AdminParticipation> _askParticipation(BuildContext context) async {
+    final result = await showDialog<AdminParticipation>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _ParticipationDialog(),
+    );
+    return result ?? AdminParticipation.player;
   }
 
   @override
@@ -113,6 +145,25 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
                       onChanged: (v) => setState(() => _sport = v!),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Timezone ──────────────────────────────────────────
+                    DropdownButtonFormField<String>(
+                      value: _timezone,
+                      decoration: const InputDecoration(
+                        labelText: 'Team Timezone',
+                        prefixIcon: Icon(Icons.schedule),
+                        border: OutlineInputBorder(),
+                        helperText: 'Used for event reminder times',
+                      ),
+                      items: _kTimezones
+                          .map((t) => DropdownMenuItem(
+                                value: t.$1,
+                                child: Text(t.$2, overflow: TextOverflow.ellipsis),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() => _timezone = v!),
                     ),
                     const SizedBox(height: 24),
 
@@ -172,6 +223,49 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ── Admin participation dialog ─────────────────────────────────────────────────
+
+class _ParticipationDialog extends StatefulWidget {
+  const _ParticipationDialog();
+
+  @override
+  State<_ParticipationDialog> createState() => _ParticipationDialogState();
+}
+
+class _ParticipationDialogState extends State<_ParticipationDialog> {
+  AdminParticipation _selected = AdminParticipation.player;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Your Role on This Team'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'This controls whether you appear in lineups and how you receive event reminders.',
+            style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          ...AdminParticipation.values.map((p) => RadioListTile<AdminParticipation>(
+            contentPadding: EdgeInsets.zero,
+            title: Text(p.label),
+            value: p,
+            groupValue: _selected,
+            onChanged: (v) => setState(() => _selected = v!),
+          )),
+        ],
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_selected),
+          child: const Text('Continue'),
+        ),
+      ],
     );
   }
 }

@@ -103,23 +103,42 @@ class _EventCard extends ConsumerWidget {
     final dateFmt  = DateFormat('EEE, MMM d');
     final timeFmt  = DateFormat('h:mm a');
 
-    return Card(
-      child: ListTile(
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(event.type.icon, style: const TextStyle(fontSize: 22)),
-          ],
+    return Opacity(
+      opacity: event.isCancelled ? 0.5 : 1.0,
+      child: Card(
+        child: ListTile(
+          leading: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(event.type.icon, style: const TextStyle(fontSize: 22)),
+            ],
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text('${event.type.label} — ${event.location}',
+                    overflow: TextOverflow.ellipsis),
+              ),
+              if (event.isCancelled) ...[
+                const SizedBox(width: 6),
+                const Chip(
+                  label: Text('Cancelled',
+                      style: TextStyle(fontSize: 11, color: Colors.orange)),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ],
+          ),
+          subtitle: Text(
+            '${dateFmt.format(event.date)} at ${timeFmt.format(event.date)}',
+          ),
+          trailing: myAvail != null
+              ? Text(myAvail.response.emoji,
+                  style: const TextStyle(fontSize: 20))
+              : const Icon(Icons.chevron_right),
+          onTap: () => context.push('/teams/$teamId/events/${event.eventId}'),
         ),
-        title: Text('${event.type.label} — ${event.location}',
-            overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          '${dateFmt.format(event.date)} at ${timeFmt.format(event.date)}',
-        ),
-        trailing: myAvail != null
-            ? Text(myAvail.response.emoji, style: const TextStyle(fontSize: 20))
-            : const Icon(Icons.chevron_right),
-        onTap: () => context.push('/teams/$teamId/events/${event.eventId}'),
       ),
     );
   }

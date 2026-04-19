@@ -46,6 +46,10 @@ class SparesRepository {
     await batch.commit();
   }
 
+  /// Player removes themselves from the spares pool (single-doc delete).
+  Future<void> leaveSpares(String teamId, String userId) =>
+      _spares(teamId).doc(userId).delete();
+
   // ── Spare requests ─────────────────────────────────────────────���───────────
 
   Stream<List<SpareRequest>> watchSpareRequests(String teamId) =>

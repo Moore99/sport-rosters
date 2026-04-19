@@ -15,6 +15,8 @@ class AppUser {
   final String role;         // 'player' | 'teamAdmin' | 'systemAdmin'
   final bool deleted;        // soft-delete flag (GDPR right to erasure pending cascade)
   final DateTime createdAt;
+  final bool notificationsEnabled; // user-level push notification opt-out
+  final List<String> mutedTeams;   // team IDs where notifications are muted
 
   const AppUser({
     required this.userId,
@@ -29,6 +31,8 @@ class AppUser {
     required this.role,
     required this.deleted,
     required this.createdAt,
+    this.notificationsEnabled = true,
+    this.mutedTeams = const [],
   });
 
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
@@ -46,6 +50,8 @@ class AppUser {
       role:      data['role']     as String? ?? 'player',
       deleted:   data['deleted']  as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      notificationsEnabled: data['notificationsEnabled'] as bool? ?? true,
+      mutedTeams: List<String>.from(data['mutedTeams'] as List? ?? []),
     );
   }
 

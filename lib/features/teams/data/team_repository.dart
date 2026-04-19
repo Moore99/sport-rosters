@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/admin_role.dart';
 import '../domain/join_request.dart';
 import '../domain/team.dart';
 
@@ -16,6 +17,9 @@ class TeamRepository {
 
   CollectionReference<Map<String, dynamic>> _requests(String teamId) =>
       _teams.doc(teamId).collection('joinRequests');
+
+  CollectionReference<Map<String, dynamic>> _adminRoles(String teamId) =>
+      _teams.doc(teamId).collection('adminRoles');
 
   // ── Reads ──────────────────────────────────────────────────────────────────
 
@@ -112,6 +116,30 @@ class TeamRepository {
     });
     // logoUrl is written to Firestore by the function — no local update needed.
   }
+
+  // ── Admin roles ────────────────────────────────────────────────────────────
+
+  Future<void> setAdminRole(String teamId, String uid, AdminParticipation participates) =>
+      _adminRoles(teamId).doc(uid).set({'participates': participates.name});
+
+  Future<AdminParticipation?> getAdminRole(String teamId, String uid) async {
+    final doc = await _adminRoles(teamId).doc(uid).get();
+    if (!doc.exists) return null;
+    final val = doc.data()?['participates'] as String?;
+    return AdminParticipation.values.firstWhere(
+      (e) => e.name == val,
+      orElse: () => AdminParticipation.player,
+    );
+  }
+
+  Stream<Map<String, AdminParticipation>> watchAdminRoles(String teamId) =>
+      _adminRoles(teamId).snapshots().map((s) => {
+        for (final doc in s.docs)
+          doc.id: AdminParticipation.values.firstWhere(
+            (e) => e.name == (doc.data()['participates'] as String?),
+            orElse: () => AdminParticipation.player,
+          ),
+      });
 
   /// Admin removes a player from the team + removes teamId from their profile.
   Future<void> removePlayer(String teamId, String userId) async {
