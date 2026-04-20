@@ -232,6 +232,32 @@ class ProfileScreen extends ConsumerWidget {
                   .read(userRepositoryProvider)
                   .updateNotificationsEnabled(uid, v),
             ),
+            if (user?.notificationsEnabled ?? true) ...[
+              SwitchListTile(
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title:    const Text('Game reminders'),
+                value:    user?.eventTypePrefs['game'] ?? true,
+                onChanged: (v) => ref
+                    .read(userRepositoryProvider)
+                    .updateEventTypePref(uid, 'game', v),
+              ),
+              SwitchListTile(
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title:    const Text('Practice reminders'),
+                value:    user?.eventTypePrefs['practice'] ?? true,
+                onChanged: (v) => ref
+                    .read(userRepositoryProvider)
+                    .updateEventTypePref(uid, 'practice', v),
+              ),
+              SwitchListTile(
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title:    const Text('Drop-in reminders'),
+                value:    user?.eventTypePrefs['drop_in'] ?? true,
+                onChanged: (v) => ref
+                    .read(userRepositoryProvider)
+                    .updateEventTypePref(uid, 'drop_in', v),
+              ),
+            ],
             if (bioAvailable)
               SwitchListTile(
                 secondary: const Icon(Icons.fingerprint),
@@ -451,11 +477,17 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
                           user!.weightKg as double, widget.weightUnit),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                  if ((user?.role as String?) == 'systemAdmin')
+                  if ((user?.role as String?) == 'systemAdmin') ...[
                     const Chip(
                       label: Text('System Admin'),
                       avatar: Icon(Icons.admin_panel_settings, size: 16),
                     ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.sports, size: 16),
+                      label: const Text('Manage Sports'),
+                      onPressed: () => context.push(AppRoutes.sportsAdmin),
+                    ),
+                  ],
                   if (widget.adFree)
                     const Chip(
                       label: Text('Ad-free'),

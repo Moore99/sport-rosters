@@ -17,21 +17,41 @@ final currentUserProfileProvider = StreamProvider<AppUser?>((ref) {
 });
 
 // ── User's teams list ─────────────────────────────────────────────────────────
-// Re-fetches whenever the user profile's teams array changes.
+// _allUserTeamsProvider fetches every team the user is a member of (raw).
+// Derived providers filter into active / hidden / archived views.
 
-final userTeamsProvider = FutureProvider<List<Team>>((ref) async {
+final _allUserTeamsProvider = FutureProvider<List<Team>>((ref) async {
   final profile = await ref.watch(currentUserProfileProvider.future);
   if (profile == null || profile.teams.isEmpty) return [];
-
-  final repo    = ref.read(teamRepositoryProvider);
-  // Catch per-team errors (permission denied, deleted team) so one bad team
-  // doesn't prevent the rest from loading.
+  final repo = ref.read(teamRepositoryProvider);
   final results = await Future.wait(
     profile.teams.map((id) async {
       try { return await repo.getTeam(id); } catch (_) { return null; }
     }),
   );
   return results.whereType<Team>().toList();
+});
+
+// Active teams — not hidden and not archived.
+final userTeamsProvider = FutureProvider<List<Team>>((ref) async {
+  final all     = await ref.watch(_allUserTeamsProvider.future);
+  final profile = await ref.watch(currentUserProfileProvider.future);
+  final hidden  = profile?.hiddenTeams.toSet() ?? {};
+  return all.where((t) => !t.archived && !hidden.contains(t.teamId)).toList();
+});
+
+// Teams the user has manually hidden (but not archived).
+final userHiddenTeamsProvider = FutureProvider<List<Team>>((ref) async {
+  final all     = await ref.watch(_allUserTeamsProvider.future);
+  final profile = await ref.watch(currentUserProfileProvider.future);
+  final hidden  = profile?.hiddenTeams.toSet() ?? {};
+  return all.where((t) => !t.archived && hidden.contains(t.teamId)).toList();
+});
+
+// Archived teams — visible to all members so admins can restore them.
+final userArchivedTeamsProvider = FutureProvider<List<Team>>((ref) async {
+  final all = await ref.watch(_allUserTeamsProvider.future);
+  return all.where((t) => t.archived).toList();
 });
 
 // ── Single team (real-time stream) ───────────────────────────────────────────

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
 import '../../../../core/services/analytics_service.dart';
+import '../../../sports/presentation/providers/sports_provider.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
 import '../../domain/admin_role.dart';
@@ -35,7 +36,7 @@ const _kTimezones = [
 class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
   final _formKey    = GlobalKey<FormState>();
   final _nameCtrl   = TextEditingController();
-  String  _sport    = AppConfig.defaultSports.first;
+  String  _sport    = AppConfig.defaultSports.first; // updated to first Firestore sport in build
   String  _timezone = 'America/Toronto';
   int     _minPlayers = 1;
   int     _maxPlayers = 20;
@@ -105,6 +106,12 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Keep _sport valid as Firestore list loads (may differ from AppConfig order).
+    final sportNames = ref.watch(sportNamesProvider);
+    if (!sportNames.contains(_sport) && sportNames.isNotEmpty) {
+      Future.microtask(() { if (mounted) setState(() => _sport = sportNames.first); });
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Create Team')),
       body: SafeArea(
@@ -141,7 +148,7 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                         prefixIcon: Icon(Icons.sports),
                         border: OutlineInputBorder(),
                       ),
-                      items: AppConfig.defaultSports
+                      items: sportNames
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
                       onChanged: (v) => setState(() => _sport = v!),

@@ -17,6 +17,10 @@ class AppUser {
   final DateTime createdAt;
   final bool notificationsEnabled; // user-level push notification opt-out
   final List<String> mutedTeams;   // team IDs where notifications are muted
+  final List<String> hiddenTeams;  // team IDs hidden from main list
+  /// Per-event-type reminder prefs. Keys: 'game', 'practice', 'dropIn'.
+  /// Absent key = enabled (default true).
+  final Map<String, bool> eventTypePrefs;
 
   const AppUser({
     required this.userId,
@@ -33,6 +37,8 @@ class AppUser {
     required this.createdAt,
     this.notificationsEnabled = true,
     this.mutedTeams = const [],
+    this.hiddenTeams = const [],
+    this.eventTypePrefs = const {},
   });
 
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
@@ -52,6 +58,12 @@ class AppUser {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       notificationsEnabled: data['notificationsEnabled'] as bool? ?? true,
       mutedTeams: List<String>.from(data['mutedTeams'] as List? ?? []),
+      hiddenTeams: List<String>.from(data['hiddenTeams'] as List? ?? []),
+      eventTypePrefs: Map<String, bool>.from(
+        (data['eventTypePrefs'] as Map? ?? {}).map(
+          (k, v) => MapEntry(k as String, v as bool? ?? true),
+        ),
+      ),
     );
   }
 

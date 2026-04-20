@@ -10,8 +10,8 @@ import '../../../../core/services/analytics_service.dart';
 import '../../domain/team.dart';
 import '../providers/teams_provider.dart';
 import '../../data/team_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/auth/data/user_repository.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/shared/widgets/banner_ad_widget.dart';
 
 class TeamsScreen extends ConsumerWidget {
@@ -40,9 +40,21 @@ class TeamsScreen extends ConsumerWidget {
       body: SafeArea(top: false, child: teamsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (teams) => teams.isEmpty
-            ? _EmptyState(onJoin: () => _showJoinDialog(context, ref))
-            : _TeamsList(teams: teams),
+        data:    (teams) {
+          final hiddenAsync   = ref.watch(userHiddenTeamsProvider);
+          final archivedAsync = ref.watch(userArchivedTeamsProvider);
+          final hidden        = hiddenAsync.valueOrNull ?? [];
+          final archived      = archivedAsync.valueOrNull ?? [];
+
+          if (teams.isEmpty && hidden.isEmpty && archived.isEmpty) {
+            return _EmptyState(onJoin: () => _showJoinDialog(context, ref));
+          }
+          return _TeamsListView(
+            teams:    teams,
+            hidden:   hidden,
+            archived: archived,
+          );
+        },
       )),
       bottomNavigationBar: const BannerAdWidget(),
       floatingActionButton: Column(
@@ -76,17 +88,92 @@ class TeamsScreen extends ConsumerWidget {
 
 // ── Team list ─────────────────────────────────────────────────────────────────
 
-class _TeamsList extends StatelessWidget {
+class _TeamsListView extends StatefulWidget {
   final List<Team> teams;
-  const _TeamsList({required this.teams});
+  final List<Team> hidden;
+  final List<Team> archived;
+  const _TeamsListView({
+    required this.teams,
+    required this.hidden,
+    required this.archived,
+  });
+
+  @override
+  State<_TeamsListView> createState() => _TeamsListViewState();
+}
+
+class _TeamsListViewState extends State<_TeamsListView> {
+  bool _showHidden   = false;
+  bool _showArchived = false;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-      itemCount: teams.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, i) => _TeamCard(team: teams[i]),
+      children: [
+        ...widget.teams.map((t) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _TeamCard(team: t),
+        )),
+
+        if (widget.hidden.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() => _showHidden = !_showHidden),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Row(
+                children: [
+                  Icon(_showHidden
+                      ? Icons.expand_less
+                      : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${widget.hidden.length} hidden team${widget.hidden.length == 1 ? '' : 's'}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_showHidden)
+            ...widget.hidden.map((t) => Padding(
+              padding: const EdgeInsets.only(bottom: 8, top: 4),
+              child: Opacity(opacity: 0.6, child: _TeamCard(team: t)),
+            )),
+        ],
+
+        if (widget.archived.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() => _showArchived = !_showArchived),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Row(
+                children: [
+                  Icon(_showArchived
+                      ? Icons.expand_less
+                      : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.outline),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${widget.archived.length} archived team${widget.archived.length == 1 ? '' : 's'}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_showArchived)
+            ...widget.archived.map((t) => Padding(
+              padding: const EdgeInsets.only(bottom: 8, top: 4),
+              child: Opacity(opacity: 0.5, child: _TeamCard(team: t)),
+            )),
+        ],
+      ],
     );
   }
 }

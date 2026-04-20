@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import '../config/app_config.dart';
 import '../../features/lineups/domain/player_preference.dart';
 import '../../features/rankings/domain/ranking.dart';
 
@@ -20,11 +19,13 @@ class LineupGenerator {
   /// Returns a position → userId map.
   /// Positions that couldn't be filled are mapped to ''.
   static Map<String, String> generate({
-    required List<String>                  positions,
-    required List<String>                  availableUids,
-    required Map<String, Ranking>          rankings,
-    required Map<String, PlayerPreference> preferences,
-    required String                        sport,
+    required List<String>                       positions,
+    required List<String>                       availableUids,
+    required Map<String, Ranking>               rankings,
+    required Map<String, PlayerPreference>      preferences,
+    required Map<String, List<String>>          sportCategories,
+    // sport param retained for call-site compatibility but no longer used
+    String sport = '',
   }) {
     // Build eligibility list for each position
     final eligibility = <String, List<_Candidate>>{};
@@ -39,7 +40,7 @@ class LineupGenerator {
         if (pref == null || !pref.hasPreferences) {
           priority = 3; // no preferences — can play anywhere, lowest priority
         } else {
-          priority = _matchPriority(pos, pref.preferredPositions, sport);
+          priority = _matchPriority(pos, pref.preferredPositions, sportCategories);
           if (priority < 0) continue; // player not willing to play this position
         }
         eligibility[pos]!.add(_Candidate(uid, priority, score));
@@ -83,17 +84,19 @@ class LineupGenerator {
   ///
   /// Returns a list of [numSubTeams] position→userId maps.
   static List<Map<String, String>> generateSubTeams({
-    required int                           numSubTeams,
-    required List<String>                  positions,
-    required List<String>                  availableUids,
-    required Map<String, Ranking>          rankings,
-    required Map<String, PlayerPreference> preferences,
-    required String                        sport,
+    required int                                numSubTeams,
+    required List<String>                       positions,
+    required List<String>                       availableUids,
+    required Map<String, Ranking>               rankings,
+    required Map<String, PlayerPreference>      preferences,
+    required Map<String, List<String>>          sportCategories,
+    String sport = '',
   }) {
     if (numSubTeams <= 1) {
       return [generate(
         positions: positions, availableUids: availableUids,
-        rankings: rankings, preferences: preferences, sport: sport,
+        rankings: rankings, preferences: preferences,
+        sportCategories: sportCategories,
       )];
     }
 
@@ -123,7 +126,7 @@ class LineupGenerator {
     if (goaliePos != null) {
       for (int t = 0; t < numSubTeams; t++) {
         for (int i = 0; i < pool.length; i++) {
-          if (_willingToPlayGoalie(pool[i], goaliePos, preferences, sport)) {
+          if (_willingToPlayGoalie(pool[i], goaliePos, preferences, sportCategories)) {
             goalies[t] = pool.removeAt(i);
             break;
           }
@@ -150,11 +153,12 @@ class LineupGenerator {
     return List.generate(numSubTeams, (t) {
       final teamUids = [...rosters[t], if (goalies[t] != null) goalies[t]!];
       return generate(
-        positions:     positions,
-        availableUids: teamUids,
-        rankings:      rankings,
-        preferences:   preferences,
-        sport:         sport,
+        positions:      positions,
+        availableUids:  teamUids,
+        rankings:       rankings,
+        preferences:    preferences,
+        sportCategories: sportCategories,
+        sport:          sport,
       );
     });
   }
@@ -168,18 +172,20 @@ class LineupGenerator {
   }
 
   static bool _willingToPlayGoalie(String uid, String goaliePos,
-      Map<String, PlayerPreference> preferences, String sport) {
+      Map<String, PlayerPreference> preferences,
+      Map<String, List<String>> sportCategories) {
     final pref = preferences[uid];
     if (pref == null || !pref.hasPreferences) return true;
     return pref.preferredPositions.any((p) =>
         p == 'Any' ||
         p == goaliePos ||
-        (AppConfig.sportPositionCategories[sport]?[p]?.contains(goaliePos) ?? false));
+        (sportCategories[p]?.contains(goaliePos) ?? false));
   }
 
   /// Returns match priority (0=exact, 1=category, 2=Any) or -1 if no match.
   static int _matchPriority(
-      String position, List<String> prefs, String sport) {
+      String position, List<String> prefs,
+      Map<String, List<String>> sportCategories) {
     var best = -1;
     for (final pref in prefs) {
       if (pref == 'Any') {
@@ -187,7 +193,7 @@ class LineupGenerator {
       } else if (pref == position) {
         return 0; // exact match — can't do better
       } else {
-        final cats = AppConfig.sportPositionCategories[sport]?[pref];
+        final cats = sportCategories[pref];
         if (cats != null && cats.contains(position)) {
           if (best < 0 || best > 1) best = 1;
         }

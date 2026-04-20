@@ -12,6 +12,7 @@ class Team {
   final DateTime createdAt;
   final String? logoUrl;
   final String timezone; // IANA timezone ID, e.g. 'America/Toronto'
+  final bool archived;  // soft-archive; hidden from member lists
 
   const Team({
     required this.teamId,
@@ -25,6 +26,7 @@ class Team {
     required this.createdAt,
     this.logoUrl,
     this.timezone = 'America/Toronto',
+    this.archived = false,
   });
 
   factory Team.fromFirestore(DocumentSnapshot doc) {
@@ -41,6 +43,7 @@ class Team {
       createdAt:    (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       logoUrl:      d['logoUrl'] as String?,
       timezone:     d['timezone'] as String? ?? 'America/Toronto',
+      archived:     d['archived'] as bool? ?? false,
     );
   }
 
@@ -55,6 +58,7 @@ class Team {
     'createdAt':     Timestamp.fromDate(createdAt),
     if (logoUrl != null) 'logoUrl': logoUrl,
     'timezone': timezone,
+    if (archived) 'archived': true,
   };
 
   bool isAdmin(String uid)  => admins.contains(uid);
