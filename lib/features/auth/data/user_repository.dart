@@ -68,6 +68,19 @@ class UserRepository {
   Future<void> unmuteTeam(String userId, String teamId) =>
       _users.doc(userId).update({'mutedTeams': FieldValue.arrayRemove([teamId])});
 
+  /// Hides a team from the user's main teams list.
+  Future<void> hideTeam(String userId, String teamId) =>
+      _users.doc(userId).update({'hiddenTeams': FieldValue.arrayUnion([teamId])});
+
+  /// Restores a hidden team to the user's main teams list.
+  Future<void> unhideTeam(String userId, String teamId) =>
+      _users.doc(userId).update({'hiddenTeams': FieldValue.arrayRemove([teamId])});
+
+  /// Sets a per-event-type notification preference.
+  /// [eventType]: 'game' | 'practice' | 'dropIn'
+  Future<void> updateEventTypePref(String userId, String eventType, bool enabled) =>
+      _users.doc(userId).update({'eventTypePrefs.$eventType': enabled});
+
   /// Soft-delete: sets deleted=true. Hard cascade handled by Cloud Function.
   /// GDPR/PIPEDA: triggers server-side deletion of all linked data.
   Future<void> softDeleteUser(String userId) =>

@@ -141,6 +141,10 @@ class TeamRepository {
           ),
       });
 
+  /// Archives or restores a team (admin only).
+  Future<void> archiveTeam(String teamId, {bool archived = true}) =>
+      _teams.doc(teamId).update({'archived': archived});
+
   /// Admin removes a player from the team + removes teamId from their profile.
   Future<void> removePlayer(String teamId, String userId) async {
     final batch = _db.batch();

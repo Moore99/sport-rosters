@@ -143,8 +143,27 @@ class EventRepository {
           .map((s) => s.docs.map(Availability.fromFirestore).toList());
 
   /// Player sets or updates their RSVP.
-  Future<void> setAvailability(Availability avail) =>
-      _avail(avail.eventId).doc(avail.userId).set(avail.toFirestore());
+  /// When [maxPlayers] is provided and the response is 'yes', checks that the
+  /// event is not already full before writing. Throws [EventFullException] if
+  /// at capacity. Players already marked 'yes' can re-submit without triggering
+  /// the cap (e.g. editing a comment field in future).
+  Future<void> setAvailability(Availability avail, {int? maxPlayers}) async {
+    if (avail.response == AvailabilityResponse.yes &&
+        maxPlayers != null &&
+        maxPlayers > 0) {
+      final existing = await _avail(avail.eventId).doc(avail.userId).get();
+      final alreadyYes = existing.exists &&
+          (existing.data() as Map<String, dynamic>?)?['response'] == 'yes';
+      if (!alreadyYes) {
+        final agg = await _avail(avail.eventId)
+            .where('response', isEqualTo: 'yes')
+            .count()
+            .get();
+        if ((agg.count ?? 0) >= maxPlayers) throw const EventFullException();
+      }
+    }
+    await _avail(avail.eventId).doc(avail.userId).set(avail.toFirestore());
+  }
 
   /// Upcoming events for a team (date ≥ now), sorted ascending.
   Future<List<Event>> fetchUpcomingTeamEvents(String teamId) async {
@@ -203,3 +222,7 @@ class EventRepository {
 final eventRepositoryProvider = Provider<EventRepository>(
   (ref) => EventRepository(FirebaseFirestore.instance),
 );
+
+class EventFullException implements Exception {
+  const EventFullException();
+}

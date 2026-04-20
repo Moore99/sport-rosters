@@ -50,7 +50,8 @@ class _TeamDetailView extends ConsumerWidget {
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final isAdmin = team.isAdmin(uid);
     final userProfile = ref.watch(currentUserProfileProvider).valueOrNull;
-    final isMuted = userProfile?.mutedTeams.contains(team.teamId) ?? false;
+    final isMuted  = userProfile?.mutedTeams.contains(team.teamId) ?? false;
+    final isHidden = userProfile?.hiddenTeams.contains(team.teamId) ?? false;
     final requestsAsync =
         isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
     final pendingCount = requestsAsync?.valueOrNull?.length ?? 0;
@@ -85,6 +86,25 @@ class _TeamDetailView extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Notifications muted for this team.')),
+                  );
+                }
+              }
+            },
+          ),
+          // Hide/unhide team
+          IconButton(
+            icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility_outlined),
+            tooltip: isHidden ? 'Show team in list' : 'Hide team from list',
+            onPressed: () async {
+              final repo = ref.read(userRepositoryProvider);
+              if (isHidden) {
+                await repo.unhideTeam(uid, team.teamId);
+              } else {
+                await repo.hideTeam(uid, team.teamId);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(
+                        '${team.name} hidden. Find it under "hidden teams" on the teams screen.')),
                   );
                 }
               }
@@ -153,6 +173,52 @@ class _TeamDetailView extends ConsumerWidget {
                   ),
               ],
             ),
+          // Admin overflow menu (archive / delete)
+          if (isAdmin)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'More',
+              onSelected: (value) {
+                if (value == 'archive') {
+                  _confirmArchive(context, ref, archive: true);
+                } else if (value == 'restore') {
+                  _confirmArchive(context, ref, archive: false);
+                } else if (value == 'delete') {
+                  _confirmDelete(context, ref);
+                }
+              },
+              itemBuilder: (_) => [
+                if (!team.archived)
+                  const PopupMenuItem(
+                    value: 'archive',
+                    child: ListTile(
+                      leading: Icon(Icons.archive_outlined),
+                      title: Text('Archive Team'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  )
+                else
+                  const PopupMenuItem(
+                    value: 'restore',
+                    child: ListTile(
+                      leading: Icon(Icons.unarchive_outlined),
+                      title: Text('Restore Team'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                PopupMenuItem(
+                  value: 'delete',
+                  child: ListTile(
+                    leading: Icon(Icons.delete_outline,
+                        color: Theme.of(context).colorScheme.error),
+                    title: Text('Delete Team',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.error)),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       body: SafeArea(
@@ -160,6 +226,31 @@ class _TeamDetailView extends ConsumerWidget {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // ── Archived banner ──────────────────────────────────────────
+              if (team.archived) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.archive_outlined,
+                          color: Theme.of(context).colorScheme.outline),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'This team is archived. It is hidden from the main list.',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.outline),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               // ── Header card ─────────────────────────────────────────────
               _HeaderCard(team: team, isAdmin: isAdmin),
               const SizedBox(height: 16),
@@ -376,6 +467,71 @@ class _TeamDetailView extends ConsumerWidget {
                   .removePlayer(team.teamId, userId);
             },
             child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmArchive(BuildContext context, WidgetRef ref,
+      {required bool archive}) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(archive ? 'Archive Team' : 'Restore Team'),
+        content: Text(archive
+            ? 'Archive "${team.name}"? It will be hidden from the main list but nothing will be deleted. You can restore it any time.'
+            : 'Restore "${team.name}"? It will reappear in the main teams list.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await ref
+                  .read(teamRepositoryProvider)
+                  .archiveTeam(team.teamId, archived: archive);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(archive
+                          ? '"${team.name}" archived.'
+                          : '"${team.name}" restored.')),
+                );
+              }
+            },
+            child: Text(archive ? 'Archive' : 'Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete Team'),
+        content: Text(
+          'Permanently delete "${team.name}"? This will remove all members, events, lineups, and data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error),
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // TODO: call deleteTeam Cloud Function when implemented
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Team deletion coming soon. Archive for now.')),
+              );
+            },
+            child: const Text('Delete'),
           ),
         ],
       ),

@@ -14,6 +14,7 @@ import '../../../../features/teams/data/spares_repository.dart';
 import '../../../../features/teams/presentation/providers/spares_provider.dart';
 import '../../../../features/teams/presentation/providers/teams_provider.dart';
 import '../../../../core/services/analytics_service.dart';
+import '../../../../features/lineups/presentation/providers/lineup_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';
@@ -372,16 +373,27 @@ class _EventDetailView extends ConsumerWidget {
                 _RsvpButtons(
                   current: myAvail?.response,
                   disabled: !event.rsvpOpen,
-                  onSelect: (r) {
-                    unawaited(ref.read(eventRepositoryProvider).setAvailability(
-                          Availability(
-                            userId: uid,
-                            eventId: event.eventId,
-                            teamId: teamId,
-                            response: r,
-                            updatedAt: DateTime.now(),
-                          ),
-                        ));
+                  onSelect: (r) async {
+                    try {
+                      await ref.read(eventRepositoryProvider).setAvailability(
+                            Availability(
+                              userId: uid,
+                              eventId: event.eventId,
+                              teamId: teamId,
+                              response: r,
+                              updatedAt: DateTime.now(),
+                            ),
+                          );
+                    } on EventFullException {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  'This event is full. Contact your coach to be added to the spares list.')),
+                        );
+                      }
+                      return;
+                    }
                     unawaited(ref
                         .read(analyticsServiceProvider)
                         .logAvailabilitySet(r.name));
@@ -398,6 +410,12 @@ class _EventDetailView extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 24),
+              ],
+
+              // ── My lineup position (non-admin players only) ───────────────
+              if (!isAdmin) ...[
+                _MyLineupCard(eventId: event.eventId, uid: uid),
+                const SizedBox(height: 8),
               ],
 
               // ── Game result (game events only) ────────────────────────────
@@ -439,6 +457,63 @@ class _EventDetailView extends ConsumerWidget {
               ],
             ],
           )),
+    );
+  }
+}
+
+// ── My lineup card ─────────────────────────────────────────────────────────────
+
+class _MyLineupCard extends ConsumerWidget {
+  final String eventId;
+  final String uid;
+  const _MyLineupCard({required this.eventId, required this.uid});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lineupAsync = ref.watch(lineupProvider(eventId));
+    return lineupAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (lineup) {
+        if (lineup == null) return const SizedBox.shrink();
+
+        // Find position in single-team or sub-team assignments
+        String? position;
+        int? subTeamIndex;
+
+        if (lineup.subTeams.isNotEmpty) {
+          for (int i = 0; i < lineup.subTeams.length; i++) {
+            final entry = lineup.subTeams[i].entries
+                .where((e) => e.value == uid)
+                .firstOrNull;
+            if (entry != null) {
+              position = entry.key;
+              subTeamIndex = i + 1;
+              break;
+            }
+          }
+        } else {
+          final entry = lineup.assignments.entries
+              .where((e) => e.value == uid)
+              .firstOrNull;
+          if (entry != null) position = entry.key;
+        }
+
+        if (position == null) return const SizedBox.shrink();
+
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.sports),
+            title: const Text('Your Position'),
+            subtitle: Text(
+              subTeamIndex != null
+                  ? 'Team $subTeamIndex · $position'
+                  : position,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+        );
+      },
     );
   }
 }

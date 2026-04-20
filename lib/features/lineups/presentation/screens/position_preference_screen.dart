@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/config/app_config.dart';
 import '../../../../core/services/weight_unit_provider.dart';
 import '../../../../features/auth/data/user_repository.dart';
+import '../../../sports/presentation/providers/sports_provider.dart';
 import '../../../../features/auth/domain/app_user.dart';
 import '../../../lineups/data/player_preference_repository.dart';
 import '../../../lineups/domain/player_preference.dart';
@@ -84,7 +84,7 @@ class _PositionPreferenceScreenState
   bool _isEffectivelySelected(String position) {
     if (_anySelected) return true;
     if (_selected.contains(position)) return true;
-    final cats = AppConfig.categoriesForSport(widget.sport);
+    final cats = ref.read(categoriesForSportProvider(widget.sport));
     return cats.entries.any(
         (e) => _selected.contains(e.key) && e.value.contains(position));
   }
@@ -147,8 +147,8 @@ class _PositionPreferenceScreenState
         if (widget.sport == 'Dragon Boating') {
           _initWeight(userAsync?.valueOrNull?.weightKg);
         }
-        final positions  = AppConfig.positionsForSport(widget.sport);
-        final categories = AppConfig.categoriesForSport(widget.sport);
+        final positions  = ref.watch(positionsForSportProvider(widget.sport));
+        final categories = ref.watch(categoriesForSportProvider(widget.sport));
 
         return Scaffold(
           appBar: AppBar(
