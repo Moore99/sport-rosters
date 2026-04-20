@@ -34,8 +34,14 @@ workflows:
             --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY_IOS \
             --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY_ANDROID \
             --export-options-plist=/Users/builder/export_options.plist
+      - name: Upload dSYMs to Crashlytics
+        script: |
+          find build/ios/archive/Runner.xcarchive/dSYMs -name "*.dSYM" | \
+          xargs -I {} ios/Pods/FirebaseCrashlytics/upload-symbols \
+            -gsp ios/Runner/GoogleService-Info.plist -p ios {}
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/archive/Runner.xcarchive/dSYMs/*.dSYM
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
