@@ -81,7 +81,7 @@ All three must be present in `google-services.json`. The Play App Signing SHA-1 
 
 ## CI/CD
 - **Android**: built locally → APK or AAB → installed via ADB or uploaded to Play Console manually.
-- **iOS**: built via Codemagic (cloud CI) → TestFlight → App Store. Triggered manually on push to `main`.
+- **iOS**: built via Codemagic (cloud CI) → TestFlight → App Store. Triggered manually on push to `main`. After the IPA is built, a post-build step uploads all dSYMs to Crashlytics via `upload-symbols -gsp ios/Runner/GoogleService-Info.plist`. dSYM files are also saved as Codemagic artifacts.
 - **Build output**: `build/` is a Windows junction → `C:\BuildTemp\sports-rostering` to avoid OneDrive file locking.
 - **Version source of truth**: `version.txt` at repo root. `pubspec.yaml` stays in sync. Codemagic reads `version.txt` for `--build-name`; `$BUILD_NUMBER` env var sets the build number.
 
@@ -108,6 +108,6 @@ All three must be present in `google-services.json`. The Play App Signing SHA-1 
 - **Web support** — Flutter web build exists but is not actively maintained or deployed. Some features (image upload, biometrics) have platform-specific implementations that may not work on web.
 - **Sports in Firestore** — moving the hardcoded sports list to a `sports/{sportId}` Firestore collection would allow system admins to add sports without an app update. Planned for Phase 2+, not yet built.
 - **Automated CI for Android** — currently Android builds are manual (local `flutter build appbundle`). Codemagic could build both platforms; not configured yet.
-- **Crashlytics symbol upload** — dSYM upload for iOS and ProGuard mapping for Android are not explicitly verified in CI. Crash stack traces may be unresolved without them.
+- **Crashlytics symbol upload (Android)** — ProGuard/R8 mapping file upload for Android is not configured. If minification is enabled, crash stack traces on Android may be unresolved.
 - **Performance monitoring** — Firebase Performance Monitoring is not integrated. Response time and cold start metrics are not tracked.
 - **Remote Config** — feature flags are compile-time constants. Firebase Remote Config would allow toggling flags without an app update.
