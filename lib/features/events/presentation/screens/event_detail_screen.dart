@@ -644,44 +644,38 @@ class _HeaderCard extends StatelessWidget {
                 Text(event.type.icon, style: const TextStyle(fontSize: 32)),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(event.type.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall),
-                      if (event.isCancelled)
-                        Chip(
-                          label: const Text('Cancelled'),
-                          backgroundColor:
-                              Colors.orange.withValues(alpha: 0.15),
-                          side: BorderSide(
-                              color: Colors.orange.withValues(alpha: 0.5)),
-                          labelStyle:
-                              const TextStyle(color: Colors.orange),
-                        )
-                      else if (!event.isUpcoming)
-                        Chip(
-                          label: const Text('Past'),
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                        ),
-                    ],
-                  ),
+                  child: Text(event.type.label,
+                      style: Theme.of(context).textTheme.headlineSmall),
                 ),
-                if (event.isUpcoming)
-                  TextButton.icon(
-                    onPressed: () => ExportService.shareEventToCalendar(
-                      teamName: teamName,
-                      event: event,
-                    ),
-                    icon: const Icon(Icons.calendar_month_outlined, size: 18),
-                    label: const Text('Add to Calendar'),
+                if (event.isCancelled)
+                  Chip(
+                    label: const Text('Cancelled'),
+                    backgroundColor: Colors.orange.withValues(alpha: 0.15),
+                    side: BorderSide(color: Colors.orange.withValues(alpha: 0.5)),
+                    labelStyle: const TextStyle(color: Colors.orange),
+                  )
+                else if (!event.isUpcoming)
+                  Chip(
+                    label: const Text('Past'),
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
               ],
             ),
+            if (event.isUpcoming) ...[
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => ExportService.shareEventToCalendar(
+                  teamName: teamName,
+                  event: event,
+                ),
+                icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                label: const Text('Add to Calendar'),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
             const Divider(height: 24),
             _InfoRow(Icons.calendar_today, dateFmt.format(event.date)),
             const SizedBox(height: 8),
