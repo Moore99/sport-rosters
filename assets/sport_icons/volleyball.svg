@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#000" stroke-width="7"/>
+  <!-- Curved panel lines -->
+  <path d="M 50 8 Q 85 20 92 50" fill="none" stroke="#000" stroke-width="5"/>
+  <path d="M 50 8 Q 15 20 8 50" fill="none" stroke="#000" stroke-width="5"/>
+  <path d="M 8 50 Q 20 85 50 92" fill="none" stroke="#000" stroke-width="5"/>
+  <path d="M 92 50 Q 80 85 50 92" fill="none" stroke="#000" stroke-width="5"/>
+  <line x1="8" y1="50" x2="92" y2="50" stroke="#000" stroke-width="5"/>
+</svg>

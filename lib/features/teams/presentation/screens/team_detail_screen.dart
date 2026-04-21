@@ -1,5 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../../../core/config/app_config.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -654,8 +658,16 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
                         ? NetworkImage(widget.team.logoUrl!)
                         : null,
                     child: widget.team.logoUrl == null
-                        ? Text(widget.team.sport.substring(0, 1),
-                            style: const TextStyle(fontSize: 22))
+                        ? Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: SvgPicture.asset(
+                              AppConfig.sportIconAsset(widget.team.sport),
+                              colorFilter: ColorFilter.mode(
+                                Theme.of(context).colorScheme.onPrimaryContainer,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          )
                         : null,
                   ),
                   if (widget.isAdmin)

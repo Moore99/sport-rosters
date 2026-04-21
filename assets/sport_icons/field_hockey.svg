@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Shaft -->
+  <rect x="44" y="6" width="12" height="62" rx="5" fill="#000"/>
+  <!-- Curved hook at bottom -->
+  <path d="M 44 65 Q 44 88 65 88 Q 78 88 78 78 Q 78 70 65 70 L 56 70" fill="none" stroke="#000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Ball -->
+  <circle cx="80" cy="85" r="10" fill="#000"/>
+</svg>

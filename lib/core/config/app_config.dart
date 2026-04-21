@@ -612,6 +612,38 @@ class AppConfig {
   }
 
   // ── Google Places ─────────────────────────────────────────────────────────
+  // ── Sport Icons ───────────────────────────────────────────────────────────
+  // Returns the bundled SVG asset path for a given sport name.
+  // Used as the default team avatar when no custom logo has been uploaded.
+  static String sportIconAsset(String sport) {
+    const _icons = <String, String>{
+      'Australian Rules Football': 'assets/sport_icons/australian_rules_football.svg',
+      'Baseball':                  'assets/sport_icons/baseball.svg',
+      'Basketball':                'assets/sport_icons/basketball.svg',
+      'Box Lacrosse':              'assets/sport_icons/lacrosse.svg',
+      'Cricket':                   'assets/sport_icons/cricket.svg',
+      'Curling':                   'assets/sport_icons/curling.svg',
+      'Dragon Boating':            'assets/sport_icons/dragon_boating.svg',
+      'Field Hockey':              'assets/sport_icons/field_hockey.svg',
+      'Floorball':                 'assets/sport_icons/floorball.svg',
+      'Football (US/CDA)':         'assets/sport_icons/american_football.svg',
+      'Football/Soccer':           'assets/sport_icons/soccer.svg',
+      'Futsal':                    'assets/sport_icons/futsal.svg',
+      'Gaelic Football':           'assets/sport_icons/gaelic_football.svg',
+      'Ice Hockey':                'assets/sport_icons/ice_hockey.svg',
+      'Lacrosse':                  'assets/sport_icons/lacrosse.svg',
+      'Quidditch':                 'assets/sport_icons/quidditch.svg',
+      'Rugby':                     'assets/sport_icons/rugby.svg',
+      'Rugby 7s':                  'assets/sport_icons/rugby.svg',
+      'Softball':                  'assets/sport_icons/softball.svg',
+      'Ultimate Frisbee':          'assets/sport_icons/ultimate_frisbee.svg',
+      'Volleyball':                'assets/sport_icons/volleyball.svg',
+      'Water Polo':                'assets/sport_icons/water_polo.svg',
+      'Other':                     'assets/sport_icons/other.svg',
+    };
+    return _icons[sport] ?? 'assets/sport_icons/other.svg';
+  }
+
   // Two separate API keys needed: one for Android, one for iOS.
   // Each key must be restricted to its platform in Google Cloud Console.
   //

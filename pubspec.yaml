@@ -98,6 +98,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/sport_icons/
 
 flutter_launcher_icons:
   android: true

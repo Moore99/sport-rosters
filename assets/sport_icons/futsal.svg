@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Futsal ball - similar to soccer but with more panels, smaller -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#000" stroke-width="7"/>
+  <polygon points="50,24 65,36 60,52 40,52 35,36" fill="#000"/>
+  <line x1="50" y1="8" x2="50" y2="24" stroke="#000" stroke-width="5"/>
+  <line x1="78" y1="18" x2="65" y2="36" stroke="#000" stroke-width="5"/>
+  <line x1="90" y1="62" x2="75" y2="52" stroke="#000" stroke-width="5"/>
+  <line x1="65" y1="88" x2="60" y2="70" stroke="#000" stroke-width="5"/>
+  <line x1="35" y1="88" x2="40" y2="70" stroke="#000" stroke-width="5"/>
+  <line x1="10" y1="62" x2="25" y2="52" stroke="#000" stroke-width="5"/>
+  <line x1="22" y1="18" x2="35" y2="36" stroke="#000" stroke-width="5"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Round ball like soccer but simpler -->
+  <circle cx="50" cy="50" r="42" fill="none" stroke="#000" stroke-width="7"/>
+  <line x1="8" y1="50" x2="92" y2="50" stroke="#000" stroke-width="4"/>
+  <line x1="50" y1="8" x2="50" y2="92" stroke="#000" stroke-width="4"/>
+  <circle cx="50" cy="50" r="16" fill="none" stroke="#000" stroke-width="4"/>
+  <!-- Diagonal seams -->
+  <path d="M 22 22 Q 36 36 50 34" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M 78 22 Q 64 36 50 34" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M 22 78 Q 36 64 50 66" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M 78 78 Q 64 64 50 66" fill="none" stroke="#000" stroke-width="4"/>
+</svg>
