@@ -2,6 +2,7 @@
 /// Requires: firebase emulators:start --only auth,firestore
 library;
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -29,10 +30,10 @@ void main() {
     expect(find.text('Create Account'), findsWidgets);
 
     // Fill in the form
-    await tester.enterText(find.byKey(const Key('field_name')),     testName);
-    await tester.enterText(find.byKey(const Key('field_email')),    testEmail);
-    await tester.enterText(find.byKey(const Key('field_password')), testPassword);
-    await tester.enterText(find.byKey(const Key('field_confirm_password')), testPassword);
+    await tester.enterText(find.byKey(const Key('field_name')),              testName);
+    await tester.enterText(find.byKey(const Key('field_email')),             testEmail);
+    await tester.enterText(find.byKey(const Key('field_password')),          testPassword);
+    await tester.enterText(find.byKey(const Key('field_confirm_password')),  testPassword);
 
     // Accept terms
     await tester.tap(find.byKey(const Key('chk_terms')));
@@ -53,7 +54,6 @@ void main() {
   // ── Sign in ───────────────────────────────────────────────────────────────
 
   testWidgets('registered user can sign in', (tester) async {
-    // Pre-create account in emulator
     await _createTestAccount();
 
     await tester.pumpWidget(buildTestApp());
@@ -117,8 +117,6 @@ void main() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-import 'package:firebase_auth/firebase_auth.dart';
 
 Future<void> _createTestAccount() async {
   try {
