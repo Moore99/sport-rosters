@@ -145,6 +145,14 @@ class TeamRepository {
   Future<void> archiveTeam(String teamId, {bool archived = true}) =>
       _teams.doc(teamId).update({'archived': archived});
 
+  /// Permanently deletes a team and all its data via Cloud Function (admin only).
+  Future<void> deleteTeam(String teamId) async {
+    final callable = FirebaseFunctions
+        .instanceFor(region: 'northamerica-northeast1')
+        .httpsCallable('deleteTeam');
+    await callable.call(<String, dynamic>{'teamId': teamId});
+  }
+
   /// Admin removes a player from the team + removes teamId from their profile.
   Future<void> removePlayer(String teamId, String userId) async {
     final batch = _db.batch();
