@@ -77,6 +77,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // ── Email ─────────────────────────────────────────────
                     TextFormField(
+                      key: const Key('field_email'),
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
@@ -96,6 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // ── Password ──────────────────────────────────────────
                     TextFormField(
+                      key: const Key('field_password'),
                       controller: _passCtrl,
                       obscureText: _obscure,
                       textInputAction: TextInputAction.done,
@@ -126,6 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // ── Sign in button ────────────────────────────────────
                     FilledButton(
+                      key: const Key('btn_sign_in'),
                       onPressed: isLoading ? null : _submit,
                       child: isLoading
                           ? const SizedBox(

@@ -78,6 +78,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     // ── Name ──────────────────────────────────────────────
                     TextFormField(
+                      key: const Key('field_name'),
                       controller: _nameCtrl,
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
@@ -93,6 +94,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // ── Email ─────────────────────────────────────────────
                     TextFormField(
+                      key: const Key('field_email'),
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
@@ -112,6 +114,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // ── Password ──────────────────────────────────────────
                     TextFormField(
+                      key: const Key('field_password'),
                       controller: _passCtrl,
                       obscureText: _obscure,
                       textInputAction: TextInputAction.next,
@@ -136,6 +139,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // ── Confirm Password ──────────────────────────────────
                     TextFormField(
+                      key: const Key('field_confirm_password'),
                       controller: _confirmCtrl,
                       obscureText: _obscureConf,
                       textInputAction: TextInputAction.next,
@@ -215,6 +219,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // ── Terms acceptance ──────────────────────────────────
                     CheckboxListTile(
+                      key: const Key('chk_terms'),
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       value: _termsAccepted,
@@ -250,6 +255,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // ── Register button ───────────────────────────────────
                     FilledButton(
+                      key: const Key('btn_create_account'),
                       onPressed: isLoading ? null : _submit,
                       child: isLoading
                           ? const SizedBox(

@@ -43,9 +43,44 @@ To force a clean build, delete `C:\BuildTemp\sports-rostering` contents (not the
 
 ## Testing & Code Quality
 
+### Unit tests (no device needed)
 ```bash
-flutter test
-flutter analyze   # Lint + static analysis
+flutter test test/unit/
+```
+Covers: Team model, Event model, GameResult, BoatConfig, LineupGenerator, AppConfig.
+All 64 tests run in ~1 second. Run after any logic change before building.
+
+### Integration tests (requires Android device/emulator + Firebase emulators)
+
+**Step 1 — start Firebase emulators** (in a separate terminal):
+```bash
+firebase emulators:start --only auth,firestore,functions
+```
+Emulator UI: http://localhost:4000
+
+**Step 2 — run integration tests** (Android emulator uses host `10.0.2.2`):
+```bash
+flutter test integration_test/auth_test.dart
+flutter test integration_test/teams_test.dart
+# or all at once:
+flutter test integration_test/
+```
+For a **physical Android device**, find your machine's LAN IP and pass it:
+```bash
+flutter test integration_test/ --dart-define=EMULATOR_HOST=192.168.x.x
+```
+
+**Test files:**
+| File | Covers |
+|------|--------|
+| `integration_test/auth_test.dart` | Register, sign-in, sign-out, bad credentials |
+| `integration_test/teams_test.dart` | Empty state, create team, navigate to detail |
+
+**Adding more integration tests:** follow the pattern in `integration_test/helpers/setup.dart` — call `initTestFirebase()` in `setUpAll` and `resetAuth()` in `setUp`.
+
+### Static analysis
+```bash
+flutter analyze --no-fatal-infos --no-fatal-warnings
 ```
 
 ### Windows `flutter analyze` False Positives
