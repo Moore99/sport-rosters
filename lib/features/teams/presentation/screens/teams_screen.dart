@@ -193,14 +193,17 @@ class _TeamCard extends ConsumerWidget {
       child: ListTile(
         leading: CircleAvatar(
           radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+          backgroundColor: team.logoUrl == null
+              ? AppConfig.sportColor(team.sport)
+              : null,
           backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
           child: team.logoUrl == null
               ? Padding(
                   padding: const EdgeInsets.all(6),
                   child: SvgPicture.asset(
                     AppConfig.sportIconAsset(team.sport),
-                    colorFilter: ColorFilter.mode(
-                      Theme.of(context).colorScheme.onPrimaryContainer,
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
                       BlendMode.srcIn,
                     ),
                   ),
