@@ -654,6 +654,9 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
                         MediaQuery.textScalerOf(context)
                             .scale(1.0)
                             .clamp(1.0, 1.5),
+                    backgroundColor: widget.team.logoUrl == null
+                        ? AppConfig.sportColor(widget.team.sport)
+                        : null,
                     backgroundImage: widget.team.logoUrl != null
                         ? NetworkImage(widget.team.logoUrl!)
                         : null,
@@ -662,8 +665,8 @@ class _HeaderCardState extends ConsumerState<_HeaderCard> {
                             padding: const EdgeInsets.all(8),
                             child: SvgPicture.asset(
                               AppConfig.sportIconAsset(widget.team.sport),
-                              colorFilter: ColorFilter.mode(
-                                Theme.of(context).colorScheme.onPrimaryContainer,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
                                 BlendMode.srcIn,
                               ),
                             ),

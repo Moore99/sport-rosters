@@ -1,6 +1,7 @@
 /// Central configuration — ad unit IDs, feature flags, IAP product IDs.
 /// Swap test IDs to live IDs before store submission.
 import 'dart:io';
+import 'package:flutter/material.dart' show Color, Colors;
 
 class AppConfig {
   AppConfig._();
@@ -791,6 +792,39 @@ class AppConfig {
   // ── Sport Icons ───────────────────────────────────────────────────────────
   // Returns the bundled SVG asset path for a given sport name.
   // Used as the default team avatar when no custom logo has been uploaded.
+
+  /// Brand colour for each sport — used as CircleAvatar background.
+  /// Icon is rendered white on top via ColorFilter.mode(Colors.white, BlendMode.srcIn).
+  static Color sportColor(String sport) {
+    const _colors = <String, Color>{
+      'Australian Rules Football': Color(0xFFE65100), // deep orange
+      'Baseball':                  Color(0xFFC62828), // dark red
+      'Basketball':                Color(0xFFBF360C), // burnt orange
+      'Box Lacrosse':              Color(0xFF37474F), // dark blue-grey
+      'Cricket':                   Color(0xFF6D4C41), // brown (willow)
+      'Curling':                   Color(0xFF0D47A1), // dark blue (ice)
+      'Dragon Boating':            Color(0xFF00695C), // teal
+      'Field Hockey':              Color(0xFF2E7D32), // dark green
+      'Floorball':                 Color(0xFFC62828), // red
+      'Football (American)':       Color(0xFF4E342E), // brown (pigskin)
+      'Football (Canadian)':       Color(0xFF6A1B9A), // purple (CFL)
+      'Football/Soccer':           Color(0xFF1B5E20), // dark green (pitch)
+      'Futsal':                    Color(0xFF1565C0), // blue
+      'Gaelic Football':           Color(0xFF004D40), // dark teal
+      'Ice Hockey':                Color(0xFF0D47A1), // dark blue (ice)
+      'Lacrosse':                  Color(0xFFBF360C), // deep orange
+      'Quidditch':                 Color(0xFF4A148C), // deep purple
+      'Rugby':                     Color(0xFF33691E), // olive green
+      'Rugby 7s':                  Color(0xFF558B2F), // medium green
+      'Softball':                  Color(0xFFAD1457), // deep pink
+      'Ultimate Frisbee':          Color(0xFF006064), // dark cyan
+      'Volleyball':                Color(0xFF283593), // dark blue
+      'Water Polo':                Color(0xFF01579B), // ocean blue
+      'Other':                     Color(0xFF546E7A), // blue-grey
+    };
+    return _colors[sport] ?? const Color(0xFF546E7A);
+  }
+
   static String sportIconAsset(String sport) {
     const _icons = <String, String>{
       'Australian Rules Football': 'assets/sport_icons/australian_rules_football.svg',

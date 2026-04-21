@@ -1,6 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Paddle shaft -->
-  <rect x="44" y="6" width="12" height="55" rx="5" fill="#000"/>
-  <!-- Paddle blade -->
-  <path d="M 28 58 Q 28 90 50 90 Q 72 90 72 58 Z" fill="#000"/>
+  <!-- Boat hull (long narrow shape, flat bottom, curved ends) -->
+  <path d="M 12 46 Q 6 46 6 52 Q 6 58 12 58 L 86 58 Q 94 58 94 52 Q 94 46 86 46 Z" fill="#000"/>
+  <!-- Dragon head prow (left) -->
+  <path d="M 6 40 Q 12 34 18 38 L 16 46 L 6 46 Z" fill="#000"/>
+  <path d="M 6 64 Q 12 70 18 66 L 16 58 L 6 58 Z" fill="#000"/>
+  <!-- Dragon eye -->
+  <circle cx="11" cy="52" r="3" fill="white"/>
+  <!-- Dragon mouth (open jaw line) -->
+  <line x1="6" y1="46" x2="14" y2="44" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Drum (center-right, distinctive circle) -->
+  <circle cx="72" cy="52" r="9" fill="white"/>
+  <circle cx="72" cy="52" r="5" fill="#000"/>
+  <!-- Paddles (left side, angled outward) -->
+  <line x1="28" y1="46" x2="22" y2="32" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="40" y1="46" x2="34" y2="32" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="52" y1="46" x2="46" y2="32" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <!-- Paddles (right side) -->
+  <line x1="28" y1="58" x2="22" y2="72" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="40" y1="58" x2="34" y2="72" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="52" y1="58" x2="46" y2="72" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <!-- Tail fin (right) -->
+  <path d="M 86 46 Q 96 40 96 52 Q 96 64 86 58" fill="#000"/>
 </svg>
