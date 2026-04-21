@@ -199,6 +199,7 @@ class _TeamCard extends ConsumerWidget {
             Container(width: 4, color: sportColor),
             Expanded(
               child: ListTile(
+                contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 leading: CircleAvatar(
                   radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
                   backgroundColor: team.logoUrl == null ? sportColor : null,
