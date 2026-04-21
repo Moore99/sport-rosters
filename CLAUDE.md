@@ -52,23 +52,27 @@ All 64 tests run in ~1 second. Run after any logic change before building.
 
 ### Integration tests (requires Android device/emulator + Firebase emulators)
 
-**Step 1 — start Firebase emulators** (in a separate terminal):
+> **OneDrive junction note:** `flutter test integration_test/` can't find the debug APK
+> through the build junction. Use `flutter drive` with `--no-build` instead (3 steps below).
+
+**Step 1 — start Firebase emulators** (leave this terminal open):
 ```bash
 firebase emulators:start --only auth,firestore,functions
 ```
 Emulator UI: http://localhost:4000
 
-**Step 2 — run integration tests** (Android emulator uses host `10.0.2.2`):
+**Step 2 — build and install the debug APK:**
 ```bash
-flutter test integration_test/auth_test.dart
-flutter test integration_test/teams_test.dart
-# or all at once:
-flutter test integration_test/
+flutter build apk --debug
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\app-debug.apk"
 ```
-For a **physical Android device**, find your machine's LAN IP and pass it:
+
+**Step 3 — run a specific test file with `flutter drive`:**
 ```bash
-flutter test integration_test/ --dart-define=EMULATOR_HOST=192.168.x.x
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/auth_test.dart --no-build
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/teams_test.dart --no-build
 ```
+For a **physical Android device**, add `--dart-define=EMULATOR_HOST=192.168.x.x` (your machine's LAN IP).
 
 **Test files:**
 | File | Covers |
