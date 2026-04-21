@@ -70,8 +70,20 @@ class _TeamDetailView extends ConsumerWidget {
         !isAdmin ? ref.watch(mySpareRequestProvider(team.teamId)) : null;
     final hasPendingRequest = myRequestAsync?.valueOrNull != null;
 
+    final sportColor = AppConfig.sportColor(team.sport);
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [sportColor, Color.lerp(sportColor, Colors.black, 0.25)!],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text(team.name),
         actions: [
           // Events — always visible

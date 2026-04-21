@@ -1,14 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Same as baseball but slightly larger seam curves -->
-  <circle cx="50" cy="50" r="42" fill="none" stroke="#000" stroke-width="7"/>
-  <path d="M 34 12 C 22 30 22 70 34 88" fill="none" stroke="#000" stroke-width="6"/>
-  <path d="M 66 12 C 78 30 78 70 66 88" fill="none" stroke="#000" stroke-width="6"/>
-  <line x1="20" y1="32" x2="33" y2="28" stroke="#000" stroke-width="3.5"/>
-  <line x1="20" y1="44" x2="33" y2="43" stroke="#000" stroke-width="3.5"/>
-  <line x1="20" y1="57" x2="33" y2="58" stroke="#000" stroke-width="3.5"/>
-  <line x1="20" y1="68" x2="33" y2="72" stroke="#000" stroke-width="3.5"/>
-  <line x1="80" y1="32" x2="67" y2="28" stroke="#000" stroke-width="3.5"/>
-  <line x1="80" y1="44" x2="67" y2="43" stroke="#000" stroke-width="3.5"/>
-  <line x1="80" y1="57" x2="67" y2="58" stroke="#000" stroke-width="3.5"/>
-  <line x1="80" y1="68" x2="67" y2="72" stroke="#000" stroke-width="3.5"/>
+  <!-- Bat: tapered from handle (lower-left) to barrel (upper-center) -->
+  <path d="M 6 96 L 12 90 L 50 46 Q 60 34 64 38 Q 68 44 56 54 L 14 98 Z" fill="#000"/>
+  <!-- Softball with seams: upper-right, clear of bat barrel -->
+  <circle cx="80" cy="22" r="18" fill="none" stroke="#000" stroke-width="6"/>
+  <path d="M71,7 C64,14 64,30 71,37" fill="none" stroke="#000" stroke-width="4"/>
+  <path d="M89,7 C96,14 96,30 89,37" fill="none" stroke="#000" stroke-width="4"/>
 </svg>

@@ -1,8 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Rounder oval than rugby -->
-  <ellipse cx="50" cy="50" rx="32" ry="42" fill="none" stroke="#000" stroke-width="7"/>
-  <!-- Seam lines -->
-  <line x1="18" y1="50" x2="82" y2="50" stroke="#000" stroke-width="4"/>
-  <line x1="50" y1="8" x2="50" y2="92" stroke="#000" stroke-width="4"/>
-  <ellipse cx="50" cy="50" rx="14" ry="20" fill="none" stroke="#000" stroke-width="4"/>
+  <!-- 4 goalposts: 2 tall centre posts + 2 shorter behind posts (AFL-unique) -->
+  <line x1="16" y1="94" x2="16" y2="46" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+  <line x1="38" y1="94" x2="38" y2="8"  stroke="#000" stroke-width="6" stroke-linecap="round"/>
+  <line x1="62" y1="94" x2="62" y2="8"  stroke="#000" stroke-width="6" stroke-linecap="round"/>
+  <line x1="84" y1="94" x2="84" y2="46" stroke="#000" stroke-width="6" stroke-linecap="round"/>
+  <!-- AFL oval ball below goals -->
+  <ellipse cx="50" cy="76" rx="18" ry="13" fill="none" stroke="#000" stroke-width="6"/>
+  <line x1="50" y1="63" x2="50" y2="89" stroke="#000" stroke-width="3"/>
 </svg>

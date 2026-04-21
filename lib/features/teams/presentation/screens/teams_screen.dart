@@ -189,34 +189,44 @@ class _TeamCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
 
+    final sportColor = AppConfig.sportColor(team.sport);
     return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
-          backgroundColor: team.logoUrl == null
-              ? AppConfig.sportColor(team.sport)
-              : null,
-          backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
-          child: team.logoUrl == null
-              ? Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: SvgPicture.asset(
-                    AppConfig.sportIconAsset(team.sport),
-                    colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                )
-              : null,
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 4, color: sportColor),
+            Expanded(
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                  backgroundColor: team.logoUrl == null ? sportColor : null,
+                  backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
+                  child: team.logoUrl == null
+                      ? Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: SvgPicture.asset(
+                            AppConfig.sportIconAsset(team.sport),
+                            colorFilter: const ColorFilter.mode(
+                              Colors.white,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                title:   Text(team.name),
+                subtitle: Text(
+                  '${team.sport} · ${team.totalMembers} member${team.totalMembers == 1 ? '' : 's'}'
+                  '${team.isAdmin(uid) ? ' · Admin' : ''}',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/teams/${team.teamId}'),
+              ),
+            ),
+          ],
         ),
-        title:   Text(team.name),
-        subtitle: Text(
-          '${team.sport} · ${team.totalMembers} member${team.totalMembers == 1 ? '' : 's'}'
-          '${team.isAdmin(uid) ? ' · Admin' : ''}',
-        ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => context.push('/teams/${team.teamId}'),
       ),
     );
   }
