@@ -1,10 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="42" fill="none" stroke="#000" stroke-width="7"/>
-  <!-- Central pentagon -->
-  <polygon points="50,28 63,38 58,53 42,53 37,38" fill="#000"/>
-  <!-- Surrounding patches (outlines only) -->
-  <polygon points="50,8 65,18 63,38 50,28 37,38 35,18" fill="none" stroke="#000" stroke-width="4"/>
-  <polygon points="78,32 88,48 75,60 63,53 63,38 78,32" fill="none" stroke="#000" stroke-width="4"/>
-  <polygon points="72,72 58,80 42,80 28,72 37,60 42,53 58,53 63,60 72,72" fill="none" stroke="#000" stroke-width="4"/>
-  <polygon points="22,32 37,38 37,53 25,60 12,48 22,32" fill="none" stroke="#000" stroke-width="4"/>
+  <!-- Ball outline -->
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#000" stroke-width="6"/>
+  <!-- Central pentagon (vertex up) -->
+  <polygon points="50,39 40,47 44,59 57,59 61,47" fill="#000"/>
+  <!-- Top-right pentagon -->
+  <polygon points="70,22 60,22 56,32 65,38 74,32" fill="#000"/>
+  <!-- Top-left pentagon -->
+  <polygon points="30,22 26,32 35,38 44,32 40,22" fill="#000"/>
+  <!-- Lower-left pentagon -->
+  <polygon points="16,61 25,67 34,61 30,51 20,51" fill="#000"/>
+  <!-- Bottom pentagon -->
+  <polygon points="50,85 59,79 55,69 45,69 41,79" fill="#000"/>
+  <!-- Lower-right pentagon -->
+  <polygon points="84,61 80,51 70,51 66,61 75,67" fill="#000"/>
 </svg>
