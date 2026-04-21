@@ -69,7 +69,7 @@ class _EventDetailView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(event.type.label),
+        title: Text(event.type.label, overflow: TextOverflow.ellipsis, maxLines: 1),
         actions: [
           // Lineup / Boat Seating button
           if (isAdmin)

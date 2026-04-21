@@ -70,155 +70,186 @@ class _TeamDetailView extends ConsumerWidget {
       appBar: AppBar(
         title: Text(team.name),
         actions: [
-          // Mute/unmute team notifications
-          IconButton(
-            icon: Icon(
-              isMuted ? Icons.notifications_off : Icons.notifications_active_outlined,
-              color: isMuted ? Theme.of(context).colorScheme.error : null,
-            ),
-            tooltip: isMuted ? 'Notifications off — tap to unmute' : 'Notifications on — tap to mute',
-            onPressed: () async {
-              final repo = ref.read(userRepositoryProvider);
-              if (isMuted) {
-                await repo.unmuteTeam(uid, team.teamId);
-              } else {
-                await repo.muteTeam(uid, team.teamId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Notifications muted for this team.')),
-                  );
-                }
-              }
-            },
-          ),
-          // Hide/unhide team
-          IconButton(
-            icon: Icon(isHidden ? Icons.visibility_off : Icons.visibility_outlined),
-            tooltip: isHidden ? 'Show team in list' : 'Hide team from list',
-            onPressed: () async {
-              final repo = ref.read(userRepositoryProvider);
-              if (isHidden) {
-                await repo.unhideTeam(uid, team.teamId);
-              } else {
-                await repo.hideTeam(uid, team.teamId);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(
-                        '${team.name} hidden. Find it under "hidden teams" on the teams screen.')),
-                  );
-                }
-              }
-            },
-          ),
-          // Show Team ID / QR code for sharing
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Share Team',
-            onPressed: () => _showTeamId(context, team.teamId, team.name),
-          ),
-          // Events button
+          // Events — always visible
           IconButton(
             icon: const Icon(Icons.calendar_month),
             tooltip: 'Events',
             onPressed: () => context.push('/teams/${team.teamId}/events'),
           ),
-          // Announcements — all members
+          // QR / share — always visible
           IconButton(
-            icon: const Icon(Icons.campaign_outlined),
-            tooltip: 'Announcements',
-            onPressed: () =>
-                context.push('/teams/${team.teamId}/announcements'),
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Share Team',
+            onPressed: () => _showTeamId(context, team.teamId, team.name),
           ),
-          // Notification inbox — all members
-          IconButton(
-            icon: const Icon(Icons.inbox_outlined),
-            tooltip: 'Notification Inbox',
-            onPressed: () => context.push('/teams/${team.teamId}/inbox'),
-          ),
-          // Stats — all members
-          IconButton(
-            icon: const Icon(Icons.bar_chart),
-            tooltip: 'Stats',
-            onPressed: () => context.push('/teams/${team.teamId}/stats'),
-          ),
-          // Notify team — admin only
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              tooltip: 'Send Notification',
-              onPressed: () => context.push('/teams/${team.teamId}/notify'),
-            ),
-          // Rankings — admin only
-          if (isAdmin)
-            IconButton(
-              icon: const Icon(Icons.leaderboard),
-              tooltip: 'Player Rankings (Coach only)',
-              onPressed: () => context.push('/teams/${team.teamId}/rankings'),
-            ),
-          // Spares — admin only (badge when requests pending)
-          if (isAdmin)
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.people_outline),
-                  tooltip: 'Manage Spares',
-                  onPressed: () => context.push('/teams/${team.teamId}/spares'),
-                ),
-                if (pendingSpareCount > 0)
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Badge(label: Text('$pendingSpareCount')),
-                  ),
-              ],
-            ),
-          // Admin overflow menu (archive / delete)
-          if (isAdmin)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              tooltip: 'More',
-              onSelected: (value) {
-                if (value == 'archive') {
-                  _confirmArchive(context, ref, archive: true);
-                } else if (value == 'restore') {
-                  _confirmArchive(context, ref, archive: false);
-                } else if (value == 'delete') {
-                  _confirmDelete(context, ref);
-                }
-              },
-              itemBuilder: (_) => [
-                if (!team.archived)
-                  const PopupMenuItem(
-                    value: 'archive',
+          // Single overflow menu — everything else
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                tooltip: 'More',
+                onSelected: (value) async {
+                  final repo = ref.read(userRepositoryProvider);
+                  switch (value) {
+                    case 'announcements':
+                      context.push('/teams/${team.teamId}/announcements');
+                    case 'inbox':
+                      context.push('/teams/${team.teamId}/inbox');
+                    case 'stats':
+                      context.push('/teams/${team.teamId}/stats');
+                    case 'mute':
+                      if (isMuted) {
+                        await repo.unmuteTeam(uid, team.teamId);
+                      } else {
+                        await repo.muteTeam(uid, team.teamId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Notifications muted for this team.')),
+                          );
+                        }
+                      }
+                    case 'hide':
+                      if (isHidden) {
+                        await repo.unhideTeam(uid, team.teamId);
+                      } else {
+                        await repo.hideTeam(uid, team.teamId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(
+                                '${team.name} hidden. Find it under "hidden teams" on the teams screen.')),
+                          );
+                        }
+                      }
+                    case 'notify':
+                      context.push('/teams/${team.teamId}/notify');
+                    case 'rankings':
+                      context.push('/teams/${team.teamId}/rankings');
+                    case 'spares':
+                      context.push('/teams/${team.teamId}/spares');
+                    case 'archive':
+                      _confirmArchive(context, ref, archive: true);
+                    case 'restore':
+                      _confirmArchive(context, ref, archive: false);
+                    case 'delete':
+                      _confirmDelete(context, ref);
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(
+                    value: 'announcements',
                     child: ListTile(
-                      leading: Icon(Icons.archive_outlined),
-                      title: Text('Archive Team'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  )
-                else
-                  const PopupMenuItem(
-                    value: 'restore',
-                    child: ListTile(
-                      leading: Icon(Icons.unarchive_outlined),
-                      title: Text('Restore Team'),
+                      leading: const Icon(Icons.campaign_outlined),
+                      title: const Text('Announcements'),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: ListTile(
-                    leading: Icon(Icons.delete_outline,
-                        color: Theme.of(context).colorScheme.error),
-                    title: Text('Delete Team',
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error)),
-                    contentPadding: EdgeInsets.zero,
+                  PopupMenuItem(
+                    value: 'inbox',
+                    child: ListTile(
+                      leading: const Icon(Icons.inbox_outlined),
+                      title: const Text('Notification Inbox'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                   ),
+                  PopupMenuItem(
+                    value: 'stats',
+                    child: ListTile(
+                      leading: const Icon(Icons.bar_chart),
+                      title: const Text('Team Stats'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'mute',
+                    child: ListTile(
+                      leading: Icon(isMuted
+                          ? Icons.notifications_active_outlined
+                          : Icons.notifications_off_outlined,
+                          color: isMuted ? null : Theme.of(context).colorScheme.error),
+                      title: Text(isMuted ? 'Unmute notifications' : 'Mute notifications'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'hide',
+                    child: ListTile(
+                      leading: Icon(isHidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                      title: Text(isHidden ? 'Show in list' : 'Hide from list'),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  if (isAdmin) ...[
+                    PopupMenuItem(
+                      value: 'notify',
+                      child: ListTile(
+                        leading: const Icon(Icons.notifications_outlined),
+                        title: const Text('Send Notification'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'rankings',
+                      child: ListTile(
+                        leading: const Icon(Icons.leaderboard),
+                        title: const Text('Player Rankings'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'spares',
+                      child: ListTile(
+                        leading: Badge(
+                          isLabelVisible: pendingSpareCount > 0,
+                          label: Text('$pendingSpareCount'),
+                          child: const Icon(Icons.people_outline),
+                        ),
+                        title: const Text('Manage Spares'),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                    if (!team.archived)
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: ListTile(
+                          leading: Icon(Icons.archive_outlined),
+                          title: Text('Archive Team'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      )
+                    else
+                      const PopupMenuItem(
+                        value: 'restore',
+                        child: ListTile(
+                          leading: Icon(Icons.unarchive_outlined),
+                          title: Text('Restore Team'),
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete_outline,
+                            color: Theme.of(context).colorScheme.error),
+                        title: Text('Delete Team',
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.error)),
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (pendingSpareCount > 0 && isAdmin)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Badge(label: Text('$pendingSpareCount')),
                 ),
-              ],
-            ),
+            ],
+          ),
         ],
       ),
       body: SafeArea(
