@@ -16,6 +16,79 @@ const appleSharedSecret         = defineSecret('APPLE_IAP_SHARED_SECRET');
 const googlePlayServiceAccount  = defineSecret('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
 
 /**
+ * deleteTeam — permanent team deletion cascade (admin only).
+ *
+ * Deletes in order:
+ *   1. availability subcollections for all team events
+ *   2. lineups subcollection for all team events
+ *   3. All events in the team
+ *   4. joinRequests subcollection
+ *   5. rankings subcollection
+ *   6. playerPreferences subcollection
+ *   7. spares subcollection
+ *   8. spareRequests subcollection
+ *   9. dropInSessions referencing this team
+ *   10. Team document itself
+ *
+ * Must be called by a team admin.
+ */
+exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+  const { teamId } = request.data;
+  if (!teamId) throw new HttpsError('invalid-argument', 'teamId is required.');
+
+  const db = getFirestore();
+  const teamRef = db.collection('teams').doc(teamId);
+  const teamDoc = await teamRef.get();
+
+  if (!teamDoc.exists) throw new HttpsError('not-found', 'Team not found.');
+
+  const teamData = teamDoc.data();
+  const admins = teamData.admins ?? [];
+  if (!admins.includes(uid)) {
+    throw new HttpsError('permission-denied', 'Only team admins can delete a team.');
+  }
+
+  // ── 1 & 2. Events → availability + lineups subcollections ───────────────────
+  const eventsSnap = await db.collection('events')
+    .where('teamId', '==', teamId)
+    .get();
+
+  for (const eventDoc of eventsSnap.docs) {
+    const availSnap = await eventDoc.ref.collection('availability').get();
+    await _deleteInBatches(db, availSnap.docs);
+
+    const lineupSnap = await eventDoc.ref.collection('lineups').get();
+    await _deleteInBatches(db, lineupSnap.docs);
+  }
+
+  // ── 3. Delete all events ────────────────────────────────────────────────────
+  await _deleteInBatches(db, eventsSnap.docs);
+
+  // ── 4–8. Team subcollections ────────────────────────────────────────────────
+  const subcollections = [
+    'joinRequests', 'rankings', 'playerPreferences', 'spares', 'spareRequests',
+  ];
+  for (const sub of subcollections) {
+    const snap = await teamRef.collection(sub).get();
+    await _deleteInBatches(db, snap.docs);
+  }
+
+  // ── 9. dropInSessions referencing this team ─────────────────────────────────
+  const dropInSnap = await db.collection('dropInSessions')
+    .where('teamId', '==', teamId)
+    .get();
+  await _deleteInBatches(db, dropInSnap.docs);
+
+  // ── 10. Delete team document ────────────────────────────────────────────────
+  await teamRef.delete();
+
+  return { success: true };
+});
+
+/**
  * deleteAccount — GDPR/PIPEDA compliant account deletion cascade.
  *
  * Deletes in order:

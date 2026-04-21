@@ -556,11 +556,16 @@ class _TeamDetailView extends ConsumerWidget {
                 backgroundColor: Theme.of(context).colorScheme.error),
             onPressed: () async {
               Navigator.of(context).pop();
-              // TODO: call deleteTeam Cloud Function when implemented
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Team deletion coming soon. Archive for now.')),
-              );
+              try {
+                await ref.read(teamRepositoryProvider).deleteTeam(team.teamId);
+                if (context.mounted) context.go('/teams');
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete team: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Delete'),
           ),
