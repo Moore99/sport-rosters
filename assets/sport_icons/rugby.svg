@@ -1,8 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Elongated oval ball -->
-  <ellipse cx="50" cy="50" rx="40" ry="26" fill="none" stroke="#000" stroke-width="7"/>
-  <!-- Seam lines -->
-  <line x1="10" y1="50" x2="90" y2="50" stroke="#000" stroke-width="4"/>
-  <path d="M 50 24 Q 62 38 62 50 Q 62 62 50 76" fill="none" stroke="#000" stroke-width="4"/>
-  <path d="M 50 24 Q 38 38 38 50 Q 38 62 50 76" fill="none" stroke="#000" stroke-width="4"/>
+  <!-- Rugby ball: horizontal, elongated, pointed ends -->
+  <path d="M 6 50 Q 18 18 50 16 Q 82 18 94 50 Q 82 82 50 84 Q 18 82 6 50 Z"
+        fill="none" stroke="#000" stroke-width="7"/>
+  <!-- Lacing line down the center -->
+  <line x1="50" y1="18" x2="50" y2="82" stroke="#000" stroke-width="3"/>
+  <!-- Lacing stitches -->
+  <line x1="44" y1="34" x2="56" y2="34" stroke="#000" stroke-width="3"/>
+  <line x1="43" y1="44" x2="57" y2="44" stroke="#000" stroke-width="3"/>
+  <line x1="43" y1="54" x2="57" y2="54" stroke="#000" stroke-width="3"/>
+  <line x1="44" y1="64" x2="56" y2="64" stroke="#000" stroke-width="3"/>
 </svg>

@@ -10,6 +10,12 @@ import '../../domain/event.dart';
 import '../providers/events_provider.dart';
 import '../../../../features/shared/widgets/banner_ad_widget.dart';
 
+Color _typeColor(EventType type) => switch (type) {
+  EventType.game     => const Color(0xFFE53935),
+  EventType.practice => const Color(0xFF1E88E5),
+  EventType.dropIn   => const Color(0xFF43A047),
+};
+
 class EventsScreen extends ConsumerWidget {
   final String teamId;
   const EventsScreen({super.key, required this.teamId});
@@ -106,38 +112,49 @@ class _EventCard extends ConsumerWidget {
     return Opacity(
       opacity: event.isCancelled ? 0.5 : 1.0,
       child: Card(
-        child: ListTile(
-          leading: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        clipBehavior: Clip.antiAlias,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(event.type.icon, style: const TextStyle(fontSize: 22)),
-            ],
-          ),
-          title: Row(
-            children: [
+              Container(width: 4, color: _typeColor(event.type)),
               Expanded(
-                child: Text('${event.type.label} — ${event.location}',
-                    overflow: TextOverflow.ellipsis),
-              ),
-              if (event.isCancelled) ...[
-                const SizedBox(width: 6),
-                const Chip(
-                  label: Text('Cancelled',
-                      style: TextStyle(fontSize: 11, color: Colors.orange)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
+                child: ListTile(
+                  leading: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(event.type.icon, style: const TextStyle(fontSize: 22)),
+                    ],
+                  ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text('${event.type.label} — ${event.location}',
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      if (event.isCancelled) ...[
+                        const SizedBox(width: 6),
+                        const Chip(
+                          label: Text('Cancelled',
+                              style: TextStyle(fontSize: 11, color: Colors.orange)),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ],
+                  ),
+                  subtitle: Text(
+                    '${dateFmt.format(event.date)} at ${timeFmt.format(event.date)}',
+                  ),
+                  trailing: myAvail != null
+                      ? Text(myAvail.response.emoji,
+                          style: const TextStyle(fontSize: 20))
+                      : const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/teams/$teamId/events/${event.eventId}'),
                 ),
-              ],
+              ),
             ],
           ),
-          subtitle: Text(
-            '${dateFmt.format(event.date)} at ${timeFmt.format(event.date)}',
-          ),
-          trailing: myAvail != null
-              ? Text(myAvail.response.emoji,
-                  style: const TextStyle(fontSize: 20))
-              : const Icon(Icons.chevron_right),
-          onTap: () => context.push('/teams/$teamId/events/${event.eventId}'),
         ),
       ),
     );
