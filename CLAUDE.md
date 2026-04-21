@@ -354,6 +354,10 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 11 | R8 minification enabled (isMinifyEnabled + isShrinkResources + proguard-rules.pro) | ✅ Done |
 | 11 | dSYM upload to Crashlytics in Codemagic post-build step | ✅ Done |
 | 11 | Help screen fully updated to reflect all current features | ✅ Done |
+| 12 | Sport-specific default team icons (SVG, bundled assets, 23 sports) | ✅ Done |
+| 12 | deleteTeam Cloud Function (full cascade delete, admin-only) | ✅ Done |
+| 12 | eventTypePrefs respected in sendEventReminders Cloud Function | ✅ Done |
+| 12 | mutedTeams respected in sendTeamNotification Cloud Function | ✅ Done |
 
 ## Current Production Versions
 

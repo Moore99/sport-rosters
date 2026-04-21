@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
+import '../../../../core/config/app_config.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../domain/team.dart';
@@ -191,7 +194,18 @@ class _TeamCard extends ConsumerWidget {
         leading: CircleAvatar(
           radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
           backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
-          child: team.logoUrl == null ? Text(team.sport.substring(0, 1)) : null,
+          child: team.logoUrl == null
+              ? Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: SvgPicture.asset(
+                    AppConfig.sportIconAsset(team.sport),
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                )
+              : null,
         ),
         title:   Text(team.name),
         subtitle: Text(

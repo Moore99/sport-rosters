@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Trophy cup -->
+  <path d="M 30 10 L 70 10 L 65 50 Q 62 62 50 66 Q 38 62 35 50 Z" fill="#000"/>
+  <!-- Trophy base stem -->
+  <rect x="44" y="66" width="12" height="16" rx="2" fill="#000"/>
+  <!-- Trophy base -->
+  <rect x="28" y="80" width="44" height="12" rx="6" fill="#000"/>
+  <!-- Trophy handles -->
+  <path d="M 30 18 Q 12 18 12 34 Q 12 48 30 48" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
+  <path d="M 70 18 Q 88 18 88 34 Q 88 48 70 48" fill="none" stroke="#000" stroke-width="7" stroke-linecap="round"/>
+</svg>

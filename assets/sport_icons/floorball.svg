@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Stick shaft -->
+  <rect x="18" y="8" width="10" height="55" rx="5" fill="#000"/>
+  <!-- Blade -->
+  <rect x="18" y="58" width="36" height="9" rx="4" fill="#000"/>
+  <!-- Ball (perforated look) -->
+  <circle cx="74" cy="72" r="18" fill="none" stroke="#000" stroke-width="7"/>
+  <circle cx="74" cy="66" r="3" fill="#000"/>
+  <circle cx="68" cy="76" r="3" fill="#000"/>
+  <circle cx="80" cy="76" r="3" fill="#000"/>
+</svg>
