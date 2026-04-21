@@ -341,12 +341,26 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 10 | Announce + notify in one step (optional push toggle when posting) | ✅ Done |
 | 10 | Recurring series date shift (delta applied to all events; reminder flags cleared) | ✅ Done |
 | 10 | Spare self-removal (player leaves spares pool from team detail screen) | ✅ Done |
+| 11 | Player lineup position card on event detail screen | ✅ Done |
+| 11 | Notification preferences per event type (game/practice/drop-in) in Profile | ✅ Done |
+| 11 | Event capacity hard-cap (maxPlayers enforced; EventFullException shown to player) | ✅ Done |
+| 11 | Team hide/unhide (eye toggle in AppBar; hidden teams collapsed in Teams list) | ✅ Done |
+| 11 | Team archive/restore (admin ⋮ menu; archived teams hidden but not deleted) | ✅ Done |
+| 11 | Sports in Firestore (Sport model, SportRepository, sportsProvider with AppConfig fallback) | ✅ Done |
+| 11 | Sports admin screen (/admin/sports) for system admins | ✅ Done |
+| 11 | LineupGenerator decoupled from AppConfig (sportCategories passed as parameter) | ✅ Done |
+| 11 | QR code team join via MobileScanner in Join Team dialog | ✅ Done |
+| 11 | AppBar consolidated (team detail: 10+ icons → Events + QR + ⋮ overflow) | ✅ Done |
+| 11 | R8 minification enabled (isMinifyEnabled + isShrinkResources + proguard-rules.pro) | ✅ Done |
+| 11 | dSYM upload to Crashlytics in Codemagic post-build step | ✅ Done |
+| 11 | Help screen fully updated to reflect all current features | ✅ Done |
 
 ## Current Production Versions
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
 | Android (Play Store) | 1.1.9 | 30 | Live |
+| Android (Play Store) | 1.2.0 | 32 | Submitted |
 | iOS (App Store) | 1.1.9 | 41 | Live |
 
 ## Store URLs
@@ -382,9 +396,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 - A linter/Flutter Gradle plugin upgrade may revert this to `flutter.minSdkVersion` — if builds break, check this line first.
 
 ### Google Places Autocomplete — API Key
-- **Separate keys required for Android and iOS** — Google Cloud doesn't allow a single key for both platforms
-- **Android key**: restrict to Android app (`com.sportsrostering.app`) + SHA-1: `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`
-- **iOS key**: restrict to iOS app bundle (`com.sportsrostering.app`)
+- **Single key used for both platforms** — set to "No application restrictions" in Google Cloud Console (API restriction: Places API only)
+- Both SHA-1s registered in Cloud Console: debug `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`, release `1F:0B:6E:08:1D:5F:DB:85:0F:2B:23:48:76:99:A6:BD:77:8F:BE:40`
+- **Important**: `google_places_flutter` makes REST HTTP calls from the device — Android app restrictions block it. Key must be set to "None" for app restrictions, restricted by API only.
 - Keys injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY_ANDROID=...` and `--dart-define=GOOGLE_PLACES_API_KEY_IOS=...`
 - Codemagic: set both `GOOGLE_PLACES_API_KEY_ANDROID` and `GOOGLE_PLACES_API_KEY_IOS` in Keys group
 - The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without `--dart-define`)
@@ -411,3 +425,5 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | Stream providers stay in error after sign-out | Ensure providers watch `currentUserProvider` — see Firestore Security Rules section |
 | AdMob not showing | Verify app ID in `AndroidManifest.xml` (Android) / `Info.plist` (iOS) matches AdMob console |
 | IAP restore not working | Check network — Apple requires active connection for restore requests |
+| Places API "invalid key" or "not authorized" | Key must have "No application restrictions" (not Android app) — `google_places_flutter` uses REST, not Android SDK. Restrict by API only (Places API). |
+| R8 minification issues | `proguard-rules.pro` in `android/app/`. Crashlytics Gradle plugin auto-uploads mapping. If classes missing at runtime, add `-keep` rules to proguard-rules.pro |
