@@ -494,11 +494,12 @@ exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enfor
   const players = teamSnap.data().players ?? [];
   const allMembers = [...new Set([...admins, ...players])];
 
-  // Fetch FCM tokens — skip members with no token or with notifications disabled
+  // Fetch FCM tokens — skip members with notifications disabled or team muted
   const tokenPromises = allMembers.map((memberId) =>
     db.collection('users').doc(memberId).get().then((s) => {
       const data = s.data();
       if (data?.notificationsEnabled === false) return null;
+      if ((data?.mutedTeams ?? []).includes(teamId)) return null;
       return data?.fcmToken;
     })
   );
@@ -633,11 +634,17 @@ exports.sendEventReminders = onSchedule(
         if (doc.exists) userDataByUid[doc.id] = doc.data();
       }
 
+      // Map Firestore event type → eventTypePrefs key
+      const eventTypePrefKey = event.type === 'dropIn' ? 'drop_in' : (event.type ?? 'game');
+
       function isNotifiable(uid) {
         const u = userDataByUid[uid];
         if (!u) return false;
         if (u.notificationsEnabled === false) return false;
         if ((u.mutedTeams ?? []).includes(event.teamId)) return false;
+        // Check per-event-type preference (default true if not set)
+        const prefs = u.eventTypePrefs ?? {};
+        if (prefs[eventTypePrefKey] === false) return false;
         return true;
       }
 
