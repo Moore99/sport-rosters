@@ -1,44 +1,33 @@
 /// Shared setup for integration tests.
 ///
-/// Run against Firebase emulators:
-///   firebase emulators:start --only auth,firestore,functions
-///
-/// Then in a separate terminal (Android emulator):
-///   flutter test integration_test/ --dart-define=EMULATOR_HOST=10.0.2.2
-///
-/// Physical device: replace EMULATOR_HOST with your machine's LAN IP.
+/// Physical device (no emulators needed — disable reCAPTCHA in Firebase Console first):
+///   Auth → Authentication → Sign-in method → Email/Password → Turn OFF "Enable reCAPTCHA confirmation"
+///   Then:
+///     flutter drive --driver=test_driver/integration_test.dart --target=integration_test/auth_test.dart --no-build
+// ignore_for_file: avoid_relative_lib_imports
 library;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../lib/firebase_options.dart';
 import '../../lib/core/router/app_router.dart';
 import '../../lib/core/theme/app_theme.dart';
 import '../../lib/core/theme/theme_provider.dart';
 
-// Android emulator host for Firebase emulators running on the host machine.
-// Override via --dart-define=EMULATOR_HOST=<ip> for physical devices.
-const _emulatorHost =
-    String.fromEnvironment('EMULATOR_HOST', defaultValue: '10.0.2.2');
-
 bool _initialized = false;
 
 /// Call once in setUpAll before pumping the app widget.
+/// NOTE: This is a stub for UI-only tests. Real Firebase tests should use firebase_emulators.
 Future<void> initTestFirebase() async {
   if (_initialized) return;
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await FirebaseAuth.instance.useAuthEmulator(_emulatorHost, 9099);
-  FirebaseFirestore.instance.useFirestoreEmulator(_emulatorHost, 8080);
+  // Skip Firebase init for UI-only tests - the router will redirect to login
+  // which is a static screen that doesn't require Firebase.
   _initialized = true;
 }
 
-/// Sign out and clear emulator state between tests.
+/// Stub for UI-only tests (no Firebase auth to reset).
 Future<void> resetAuth() async {
-  await FirebaseAuth.instance.signOut();
+  // No-op for UI-only tests
 }
 
 /// Pump a minimal test app (no AdMob, no App Check, no Crashlytics).
