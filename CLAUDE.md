@@ -50,37 +50,14 @@ flutter test test/unit/
 Covers: Team model, Event model, GameResult, BoatConfig, LineupGenerator, AppConfig.
 All 64 tests run in ~1 second. Run after any logic change before building.
 
-### Integration tests (requires Android device/emulator + Firebase emulators)
+### Integration tests (deferred)
 
-> **OneDrive junction note:** `flutter test integration_test/` can't find the debug APK
-> through the build junction. Use `flutter drive` with `--no-build` instead (3 steps below).
+Integration tests were removed due to Firebase reCAPTCHA blocking cleartext HTTP on physical devices. The reCAPTCHA verification runs in an isolated WebView that ignores Android's network security config, making emulator-only testing impractical without proper cloud device infrastructure.
 
-**Step 1 — start Firebase emulators** (leave this terminal open):
-```bash
-firebase emulators:start --only auth,firestore,functions
-```
-Emulator UI: http://localhost:4000
-
-**Step 2 — build and install the debug APK:**
-```bash
-flutter build apk --debug
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\app-debug.apk"
-```
-
-**Step 3 — run a specific test file with `flutter drive`:**
-```bash
-flutter drive --driver=test_driver/integration_test.dart --target=integration_test/auth_test.dart --no-build
-flutter drive --driver=test_driver/integration_test.dart --target=integration_test/teams_test.dart --no-build
-```
-For a **physical Android device**, add `--dart-define=EMULATOR_HOST=192.168.x.x` (your machine's LAN IP).
-
-**Test files:**
-| File | Covers |
-|------|--------|
-| `integration_test/auth_test.dart` | Register, sign-in, sign-out, bad credentials |
-| `integration_test/teams_test.dart` | Empty state, create team, navigate to detail |
-
-**Adding more integration tests:** follow the pattern in `integration_test/helpers/setup.dart` — call `initTestFirebase()` in `setUpAll` and `resetAuth()` in `setUp`.
+**When to revisit:**
+- Firebase provides a way to disable reCAPTCHA in Console (Email/Password → reCAPTCHA toggle)
+- Use **Firebase Test Lab** or **Codemagic** for device-based E2E testing
+- Switch to **mock repositories** for UI-only testing (no Firebase)
 
 ### Static analysis
 ```bash
