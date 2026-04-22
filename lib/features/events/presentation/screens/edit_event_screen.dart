@@ -6,7 +6,7 @@ import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/config/app_config.dart';
-import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../../core/providers.dart';
 import '../../data/event_repository.dart';
 import '../../domain/event.dart';
 

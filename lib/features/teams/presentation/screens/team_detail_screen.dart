@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../../core/config/app_config.dart';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,15 +11,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/config/app_config.dart';
+import '../../../../core/providers.dart';
 import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/spares_repository.dart';
 import '../../data/team_repository.dart';
 import '../../domain/spare_request.dart';
 import '../../domain/join_request.dart';
 import '../../domain/team.dart';
-import '../providers/spares_provider.dart';
-import '../providers/teams_provider.dart';
 
 class TeamDetailScreen extends ConsumerWidget {
   final String teamId;

@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
 import '../../domain/team.dart';
 

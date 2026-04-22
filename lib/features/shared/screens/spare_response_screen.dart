@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/providers.dart';
 import '../../teams/data/spares_repository.dart';
 import '../../events/domain/event.dart';
-import '../../events/presentation/providers/events_provider.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
 
 class SpareResponseScreen extends ConsumerStatefulWidget {
   final String eventId;

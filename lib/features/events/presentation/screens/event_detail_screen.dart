@@ -6,20 +6,16 @@ import 'package:go_router/go_router.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/providers.dart';
 import '../../../../core/services/export_service.dart';
+import '../../../../core/services/analytics_service.dart';
 
 import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/teams/data/spares_repository.dart';
-import '../../../../features/teams/presentation/providers/spares_provider.dart';
-import '../../../../features/teams/presentation/providers/teams_provider.dart';
-import '../../../../core/services/analytics_service.dart';
-import '../../../../features/lineups/presentation/providers/lineup_provider.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';
 import 'edit_event_screen.dart';
-import '../providers/events_provider.dart';
 
 class EventDetailScreen extends ConsumerWidget {
   final String teamId;

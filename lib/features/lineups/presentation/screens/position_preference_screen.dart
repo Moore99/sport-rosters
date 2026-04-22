@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/services/weight_unit_provider.dart';
+import '../../../../core/providers.dart';
 import '../../../../features/auth/data/user_repository.dart';
-import '../../../sports/presentation/providers/sports_provider.dart';
 import '../../../../features/auth/domain/app_user.dart';
 import '../../../lineups/data/player_preference_repository.dart';
 import '../../../lineups/domain/player_preference.dart';

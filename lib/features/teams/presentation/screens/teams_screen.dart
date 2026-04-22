@@ -10,11 +10,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/analytics_service.dart';
+import '../../../../core/providers.dart';
 import '../../domain/team.dart';
-import '../providers/teams_provider.dart';
 import '../../data/team_repository.dart';
 import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/shared/widgets/banner_ad_widget.dart';
 
 class TeamsScreen extends ConsumerWidget {

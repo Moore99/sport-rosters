@@ -4,11 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/providers.dart';
 import '../../data/announcement_repository.dart';
 import '../../domain/announcement.dart';
 import '../providers/announcements_provider.dart';
-import '../providers/teams_provider.dart';
 
 class TeamAnnouncementsScreen extends ConsumerWidget {
   final String teamId;

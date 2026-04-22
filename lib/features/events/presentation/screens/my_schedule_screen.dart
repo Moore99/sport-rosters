@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../core/providers.dart';
 import '../../data/event_repository.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';

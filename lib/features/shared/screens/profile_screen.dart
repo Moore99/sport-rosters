@@ -11,14 +11,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/providers.dart';
 import '../../auth/data/user_repository.dart';
 import '../../../core/services/biometric_service.dart';
-import '../../../core/services/weight_unit_provider.dart';
-import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/providers/auth_notifier.dart';
-import '../../auth/presentation/providers/auth_provider.dart';
 import '../../teams/domain/team.dart';
-import '../../teams/presentation/providers/teams_provider.dart';
 import '../providers/ads_provider.dart';
 
 final _biometricAvailableProvider = FutureProvider.autoDispose<bool>(
