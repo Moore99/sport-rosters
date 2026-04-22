@@ -10,6 +10,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'core/router/app_router.dart';
 import 'core/services/biometric_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/user_ready_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -101,6 +102,17 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
 
   @override
   Widget build(BuildContext context) {
+    // Wait for initial data load before showing app
+    final userReady = ref.watch(userReadyProvider);
+    
+    return userReady.when(
+      data: (_) => _buildApp(context),
+      loading: () => const _SplashScreen(),
+      error: (_, __) => _buildApp(context), // show app even on error
+    );
+  }
+
+  Widget _buildApp(BuildContext context) {
     ref.watch(notificationInitProvider); // initializes FCM when user signs in
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
@@ -140,6 +152,38 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
       themeMode: themeMode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: AppTheme.light(),
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.sports,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Sport Rosters',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 32),
+              const CircularProgressIndicator(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
