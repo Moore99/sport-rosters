@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../../core/providers.dart';
 import '../../domain/availability.dart';
 import '../../domain/event.dart';
 import '../providers/events_provider.dart';

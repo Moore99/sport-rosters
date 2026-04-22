@@ -3,12 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../features/auth/data/user_repository.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
-import '../../../../features/events/presentation/providers/events_provider.dart';
-import '../../../../features/rankings/presentation/providers/rankings_provider.dart';
-import '../../../../features/teams/presentation/providers/teams_provider.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/services/analytics_service.dart';
+import '../../../../features/auth/data/user_repository.dart';
 import '../../data/dropin_repository.dart';
 import '../providers/dropin_provider.dart';
 

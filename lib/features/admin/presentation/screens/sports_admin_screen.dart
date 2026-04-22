@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/providers.dart';
 import '../../../sports/data/sport_repository.dart';
 import '../../../sports/domain/sport.dart';
-import '../../../sports/presentation/providers/sports_provider.dart';
 
 class SportsAdminScreen extends ConsumerWidget {
   const SportsAdminScreen({super.key});

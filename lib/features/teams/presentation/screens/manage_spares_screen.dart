@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/app_user.dart';
 import '../../data/spares_repository.dart';
 import '../../domain/spare_request.dart';
 import '../../domain/spares.dart';
 import '../providers/spares_provider.dart';
-import '../providers/teams_provider.dart';
 
 final _userProvider =
     FutureProvider.family<AppUser?, String>((ref, userId) async {

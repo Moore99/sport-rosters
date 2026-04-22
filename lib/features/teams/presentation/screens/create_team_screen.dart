@@ -6,9 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/services/analytics_service.dart';
-import '../../../sports/presentation/providers/sports_provider.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../data/team_repository.dart';
 import '../../domain/admin_role.dart';
 import '../../domain/team.dart';

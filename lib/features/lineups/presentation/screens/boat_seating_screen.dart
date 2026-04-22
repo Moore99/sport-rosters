@@ -2,17 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/config/app_config.dart';
+import '../../../../core/providers.dart';
 import '../../../../core/services/export_service.dart';
 import '../../../../core/services/rewarded_ad_service.dart';
-import '../../../../core/services/weight_unit_provider.dart';
 import '../../../../features/auth/data/user_repository.dart';
 import '../../../../features/auth/domain/app_user.dart';
-import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/events/domain/event.dart';
-import '../../../../features/events/presentation/providers/events_provider.dart';
 import '../../../../features/teams/domain/team.dart';
-import '../../../../features/teams/presentation/providers/teams_provider.dart';
-import '../../../shared/providers/ads_provider.dart';
 import '../../data/lineup_repository.dart';
 import '../../domain/lineup.dart';
 import '../providers/lineup_provider.dart';
