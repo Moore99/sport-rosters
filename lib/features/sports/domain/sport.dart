@@ -31,4 +31,15 @@ class Sport {
     'positions':  positions,
     'categories': categories,
   };
+
+  Map<String, dynamic> toJson() => toFirestore();
+
+  factory Sport.fromJson(Map<String, dynamic> json) => Sport(
+    sportId:    json['sportId'] as String? ?? '',
+    name:       json['name'] as String? ?? '',
+    positions:  List<String>.from(json['positions'] as List? ?? []),
+    categories: (json['categories'] as Map? ?? {}).map(
+      (k, v) => MapEntry(k as String, List<String>.from(v as List? ?? [])),
+    ),
+  );
 }

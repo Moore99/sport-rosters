@@ -1,7 +1,13 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/sport.dart';
+
+const _cacheKey = 'cached_sports';
+const _cacheTtlMs = 1000 * 60 * 60; // 1 hour
 
 class SportRepository {
   final FirebaseFirestore _db;
@@ -16,18 +22,64 @@ class SportRepository {
       .map((s) => s.docs.map(Sport.fromFirestore).toList());
 
   Future<List<Sport>> getSports() async {
+    final cached = await _getCachedSports();
+    if (cached != null) return cached;
+
     final snap = await _sports.orderBy('name').get();
-    return snap.docs.map(Sport.fromFirestore).toList();
+    final sports = snap.docs.map(Sport.fromFirestore).toList();
+    await _cacheSports(sports);
+    return sports;
   }
 
-  Future<void> addSport(Sport sport) =>
-      _sports.doc(sport.sportId).set(sport.toFirestore());
+  Future<List<Sport>?> _getCachedSports() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final json = prefs.getString(_cacheKey);
+      if (json == null) return null;
+      final data = jsonDecode(json) as Map<String, dynamic>;
+      if (DateTime.now().millisecondsSinceEpoch - (data['ts'] as int) > _cacheTtlMs) {
+        return null;
+      }
+      return (data['sports'] as List)
+          .map((e) => Sport.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return null;
+    }
+  }
 
-  Future<void> updateSport(Sport sport) =>
-      _sports.doc(sport.sportId).update(sport.toFirestore());
+  Future<void> _cacheSports(List<Sport> sports) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = {
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'sports': sports.map((s) => s.toJson()).toList(),
+      };
+      await prefs.setString(_cacheKey, jsonEncode(data));
+    } catch (_) {}
+  }
 
-  Future<void> deleteSport(String sportId) =>
-      _sports.doc(sportId).delete();
+  Future<void> addSport(Sport sport) async {
+    await _sports.doc(sport.sportId).set(sport.toFirestore());
+    await invalidateCache();
+  }
+
+  Future<void> updateSport(Sport sport) async {
+    await _sports.doc(sport.sportId).update(sport.toFirestore());
+    await invalidateCache();
+  }
+
+  Future<void> deleteSport(String sportId) async {
+    await _sports.doc(sportId).delete();
+    await invalidateCache();
+  }
+
+  Future<void> invalidateCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+    } catch (_) {}
+  }
 }
 
 final sportRepositoryProvider = Provider<SportRepository>(
