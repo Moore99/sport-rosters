@@ -380,7 +380,7 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
 | Android (Play Store) | 1.2.0 | 34 | Live |
-| iOS (App Store) | 1.2.0 | 38 | Live |
+| iOS (App Store) | 1.2.0 | 43 | Live |
 
 ## Store URLs
 
