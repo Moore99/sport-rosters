@@ -1,6 +1,7 @@
 {
   "projects": {
-    "sports-rostering": "sports-rostering"
+    "sports-rostering": "sports-rostering",
+    "default": "sports-rostering"
   },
   "targets": {},
   "etags": {}
