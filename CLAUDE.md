@@ -4,6 +4,12 @@ Read this file first. Reflects the actual current state, not the original spec.
 
 ---
 
+## Pending / Next Steps
+
+- **Firebase CocoaPods → SPM (action by Oct 2026)**: Firebase stops publishing to CocoaPods in October 2026. This Flutter app uses Firebase via FlutterFire — no manual migration needed; FlutterFire will handle the SPM transition. Keep FlutterFire packages current (`flutter pub upgrade`) and watch for migration-related package updates before October 2026. Deprecation warnings will appear in `pod install` output starting May 2026.
+
+---
+
 ## Running the Application
 
 ```bash
