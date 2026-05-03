@@ -484,6 +484,11 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
                       label: const Text('Manage Sports'),
                       onPressed: () => context.push(AppRoutes.sportsAdmin),
                     ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.bar_chart, size: 16),
+                      label: const Text('App Stats'),
+                      onPressed: () => context.push(AppRoutes.appStats),
+                    ),
                   ],
                   if (widget.adFree)
                     const Chip(
