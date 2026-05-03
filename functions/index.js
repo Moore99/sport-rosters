@@ -14,6 +14,8 @@ initializeApp();
 // ── Secrets (set via: firebase functions:secrets:set SECRET_NAME) ─────────────
 const appleSharedSecret         = defineSecret('APPLE_IAP_SHARED_SECRET');
 const googlePlayServiceAccount  = defineSecret('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
+const gmailUser                 = defineSecret('GMAIL_USER');
+const gmailAppPassword          = defineSecret('GMAIL_APP_PASSWORD');
 
 /**
  * deleteTeam — permanent team deletion cascade (admin only).
@@ -1056,6 +1058,154 @@ exports.resetTestPasswords = onCall(
       }
       throw new HttpsError('internal', e.message);
     }
+  }
+);
+
+/**
+ * weeklyStats — runs every Monday at 8 AM Toronto time.
+ *
+ * Counts real users (excludes systemAdmin, deleted, and test accounts),
+ * new signups in the last 7 and 30 days, total teams, and events in the
+ * last 30 days. Posts a summary to Discord if DISCORD_WEBHOOK_URL is set;
+ * always logs to Cloud Functions console.
+ */
+exports.weeklyStats = onSchedule(
+  {
+    schedule: 'every monday 08:00',
+    timeZone: 'America/Toronto',
+    region: 'northamerica-northeast1',
+    secrets: [gmailUser, gmailAppPassword],
+  },
+  async () => {
+    const db  = getFirestore();
+    const now = new Date();
+    const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
+    const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const toDate = (ts) => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+
+    // ── Users ──────────────────────────────────────────────────────────────────
+    const usersSnap = await db.collection('users').get();
+    const allUsers  = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const realUsers = allUsers.filter(u => {
+      if (u.deleted === true) return false;
+      if (u.role === 'systemAdmin') return false;
+      const name  = (u.name  ?? '').toLowerCase();
+      const email = (u.email ?? '').toLowerCase();
+      if (name.includes('test') || email.includes('test')) return false;
+      return true;
+    });
+
+    const newThisWeek  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  }).length;
+    const newThisMonth = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; }).length;
+
+    // ── Teams ──────────────────────────────────────────────────────────────────
+    const teamsSnap  = await db.collection('teams').get();
+    const totalTeams = teamsSnap.size;
+
+    // ── Events (last 30 days) ──────────────────────────────────────────────────
+    const eventsSnap = await db.collection('events')
+      .where('date', '>=', Timestamp.fromDate(ago30))
+      .get();
+    const recentEvents = eventsSnap.size;
+
+    // ── Build report ───────────────────────────────────────────────────────────
+    const dateStr = now.toLocaleDateString('en-CA', {
+      timeZone: 'America/Toronto', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    const plainText = [
+      `Sport Rosters — Weekly Stats (${dateStr})`,
+      ``,
+      `Real users:        ${realUsers.length}`,
+      `New this week:     ${newThisWeek}`,
+      `New this month:    ${newThisMonth}`,
+      `Total teams:       ${totalTeams}`,
+      `Events (30 days):  ${recentEvents}`,
+    ].join('\n');
+
+    const htmlBody = `
+      <h2>Sport Rosters — Weekly Stats</h2>
+      <p style="color:#666">${dateStr}</p>
+      <table style="border-collapse:collapse;font-family:sans-serif">
+        <tr><td style="padding:6px 16px 6px 0;color:#555">Real users</td>      <td style="padding:6px 0;font-weight:bold">${realUsers.length}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#555">New this week</td>   <td style="padding:6px 0;font-weight:bold">${newThisWeek}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#555">New this month</td>  <td style="padding:6px 0;font-weight:bold">${newThisMonth}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#555">Total teams</td>     <td style="padding:6px 0;font-weight:bold">${totalTeams}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#555">Events (30 days)</td><td style="padding:6px 0;font-weight:bold">${recentEvents}</td></tr>
+      </table>`;
+
+    console.log('=== Weekly Stats ===\n' + plainText);
+
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
+    });
+
+    await transporter.sendMail({
+      from:    `"Sport Rosters" <${gmailUser.value()}>`,
+      to:      'kernkraftconsult@gmail.com',
+      subject: `Sport Rosters Weekly Stats — ${dateStr}`,
+      text:    plainText,
+      html:    htmlBody,
+    });
+
+    console.log('Weekly stats email sent.');
+  }
+);
+
+/**
+ * getAppStats — callable function that returns app-wide stats for the admin screen.
+ * Requires systemAdmin role.
+ */
+exports.getAppStats = onCall(
+  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+    const db       = getFirestore();
+    const userSnap = await db.collection('users').doc(uid).get();
+    if (!userSnap.exists || userSnap.data().role !== 'systemAdmin') {
+      throw new HttpsError('permission-denied', 'System admin only.');
+    }
+
+    const now   = new Date();
+    const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
+    const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    const toDate = (ts) => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+
+    const usersSnap = await db.collection('users').get();
+    const allUsers  = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    const realUsers = allUsers.filter(u => {
+      if (u.deleted === true) return false;
+      if (u.role === 'systemAdmin') return false;
+      const name  = (u.name  ?? '').toLowerCase();
+      const email = (u.email ?? '').toLowerCase();
+      if (name.includes('test') || email.includes('test')) return false;
+      return true;
+    });
+
+    const newThisWeek  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  }).length;
+    const newThisMonth = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; }).length;
+
+    const teamsSnap  = await db.collection('teams').get();
+    const totalTeams = teamsSnap.size;
+
+    const eventsSnap = await db.collection('events')
+      .where('date', '>=', Timestamp.fromDate(ago30))
+      .get();
+
+    return {
+      totalRealUsers: realUsers.length,
+      newThisWeek,
+      newThisMonth,
+      totalTeams,
+      recentEvents: eventsSnap.size,
+    };
   }
 );
 
