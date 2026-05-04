@@ -1160,7 +1160,7 @@ exports.weeklyStats = onSchedule(
  * Requires systemAdmin role.
  */
 exports.getAppStats = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  { region: 'northamerica-northeast1' },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
@@ -1174,9 +1174,9 @@ exports.getAppStats = onCall(
     const now   = new Date();
     const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
     const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-
     const toDate = (ts) => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
 
+    // ── Users ──────────────────────────────────────────────────────────────────
     const usersSnap = await db.collection('users').get();
     const allUsers  = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
@@ -1189,22 +1189,51 @@ exports.getAppStats = onCall(
       return true;
     });
 
-    const newThisWeek  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  }).length;
-    const newThisMonth = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; }).length;
+    const toUserRow = (u) => ({
+      name:      u.name  ?? '',
+      email:     u.email ?? '',
+      createdAt: toDate(u.createdAt)?.toISOString() ?? null,
+      teamCount: (u.teams ?? []).length,
+    });
 
-    const teamsSnap  = await db.collection('teams').get();
-    const totalTeams = teamsSnap.size;
+    const newThisWeekList  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  });
+    const newThisMonthList = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; });
 
+    // ── Teams ──────────────────────────────────────────────────────────────────
+    const teamsSnap = await db.collection('teams').get();
+    const teamsData = teamsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const teamMap   = Object.fromEntries(teamsData.map(t => [t.id, t]));
+
+    // ── Events (last 30 days) ──────────────────────────────────────────────────
     const eventsSnap = await db.collection('events')
       .where('date', '>=', Timestamp.fromDate(ago30))
       .get();
+    const eventsData = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
     return {
-      totalRealUsers: realUsers.length,
-      newThisWeek,
-      newThisMonth,
-      totalTeams,
-      recentEvents: eventsSnap.size,
+      totalRealUsers:  realUsers.length,
+      newThisWeek:     newThisWeekList.length,
+      newThisMonth:    newThisMonthList.length,
+      totalTeams:      teamsData.length,
+      recentEvents:    eventsData.length,
+
+      realUsersList: realUsers.map(toUserRow),
+      newThisWeekList:  newThisWeekList.map(toUserRow),
+      newThisMonthList: newThisMonthList.map(toUserRow),
+
+      teamsList: teamsData.map(t => ({
+        name:        t.name  ?? '',
+        sport:       t.sport ?? '',
+        memberCount: (t.admins ?? []).length + (t.players ?? []).length,
+        createdAt:   toDate(t.createdAt)?.toISOString() ?? null,
+      })),
+
+      recentEventsList: eventsData.map(e => ({
+        type:     e.type ?? '',
+        teamName: teamMap[e.teamId]?.name  ?? 'Unknown Team',
+        sport:    teamMap[e.teamId]?.sport ?? '',
+        date:     toDate(e.date)?.toISOString() ?? null,
+      })),
     };
   }
 );
