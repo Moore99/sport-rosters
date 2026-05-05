@@ -380,13 +380,19 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 12 | deleteTeam Cloud Function (full cascade delete, admin-only) | ✅ Done |
 | 12 | eventTypePrefs respected in sendEventReminders Cloud Function | ✅ Done |
 | 12 | mutedTeams respected in sendTeamNotification Cloud Function | ✅ Done |
+| 13 | Weekly stats email (Cloud Function, every Monday 8am Toronto, Gmail/nodemailer) | ✅ Done |
+| 13 | App Stats admin screen (/admin/stats) — tappable cards: users, teams, events (30d) | ✅ Done |
+| 13 | getAppStats Cloud Function (systemAdmin-only callable, returns counts + detail lists) | ✅ Done |
+| 13 | firebase-functions SDK upgraded 4.9.0 → 7.2.5 | ✅ Done |
 
 ## Current Production Versions
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
 | Android (Play Store) | 1.2.1 | 44 | Live |
+| Android (Play Store) | 1.3.0 | 46 | In review |
 | iOS (App Store) | 1.2.1 | 44 | Live |
+| iOS (App Store) | 1.3.0 | 46 | In review |
 
 ## Store URLs
 
