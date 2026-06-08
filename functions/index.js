@@ -574,7 +574,7 @@ exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enfor
  *   reminder2Sent:  bool
  */
 exports.sendEventReminders = onSchedule(
-  { schedule: 'every 60 minutes', region: 'northamerica-northeast1' },
+  { schedule: 'every 60 minutes', region: 'northamerica-northeast1', secrets: [gmailUser, gmailAppPassword] },
   async () => {
     const db  = getFirestore();
     const now = new Date();
@@ -703,10 +703,39 @@ exports.sendEventReminders = onSchedule(
         }
       }
 
+      // Send reminder email to members without an FCM token (push fallback).
+      async function sendReminderEmailToGroup(uids, title, body) {
+        const recipients = uids.filter(uid => !userDataByUid[uid]?.fcmToken);
+        if (recipients.length === 0) return;
+        const nodemailer = require('nodemailer');
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
+        });
+        const teamName  = team.name ?? 'Your team';
+        const timeZone  = team.timezone || 'America/Toronto';
+        const timeStr   = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
+        const dateStr   = eventDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', timeZone });
+        await Promise.all(recipients.map(uid => {
+          const u = userDataByUid[uid];
+          if (!u?.email) return null;
+          const firstName = (u.name ?? 'there').split(' ')[0];
+          return transporter.sendMail({
+            from:    `"Sports Rostering" <${gmailUser.value()}>`,
+            to:      u.email,
+            subject: `${title} — ${teamName}`,
+            text:    `Hi ${firstName},\n\n${body}\n\nTeam: ${teamName}\nDate: ${dateStr} at ${timeStr}\n\nOpen the app to update your availability:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
+            html:    `<p>Hi ${firstName},</p><p>${body}</p><table style="font-family:sans-serif;border-collapse:collapse"><tr><td style="color:#555;padding:4px 16px 4px 0">Team</td><td style="font-weight:bold">${teamName}</td></tr><tr><td style="color:#555;padding:4px 16px 4px 0">Date</td><td style="font-weight:bold">${dateStr} at ${timeStr}</td></tr></table><br><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Open App</a><p style="color:#aaa;font-size:12px">You received this because push notifications are not enabled on your device. To manage notifications, open the app and go to Profile → Notifications.</p>`,
+          });
+        }));
+      }
+
       async function sendReminderToTeam(regularTitle, regularBody, coachTitle, coachBody) {
         await Promise.all([
           sendToGroup(regularMembers, regularTitle, regularBody),
           sendToGroup(coachOnlyMembers, coachTitle, coachBody),
+          sendReminderEmailToGroup(regularMembers, regularTitle, regularBody),
+          sendReminderEmailToGroup(coachOnlyMembers, coachTitle, coachBody),
         ]);
 
         // Persist one inbox message representing the primary reminder
@@ -925,7 +954,7 @@ exports.onAvailabilityChanged = onDocumentUpdated(
  *   batchSize  — Number of spares to notify (default 10)
  */
 exports.notifySpares = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: true },
+  { region: 'northamerica-northeast1', enforceAppCheck: true, secrets: [gmailUser, gmailAppPassword] },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
@@ -956,41 +985,60 @@ exports.notifySpares = onCall(
       return { sent: 0 };
     }
 
-    // Get FCM tokens for spares
-    const tokens = [];
+    // Fetch user data for spares (token + email + name for email fallback)
+    const spareUsers = [];
     for (const doc of sparesSnap.docs) {
-      const userId = doc.id;
-      const userSnap = await db.collection('users').doc(userId).get();
-      const token = userSnap.data()?.fcmToken;
-      if (token) tokens.push(token);
+      const userSnap = await db.collection('users').doc(doc.id).get();
+      if (userSnap.exists) spareUsers.push({ uid: doc.id, ...userSnap.data() });
     }
 
-    if (tokens.length === 0) {
-      return { sent: 0 };
-    }
+    const tokens = spareUsers.map(u => u.fcmToken).filter(Boolean);
 
     const eventDateObj = new Date(eventDate);
     const dateStr = eventDateObj.toLocaleDateString('en-US', {
       weekday: 'short', month: 'short', day: 'numeric'
     });
+    const longDateStr = eventDateObj.toLocaleDateString('en-CA', {
+      weekday: 'long', month: 'long', day: 'numeric'
+    });
 
     const title = `Spares Needed - ${teamName}`;
     const body = `Event on ${dateStr} needs players. Tap to fill in!`;
 
-    // Send notifications
+    // Send push to spares who have FCM tokens
     const BATCH = 500;
     let sent = 0;
-    for (let i = 0; i < tokens.length; i += BATCH) {
-      const batch = tokens.slice(i, i + BATCH);
-      const response = await getMessaging().sendEachForMulticast({
-        tokens: batch,
-        notification: { title, body },
-        data: { teamId, eventId, type: 'spareNeeded' },
-        android: { priority: 'high' },
-        apns: { payload: { aps: { sound: 'default' } } },
-      });
-      sent += response.successCount;
+    if (tokens.length > 0) {
+      for (let i = 0; i < tokens.length; i += BATCH) {
+        const batch = tokens.slice(i, i + BATCH);
+        const response = await getMessaging().sendEachForMulticast({
+          tokens: batch,
+          notification: { title, body },
+          data: { teamId, eventId, type: 'spareNeeded' },
+          android: { priority: 'high' },
+          apns: { payload: { aps: { sound: 'default' } } },
+        });
+        sent += response.successCount;
+      }
     }
+
+    // Send email to ALL spares (push may not reach everyone)
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
+    });
+    await Promise.all(spareUsers.map(u => {
+      if (!u.email) return null;
+      const firstName = (u.name ?? 'there').split(' ')[0];
+      return transporter.sendMail({
+        from:    `"Sports Rostering" <${gmailUser.value()}>`,
+        to:      u.email,
+        subject: `Spares Needed — ${teamName} on ${longDateStr}`,
+        text:    `Hi ${firstName},\n\n${teamName} is looking for spares for an event on ${longDateStr}.\n\nIf you can play, open the app to sign up:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
+        html:    `<p>Hi ${firstName},</p><p><strong>${teamName}</strong> is looking for spares for an event on <strong>${longDateStr}</strong>.</p><p>If you can play, tap the button below to sign up:</p><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Sign Up as Spare</a><p style="color:#aaa;font-size:12px">You received this because you are on the spares list for ${teamName}. To remove yourself, open the app and leave the spares list.</p>`,
+      });
+    }));
 
     // Persist to notification inbox
     await db.collection('teamNotifications').doc(teamId)
