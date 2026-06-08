@@ -23,6 +23,7 @@ ios/Flutter/flutter_export_environment.sh
 # Firebase
 .firebase/
 firebase-debug.log
+functions/node_modules/
 
 # Environment
 .env
