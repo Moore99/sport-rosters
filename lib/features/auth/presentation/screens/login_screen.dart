@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -175,8 +176,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       },
                     ),
 
-                    // ── Sign in with Apple (iOS only — required by App Store) ─
-                    if (Platform.isIOS) ...[
+                    // ── Sign in with Apple (iOS + Web — required by App Store;
+                    //    available on web via redirect flow) ──────────────────
+                    if (kIsWeb || Platform.isIOS) ...[
                       const SizedBox(height: 12),
                       SignInWithAppleButton(
                         onPressed: isLoading ? () {} : () async {

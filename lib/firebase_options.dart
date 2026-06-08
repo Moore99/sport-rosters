@@ -38,6 +38,7 @@ class DefaultFirebaseOptions {
     projectId: 'sports-rostering',
     authDomain: 'sports-rostering.firebaseapp.com',
     storageBucket: 'sports-rostering.firebasestorage.app',
+    measurementId: 'G-QCX3G9KSPC',
   );
 
   // Replace all values below with output from `flutterfire configure`

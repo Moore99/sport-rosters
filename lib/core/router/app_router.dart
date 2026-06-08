@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -40,9 +41,11 @@ import '../../features/teams/presentation/screens/team_announcements_screen.dart
 import '../../features/teams/presentation/screens/join_via_link_screen.dart';
 import '../../features/admin/presentation/screens/sports_admin_screen.dart';
 import '../../features/admin/presentation/screens/app_stats_screen.dart';
+import '../../features/shared/screens/landing_screen.dart';
 
 // Route paths
 class AppRoutes {
+  static const landing = '/';
   static const login = '/login';
   static const biometricLock = '/biometric-lock';
   static const register = '/register';
@@ -85,7 +88,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final analyticsObserver = ref.read(analyticsObserverProvider);
 
   return GoRouter(
-    initialLocation: AppRoutes.teams,
+    initialLocation: kIsWeb ? AppRoutes.landing : AppRoutes.teams,
     observers: [analyticsObserver],
     redirect: (context, state) {
       // Strip custom URI scheme so deep links like sportsrostering://join/teamId
@@ -97,7 +100,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       final isLoggedIn = authState.valueOrNull != null;
       final currentPath = state.matchedLocation;
-      final isAuthRoute = currentPath == AppRoutes.login ||
+      final isAuthRoute = currentPath == AppRoutes.landing ||
+          currentPath == AppRoutes.login ||
           currentPath == AppRoutes.register ||
           currentPath == AppRoutes.forgotPassword ||
           currentPath == AppRoutes.privacy ||
@@ -105,6 +109,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           currentPath == AppRoutes.accessibility ||
           currentPath == AppRoutes.tour ||
           currentPath.startsWith('/join/');
+
+      // Authenticated users visiting the landing page go straight to teams.
+      if (isLoggedIn && currentPath == AppRoutes.landing) {
+        return AppRoutes.teams;
+      }
 
       if (!isLoggedIn && !isAuthRoute) return AppRoutes.login;
 
@@ -140,6 +149,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+          path: AppRoutes.landing,
+          builder: (_, __) => const LandingScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
       GoRoute(
           path: AppRoutes.biometricLock,

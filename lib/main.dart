@@ -22,11 +22,12 @@ void main() async {
 
   await Future.wait([
     Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
-    MobileAds.instance.initialize(),
+    if (!kIsWeb) MobileAds.instance.initialize(),
   ]);
 
   // ── App Check ──────────────────────────────────────────────────────────────
   // Debug provider in debug mode; Play Integrity / DeviceCheck in release.
+  // Web uses reCAPTCHA v3 — register site key in Google Cloud Console.
   await FirebaseAppCheck.instance.activate(
     providerAndroid: kDebugMode
         ? const AndroidDebugProvider()
@@ -34,23 +35,34 @@ void main() async {
     providerApple: kDebugMode
         ? const AppleDebugProvider()
         : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+    // Web uses reCAPTCHA v3. In debug mode, WebDebugProvider auto-generates a
+    // token (printed to browser console) — register it in Firebase Console.
+    // In production, replace TODO_RECAPTCHA_V3_SITE_KEY with the site key
+    // from Google Cloud Console → Security → reCAPTCHA.
+    webProvider: kDebugMode
+        ? WebDebugProvider()
+        : ReCaptchaV3Provider('6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8'),
   );
 
   FlutterNativeSplash.remove();
 
   // ── Crashlytics ────────────────────────────────────────────────────────────
   // Disable in debug so crash reports don't pollute the console.
-  await FirebaseCrashlytics.instance
-      .setCrashlyticsCollectionEnabled(!kDebugMode);
+  // firebase_crashlytics does not support web — skip entirely on web.
+  if (!kIsWeb) {
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(!kDebugMode);
 
-  // Catch Flutter framework errors
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Catch Flutter framework errors
+    FlutterError.onError =
+        FirebaseCrashlytics.instance.recordFlutterFatalError;
 
-  // Catch async errors outside Flutter framework (platform channels, isolates)
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+    // Catch async errors outside Flutter framework (platform channels, isolates)
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  }
 
   runApp(
     const ProviderScope(child: SportsRosteringApp()),
@@ -93,6 +105,7 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
   }
 
   Future<void> _tryLock() async {
+    if (kIsWeb) return;
     final service = ref.read(biometricServiceProvider);
     final enabled = await service.isEnabled();
     if (!enabled) return;

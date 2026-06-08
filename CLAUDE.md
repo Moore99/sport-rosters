@@ -384,6 +384,19 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 13 | App Stats admin screen (/admin/stats) — tappable cards: users, teams, events (30d) | ✅ Done |
 | 13 | getAppStats Cloud Function (systemAdmin-only callable, returns counts + detail lists) | ✅ Done |
 | 13 | firebase-functions SDK upgraded 4.9.0 → 7.2.5 | ✅ Done |
+| 14 | Flutter Web version — platform guards, landing page, Firebase Hosting | ✅ Done |
+| 14 | Google Sign-In on web (signInWithPopup replaces google_sign_in deprecated signIn) | ✅ Done |
+| 14 | Apple Sign-In on web (sign_in_with_apple redirect flow, Services ID: com.sportsrostering.app.signin) | ✅ Done |
+| 14 | Stripe "Remove Ads" for web — createStripeCheckout + stripeWebhook Cloud Functions | ✅ Done |
+| 14 | Rewarded ad gate on web → Stripe checkout (auto-lineup, auto-balance) | ✅ Done |
+| 14 | AdSense banner live (publisher: ca-pub-5119215558360251, slot: 8822412340, HtmlElementView) | ✅ Done |
+| 14 | Firebase App Check reCAPTCHA v3 on web (site key: 6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8) | ✅ Done |
+| 14 | Firebase Analytics GA4 measurement ID G-QCX3G9KSPC added to firebase_options.dart web block | ✅ Done |
+| 14 | Marketing landing page at `/` (hero, features grid, App Store/Play Store badges) | ✅ Done |
+| 14 | Web favicon + PWA icons updated to app whistle icon | ✅ Done |
+| 14 | Google + Apple Sign-In added to register screen (matches login screen) | ✅ Done |
+| 14 | Stripe price ID price_1TftI8Lc7EXpUmQL7nnnZlIy configured in functions/index.js | ✅ Done |
+| 14 | share_plus upgraded ^12 → ^13 (API fix — code already used v13 API); package_info_plus ^9 → ^10 | ✅ Done |
 
 ## Current Production Versions
 
@@ -391,11 +404,28 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 |----------|---------|-------|--------|
 | Android (Play Store) | 1.3.0 | 46 | Live |
 | iOS (App Store) | 1.3.0 | 46 | Live |
+| Web (Firebase Hosting) | 1.3.0 | — | Live at https://sports-rostering.web.app |
+
+## Web Build & Deploy
+
+```bash
+# Build (must use --output to bypass Windows junction issue with flutter_assets deletion)
+flutter build web --release --output C:\BuildTemp\web-output --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ --dart-define=GOOGLE_PLACES_API_KEY_IOS=AIzaSyAY590kSYhhKKzu6VVlsA0xO_VcpdNE3DQ
+
+# Local test
+cd C:\BuildTemp\web-output && python -m http.server 8080
+
+# Deploy (firebase.json public: "C:\\BuildTemp\\web-output" — junction not traversable by Firebase CLI)
+firebase deploy --only hosting
+```
+
+Note: `flutter run -d chrome` fails due to junction — use `flutter build web --output` + local HTTP server for web development.
 
 ## Store URLs
 
 | Page | URL |
 |------|-----|
+| Web App | https://sports-rostering.web.app |
 | Privacy Policy (Android) | https://moore99.github.io/sport-rosters/privacy |
 | Privacy Policy (iOS) | https://nuclear-motd.com/privacy (combined policy, still live) |
 | Terms of Service | https://moore99.github.io/sport-rosters/terms |
