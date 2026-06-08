@@ -27,11 +27,24 @@ final _appVersionProvider = FutureProvider<String>((ref) async {
   return '${info.version} (${info.buildNumber})';
 });
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userAsync        = ref.watch(currentUserProfileProvider);
     final teamsAsync       = ref.watch(userTeamsProvider);
     final uid              = ref.watch(currentUserProvider)?.uid ?? '';
@@ -48,6 +61,7 @@ class ProfileScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error:   (e, _) => Center(child: Text('Error: $e')),
         data: (user) => ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
             // ── Profile header ─────────────────────────────────────────
