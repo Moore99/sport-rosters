@@ -43,9 +43,7 @@ class NotificationService {
   final Ref _ref;
   NotificationService(this._ref);
 
-  // VAPID key for web push — generate at:
-  // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
-  static const _vapidKey = 'YOUR_VAPID_KEY';
+  static const _vapidKey = 'BCbbuuCRr03_-L_8lZUApVkyICNsf1WXcLDQc4D2C9r6lCC9GlQGeyBxwR8MqF_hcJwkrQSVXKypRn82TUULkF8';
 
   Future<void> initialize() async {
     if (kIsWeb) {
