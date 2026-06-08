@@ -17,7 +17,11 @@ final userReadyProvider = FutureProvider<bool>((ref) async {
   // If not signed in, app is ready (show login)
   if (authState == null) return true;
   
-  // If signed in, also wait for teams to load
-  await ref.watch(userTeamsProvider.future);
+  // If signed in, also wait for teams to load.
+  // Use ref.read (not ref.watch) so userReadyProvider does NOT re-run every
+  // time teams re-fetch (e.g. after any Firestore profile update). Re-running
+  // would briefly show the splash screen and destroy all widget state
+  // (including ScrollControllers), causing scroll position to reset.
+  await ref.read(userTeamsProvider.future);
   return true;
 });
