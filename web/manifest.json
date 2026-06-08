@@ -1,11 +1,11 @@
 {
-    "name": "sports_rostering",
-    "short_name": "sports_rostering",
-    "start_url": ".",
+    "name": "Sport Rosters",
+    "short_name": "Sport Rosters",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#ffffff",
+    "theme_color": "#2196F3",
+    "description": "Roster management for every sport. Schedule events, build lineups, manage drop-ins, and keep your team in sync.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
