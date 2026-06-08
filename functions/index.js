@@ -705,7 +705,12 @@ exports.sendEventReminders = onSchedule(
 
       // Send reminder email to members without an FCM token (push fallback).
       async function sendReminderEmailToGroup(uids, title, body) {
-        const recipients = uids.filter(uid => !userDataByUid[uid]?.fcmToken);
+        const recipients = uids.filter(uid => {
+          const u = userDataByUid[uid];
+          if (u?.fcmToken) return false; // has push token — push handles it
+          if (u?.emailNotificationsEnabled === false) return false;
+          return true;
+        });
         if (recipients.length === 0) return;
         const nodemailer = require('nodemailer');
         const transporter = nodemailer.createTransport({
@@ -1030,6 +1035,7 @@ exports.notifySpares = onCall(
     });
     await Promise.all(spareUsers.map(u => {
       if (!u.email) return null;
+      if (u.emailNotificationsEnabled === false) return null;
       const firstName = (u.name ?? 'there').split(' ')[0];
       return transporter.sendMail({
         from:    `"Sports Rostering" <${gmailUser.value()}>`,

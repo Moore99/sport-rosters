@@ -60,6 +60,10 @@ class UserRepository {
   Future<void> updateNotificationsEnabled(String userId, bool enabled) =>
       _users.doc(userId).update({'notificationsEnabled': enabled});
 
+  /// Toggles whether email notifications are sent to this user.
+  Future<void> updateEmailNotificationsEnabled(String userId, bool enabled) =>
+      _users.doc(userId).update({'emailNotificationsEnabled': enabled});
+
   /// Mutes notifications from a specific team for this user.
   Future<void> muteTeam(String userId, String teamId) =>
       _users.doc(userId).update({'mutedTeams': FieldValue.arrayUnion([teamId])});
