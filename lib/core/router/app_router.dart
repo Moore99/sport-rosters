@@ -101,9 +101,20 @@ class _RouterNotifier extends ChangeNotifier {
       bioLocked = next;
       notifyListeners();
     }, fireImmediately: true);
-    ref.listen<AsyncValue<AppUser?>>(currentUserProfileProvider, (_, next) {
+    ref.listen<AsyncValue<AppUser?>>(currentUserProfileProvider, (prev, next) {
       userProfile = next;
-      notifyListeners();
+      // Only notify GoRouter when routing-relevant data changes:
+      // - Transitioning from non-data to data (initial load)
+      // - teams.isEmpty changes (onboarding redirect depends on this)
+      // Non-routing fields (emailNotificationsEnabled, weight, etc.) must NOT
+      // trigger notifyListeners() — doing so rebuilds the page stack and
+      // recreates the current screen widget, destroying scroll position.
+      final prevTeamsEmpty = prev?.valueOrNull?.teams.isEmpty;
+      final nextTeamsEmpty = next.valueOrNull?.teams.isEmpty;
+      final firstLoad = prev is! AsyncData && next is AsyncData;
+      if (firstLoad || prevTeamsEmpty != nextTeamsEmpty) {
+        notifyListeners();
+      }
     }, fireImmediately: true);
   }
 }
