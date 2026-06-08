@@ -255,6 +255,15 @@ class ProfileScreen extends ConsumerWidget {
                     .updateEventTypePref(uid, 'drop_in', v),
               ),
             ],
+            SwitchListTile(
+              secondary: const Icon(Icons.email_outlined),
+              title:     const Text('Email Notifications'),
+              subtitle:  const Text('Event reminders and spare requests via email'),
+              value:     user?.emailNotificationsEnabled ?? true,
+              onChanged: (v) => ref
+                  .read(userRepositoryProvider)
+                  .updateEmailNotificationsEnabled(uid, v),
+            ),
             if (bioAvailable)
               SwitchListTile(
                 secondary: const Icon(Icons.fingerprint),

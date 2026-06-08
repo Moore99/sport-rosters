@@ -15,8 +15,9 @@ class AppUser {
   final String role;         // 'player' | 'teamAdmin' | 'systemAdmin'
   final bool deleted;        // soft-delete flag (GDPR right to erasure pending cascade)
   final DateTime createdAt;
-  final bool notificationsEnabled; // user-level push notification opt-out
-  final List<String> mutedTeams;   // team IDs where notifications are muted
+  final bool notificationsEnabled;      // user-level push notification opt-out
+  final bool emailNotificationsEnabled; // user-level email notification opt-out
+  final List<String> mutedTeams;        // team IDs where notifications are muted
   final List<String> hiddenTeams;  // team IDs hidden from main list
   /// Per-event-type reminder prefs. Keys: 'game', 'practice', 'dropIn'.
   /// Absent key = enabled (default true).
@@ -36,6 +37,7 @@ class AppUser {
     required this.deleted,
     required this.createdAt,
     this.notificationsEnabled = true,
+    this.emailNotificationsEnabled = true,
     this.mutedTeams = const [],
     this.hiddenTeams = const [],
     this.eventTypePrefs = const {},
@@ -56,7 +58,8 @@ class AppUser {
       role:      data['role']     as String? ?? 'player',
       deleted:   data['deleted']  as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      notificationsEnabled: data['notificationsEnabled'] as bool? ?? true,
+      notificationsEnabled:      data['notificationsEnabled']      as bool? ?? true,
+      emailNotificationsEnabled: data['emailNotificationsEnabled'] as bool? ?? true,
       mutedTeams: List<String>.from(data['mutedTeams'] as List? ?? []),
       hiddenTeams: List<String>.from(data['hiddenTeams'] as List? ?? []),
       eventTypePrefs: Map<String, bool>.from(
