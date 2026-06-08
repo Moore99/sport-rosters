@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/email_verify_screen.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/auth/domain/app_user.dart';
 import '../../features/teams/presentation/screens/teams_screen.dart';
 import '../../features/teams/presentation/screens/team_detail_screen.dart';
 import '../../features/teams/presentation/screens/create_team_screen.dart';
@@ -85,16 +87,43 @@ class AppRoutes {
   static const onboarding = '/onboarding';
 }
 
+class _RouterNotifier extends ChangeNotifier {
+  AsyncValue<User?> authState = const AsyncLoading();
+  bool bioLocked = false;
+  AsyncValue<AppUser?> userProfile = const AsyncLoading();
+
+  _RouterNotifier(Ref ref) {
+    ref.listen<AsyncValue<User?>>(authStateProvider, (_, next) {
+      authState = next;
+      notifyListeners();
+    }, fireImmediately: true);
+    ref.listen<bool>(biometricLockProvider, (_, next) {
+      bioLocked = next;
+      notifyListeners();
+    }, fireImmediately: true);
+    ref.listen<AsyncValue<AppUser?>>(currentUserProfileProvider, (_, next) {
+      userProfile = next;
+      notifyListeners();
+    }, fireImmediately: true);
+  }
+}
+
+final _routerNotifierProvider = ChangeNotifierProvider<_RouterNotifier>(
+  (ref) => _RouterNotifier(ref),
+);
+
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final bioLocked = ref.watch(biometricLockProvider);
-  final userProfile = ref.watch(currentUserProfileProvider);
+  final notifier = ref.read(_routerNotifierProvider);
   final analyticsObserver = ref.read(analyticsObserverProvider);
 
   return GoRouter(
     initialLocation: kIsWeb ? AppRoutes.landing : AppRoutes.teams,
     observers: [analyticsObserver],
+    refreshListenable: notifier,
     redirect: (context, state) {
+      final authState = notifier.authState;
+      final bioLocked = notifier.bioLocked;
+      final userProfile = notifier.userProfile;
       // Strip custom URI scheme so deep links like sportsrostering://join/teamId
       // are converted to /join/teamId before GoRouter tries to match routes.
       final fullUri = state.uri.toString();
