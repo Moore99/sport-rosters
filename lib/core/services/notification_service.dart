@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,6 +44,10 @@ class NotificationService {
   NotificationService(this._ref);
 
   Future<void> initialize() async {
+    // flutter_local_notifications and mobile FCM setup are not supported on web.
+    // Web push notifications require a service worker — deferred to a future phase.
+    if (kIsWeb) return;
+
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     final messaging = FirebaseMessaging.instance;

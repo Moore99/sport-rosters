@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -48,11 +49,17 @@ String friendlyAuthError(FirebaseAuthException e) {
 // which can leave the native GIDSignIn in a state where it can't resolve a
 // presentingViewController (SIGABRT on iOS with UISceneDelegate).
 // iOS clientId must be the iOS OAuth client ID (not the web client ID).
+// Web requires a separate Web OAuth 2.0 client ID from Google Cloud Console
+// → APIs & Services → Credentials. Replace TODO_WEB_OAUTH_CLIENT_ID below
+// with the generated client ID (format: XXXXXX.apps.googleusercontent.com).
 final _googleSignIn = GoogleSignIn(
-  clientId: Platform.isIOS
-      ? '363898653310-rfako4db7amsb2qu66p88d7prt83625u.apps.googleusercontent.com'
-      : null,
-  serverClientId: '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com',
+  clientId: kIsWeb
+      ? '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com'
+      : (Platform.isIOS
+          ? '363898653310-rfako4db7amsb2qu66p88d7prt83625u.apps.googleusercontent.com'
+          : null),
+  serverClientId:
+      '363898653310-clvrj1vboa5m2dnnqndlksg24kue44rp.apps.googleusercontent.com',
 );
 
 /// Handles auth actions: sign in, register, sign out, password reset.
@@ -116,19 +123,26 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> signInWithGoogle() async {
     state = const AsyncLoading();
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        // User cancelled the picker
-        state = const AsyncData(null);
-        return false;
+      final UserCredential userCred;
+      if (kIsWeb) {
+        // On web, use Firebase Auth popup flow directly — google_sign_in's
+        // signIn() method is deprecated on web and no longer works reliably.
+        userCred = await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          // User cancelled the picker
+          state = const AsyncData(null);
+          return false;
+        }
+        final googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken:     googleAuth.idToken,
+        );
+        userCred = await _auth.signInWithCredential(credential);
       }
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken:     googleAuth.idToken,
-      );
-      final userCred = await _auth.signInWithCredential(credential);
-      final user     = userCred.user!;
+      final user = userCred.user!;
 
       // Create Firestore profile on first Google sign-in
       final existing = await _users.getUser(user.uid);
@@ -160,32 +174,44 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// Signs in with Apple (iOS only). Creates a Firestore profile if first sign-in.
+  /// Signs in with Apple (iOS + web). Creates a Firestore profile if first sign-in.
   /// Apple only provides name/email on the *first* authentication — subsequent
   /// sign-ins omit them, so we fall back to whatever Firebase has on the user.
+  /// On web, uses Firebase Auth signInWithPopup (avoids sign_in_with_apple web
+  /// redirect complexity and Services ID configuration requirements).
   Future<bool> signInWithApple() async {
     state = const AsyncLoading();
     try {
-      final appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final oauthCredential = OAuthProvider('apple.com').credential(
-        idToken:     appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
-
-      final userCred = await _auth.signInWithCredential(oauthCredential);
-      final user     = userCred.user!;
+      final UserCredential userCred;
+      String appleFirstName = '';
+      String appleLastName  = '';
+      if (kIsWeb) {
+        final provider = OAuthProvider('apple.com')
+          ..addScope('email')
+          ..addScope('name');
+        userCred = await _auth.signInWithPopup(provider);
+      } else {
+        final appleCredential = await SignInWithApple.getAppleIDCredential(
+          scopes: [
+            AppleIDAuthorizationScopes.email,
+            AppleIDAuthorizationScopes.fullName,
+          ],
+        );
+        appleFirstName = appleCredential.givenName ?? '';
+        appleLastName  = appleCredential.familyName ?? '';
+        final oauthCredential = OAuthProvider('apple.com').credential(
+          idToken:     appleCredential.identityToken,
+          accessToken: appleCredential.authorizationCode,
+        );
+        userCred = await _auth.signInWithCredential(oauthCredential);
+      }
+      final user = userCred.user!;
 
       // Create Firestore profile on first Apple sign-in
       final existing = await _users.getUser(user.uid);
       if (existing == null) {
-        final firstName = appleCredential.givenName ?? '';
-        final lastName  = appleCredential.familyName ?? '';
+        final firstName = appleFirstName;
+        final lastName  = appleLastName;
         final fullName  = '$firstName $lastName'.trim();
 
         await _users.createUser(AppUser(

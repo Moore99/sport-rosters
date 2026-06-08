@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
@@ -35,6 +36,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   void _listenPurchases() {
+    // in_app_purchase is not supported on web — IAP handled via Stripe instead.
+    if (kIsWeb) return;
     _sub = InAppPurchase.instance.purchaseStream.listen(
       _handlePurchases,
       onError: (e) => state = IapStatus(IapState.error, e.toString()),
@@ -82,7 +85,7 @@ class IapNotifier extends StateNotifier<IapStatus> {
           .httpsCallable('validateIap');
 
       await callable.call(<String, dynamic>{
-        'platform':    Platform.isIOS ? 'ios' : 'android',
+        'platform': (!kIsWeb && Platform.isIOS) ? 'ios' : 'android',
         'receiptData': purchase.verificationData.serverVerificationData,
         'productId':   purchase.productID,
         'isRestore':   isRestore,
@@ -101,6 +104,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   Future<void> purchaseRemoveAds() async {
+    // On web, Remove Ads is purchased via Stripe (see rewarded_ad_service.dart).
+    if (kIsWeb) return;
     state = const IapStatus(IapState.loading);
 
     final available = await InAppPurchase.instance.isAvailable();
@@ -127,6 +132,7 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   Future<void> restorePurchases() async {
+    if (kIsWeb) return;
     state = const IapStatus(IapState.loading);
     await InAppPurchase.instance.restorePurchases();
     // Restored purchases arrive via purchaseStream → _handlePurchases

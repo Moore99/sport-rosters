@@ -1,4 +1,4 @@
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule }        = require('firebase-functions/v2/scheduler');
 const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { defineSecret }      = require('firebase-functions/params');
@@ -16,6 +16,8 @@ const appleSharedSecret         = defineSecret('APPLE_IAP_SHARED_SECRET');
 const googlePlayServiceAccount  = defineSecret('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
 const gmailUser                 = defineSecret('GMAIL_USER');
 const gmailAppPassword          = defineSecret('GMAIL_APP_PASSWORD');
+const stripeSecretKey           = defineSecret('STRIPE_SECRET_KEY');
+const stripeWebhookSecret       = defineSecret('STRIPE_WEBHOOK_SECRET');
 
 /**
  * deleteTeam — permanent team deletion cascade (admin only).
@@ -1298,5 +1300,110 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
         // Stale token — ignore, token cleanup handled by sendTeamNotification
       }
     }
+  }
+);
+
+// ── Stripe: Create Checkout Session ──────────────────────────────────────────
+/**
+ * createStripeCheckout — creates a Stripe Checkout session for the web
+ * "Remove Ads" one-time purchase.
+ *
+ * Called by Flutter Web when a free user tries to use a gated feature.
+ * Returns a Stripe Checkout URL which the client opens in the browser.
+ *
+ * Prerequisites:
+ *   firebase functions:secrets:set STRIPE_SECRET_KEY
+ *   Create a "Remove Ads" product + price in Stripe dashboard, copy the
+ *   price ID (price_xxx) into STRIPE_PRICE_ID below.
+ *
+ * @param {string} userId   - Firebase UID of the purchasing user
+ * @param {string} returnUrl  - URL to redirect to after successful payment
+ * @param {string} cancelUrl  - URL to redirect to if user cancels
+ */
+exports.createStripeCheckout = onCall(
+  {
+    region: 'northamerica-northeast1',
+    enforceAppCheck: true,
+    secrets: [stripeSecretKey],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+
+    const { returnUrl, cancelUrl } = request.data;
+    if (!returnUrl) throw new HttpsError('invalid-argument', 'returnUrl is required.');
+
+    // TODO: Replace with your actual Stripe price ID from the dashboard.
+    // Create a one-time "Remove Ads" product at https://dashboard.stripe.com/products
+    const STRIPE_PRICE_ID = 'price_1TftI8Lc7EXpUmQL7nnnZlIy';
+
+    const Stripe = require('stripe');
+    const stripe = Stripe(stripeSecretKey.value());
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      metadata: { userId: uid },
+      success_url: returnUrl,
+      cancel_url: cancelUrl || returnUrl,
+    });
+
+    return { url: session.url };
+  }
+);
+
+// ── Stripe: Webhook Handler ───────────────────────────────────────────────────
+/**
+ * stripeWebhook — receives Stripe events and grants the Remove Ads entitlement.
+ *
+ * This is an HTTP trigger (not callable) — App Check does not apply.
+ * Security is enforced by verifying the Stripe webhook signature.
+ *
+ * Set up in Stripe Dashboard → Developers → Webhooks:
+ *   Endpoint URL: https://northamerica-northeast1-sports-rostering.cloudfunctions.net/stripeWebhook
+ *   Events to send: checkout.session.completed
+ *
+ * Then: firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
+ */
+exports.stripeWebhook = onRequest(
+  {
+    region: 'northamerica-northeast1',
+    secrets: [stripeSecretKey, stripeWebhookSecret],
+  },
+  async (req, res) => {
+    const Stripe = require('stripe');
+    const stripe = Stripe(stripeSecretKey.value());
+
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        sig,
+        stripeWebhookSecret.value()
+      );
+    } catch (err) {
+      console.error('Stripe webhook signature verification failed:', err.message);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const userId = session.metadata?.userId;
+
+      if (!userId) {
+        console.error('stripeWebhook: no userId in session metadata', session.id);
+        res.status(400).send('Missing userId in metadata.');
+        return;
+      }
+
+      const db = getFirestore();
+      await db.collection('users').doc(userId).update({ adFree: true });
+      console.log(`stripeWebhook: adFree granted to uid=${userId} session=${session.id}`);
+    }
+
+    res.status(200).send('OK');
   }
 );

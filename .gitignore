@@ -30,3 +30,6 @@ firebase-debug.log
 
 # Claude Code
 .claude/
+
+# Firestore emulator
+firestore-debug.log

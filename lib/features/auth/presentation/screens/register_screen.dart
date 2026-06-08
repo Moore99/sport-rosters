@@ -1,7 +1,11 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../providers/auth_notifier.dart';
@@ -266,6 +270,62 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           : const Text('Create Account'),
                     ),
                     const SizedBox(height: 16),
+
+                    // ── Divider ───────────────────────────────────────────
+                    Row(children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or',
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.outline)),
+                      ),
+                      const Expanded(child: Divider()),
+                    ]),
+                    const SizedBox(height: 16),
+
+                    // ── Google Sign-In ────────────────────────────────────
+                    OutlinedButton.icon(
+                      icon: Image.asset('assets/icons/google_logo.png',
+                          height: 20,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.login)),
+                      label: const Text('Continue with Google'),
+                      onPressed: isLoading ? null : () async {
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .signInWithGoogle();
+                        if (context.mounted) {
+                          final authState = ref.read(authNotifierProvider);
+                          if (authState is AsyncError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(authState.error.toString())),
+                            );
+                          }
+                        }
+                      },
+                    ),
+
+                    // ── Apple Sign-In (iOS + Web) ─────────────────────────
+                    if (kIsWeb || Platform.isIOS) ...[
+                      const SizedBox(height: 12),
+                      SignInWithAppleButton(
+                        onPressed: isLoading ? () {} : () async {
+                          await ref
+                              .read(authNotifierProvider.notifier)
+                              .signInWithApple();
+                          if (context.mounted) {
+                            final authState = ref.read(authNotifierProvider);
+                            if (authState is AsyncError) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(authState.error.toString())),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 24),
 
                     // ── Back to login ─────────────────────────────────────
                     Center(

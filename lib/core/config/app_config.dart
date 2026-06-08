@@ -1,6 +1,7 @@
 /// Central configuration — ad unit IDs, feature flags, IAP product IDs.
 /// Swap test IDs to live IDs before store submission.
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Color, Colors;
 
 class AppConfig {
@@ -32,6 +33,12 @@ class AppConfig {
       'ca-app-pub-5119215558360251/6970801948';
   static const String rewardedAdUnitIos =
       'ca-app-pub-5119215558360251/8383255266';
+
+  // ── AdSense (Web) ──────────────────────────────────────────────────────────
+  // TODO: Replace with actual publisher and ad unit IDs from AdSense console.
+  // Apply at https://www.google.com/adsense if you don't have an account.
+  static const String adsensePublisherId    = 'ca-pub-5119215558360251';
+  static const String adsenseBannerAdUnitWeb = '8822412340';
 
   // ── Sports (MVP hardcoded — move to Firestore 'sports' collection Phase 2+) ─
   static const List<String> defaultSports = [
@@ -868,12 +875,10 @@ class AppConfig {
     final iosKey = const String.fromEnvironment('GOOGLE_PLACES_API_KEY_IOS',
         defaultValue: '');
 
-    // Use platform-appropriate key
-    if (Platform.isIOS && iosKey.isNotEmpty) {
-      return iosKey;
-    }
-    if (Platform.isAndroid && androidKey.isNotEmpty) {
-      return androidKey;
+    // Use platform-appropriate key (Platform.isIOS/isAndroid throw on web)
+    if (!kIsWeb) {
+      if (Platform.isIOS && iosKey.isNotEmpty) return iosKey;
+      if (Platform.isAndroid && androidKey.isNotEmpty) return androidKey;
     }
 
     // Fallback: prefer iOS key for testing if only one is set
