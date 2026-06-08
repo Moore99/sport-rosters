@@ -9,12 +9,26 @@ import '../../data/announcement_repository.dart';
 import '../../domain/announcement.dart';
 import '../providers/announcements_provider.dart';
 
-class TeamAnnouncementsScreen extends ConsumerWidget {
+class TeamAnnouncementsScreen extends ConsumerStatefulWidget {
   final String teamId;
   const TeamAnnouncementsScreen({super.key, required this.teamId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TeamAnnouncementsScreen> createState() => _TeamAnnouncementsScreenState();
+}
+
+class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScreen> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final teamId   = widget.teamId;
     final uid      = ref.watch(currentUserProvider)?.uid ?? '';
     final teamAsync = ref.watch(teamProvider(teamId));
     final isAdmin  = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
@@ -47,6 +61,7 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
             final ordered  = [...pinned, ...unpinned];
 
             return ListView.separated(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: ordered.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -163,13 +178,13 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
                   final body  = bodyCtrl.text.trim();
                   final docId = FirebaseFirestore.instance
                       .collection('teams')
-                      .doc(teamId)
+                      .doc(widget.teamId)
                       .collection('announcements')
                       .doc()
                       .id;
                   await repo.createAnnouncement(Announcement(
                     announcementId: docId,
-                    teamId:         teamId,
+                    teamId:         widget.teamId,
                     title:          title,
                     body:           body,
                     authorId:       uid,
@@ -182,7 +197,7 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
                       await FirebaseFunctions
                           .instanceFor(region: 'northamerica-northeast1')
                           .httpsCallable('sendTeamNotification')
-                          .call({'teamId': teamId, 'title': title, 'body': body});
+                          .call({'teamId': widget.teamId, 'title': title, 'body': body});
                     } catch (_) {
                       // Notification failure is non-fatal — announcement is saved
                     }
@@ -229,7 +244,7 @@ class TeamAnnouncementsScreen extends ConsumerWidget {
     if (confirmed == true) {
       await ref
           .read(announcementRepositoryProvider)
-          .deleteAnnouncement(teamId, a.announcementId);
+          .deleteAnnouncement(widget.teamId, a.announcementId);
     }
   }
 }
