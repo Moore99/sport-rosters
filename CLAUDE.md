@@ -414,9 +414,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 | Platform | Version | Build | Status |
 |----------|---------|-------|--------|
-| Android (Play Store) | 1.3.0 | 46 | Live |
-| iOS (App Store) | 1.3.0 | 46 | Live |
-| Web (Firebase Hosting) | 1.3.0 | — | Live at https://sports-rostering.web.app |
+| Android (Play Store) | 1.3.1 | 49 | Live — pending upload |
+| iOS (App Store) | 1.3.1 | 49 | In review — Codemagic pending |
+| Web (Firebase Hosting) | 1.3.1 | — | Live at https://sports-rostering.web.app |
 
 ## Web Build & Deploy
 
