@@ -43,10 +43,15 @@ class NotificationService {
   final Ref _ref;
   NotificationService(this._ref);
 
+  // VAPID key for web push — generate at:
+  // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
+  static const _vapidKey = 'YOUR_VAPID_KEY';
+
   Future<void> initialize() async {
-    // flutter_local_notifications and mobile FCM setup are not supported on web.
-    // Web push notifications require a service worker — deferred to a future phase.
-    if (kIsWeb) return;
+    if (kIsWeb) {
+      await _initializeWeb();
+      return;
+    }
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -123,6 +128,38 @@ class NotificationService {
         );
       }
     });
+  }
+
+  Future<void> _initializeWeb() async {
+    final messaging = FirebaseMessaging.instance;
+
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    final granted =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    if (!granted) return;
+
+    // getToken on web requires the VAPID key and the service worker
+    // at /firebase-messaging-sw.js to be registered by the browser.
+    final token = await messaging.getToken(vapidKey: _vapidKey);
+    if (token != null) {
+      final uid = _ref.read(currentUserProvider)?.uid;
+      if (uid != null) {
+        await _ref.read(userRepositoryProvider).updateFcmToken(uid, token);
+      }
+    }
+
+    messaging.onTokenRefresh.listen(_onTokenRefresh);
+
+    // Handle notification taps while app is open in browser tab.
+    FirebaseMessaging.instance.getInitialMessage().then(_handleNotificationTap);
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
   }
 
   void _handleNotificationTap(RemoteMessage? message) {
