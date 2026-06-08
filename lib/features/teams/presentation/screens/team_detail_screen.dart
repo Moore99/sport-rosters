@@ -42,12 +42,26 @@ class TeamDetailScreen extends ConsumerWidget {
   }
 }
 
-class _TeamDetailView extends ConsumerWidget {
+class _TeamDetailView extends ConsumerStatefulWidget {
   final Team team;
   const _TeamDetailView({required this.team});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_TeamDetailView> createState() => _TeamDetailViewState();
+}
+
+class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final team = widget.team;
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final isAdmin = team.isAdmin(uid);
     final userProfile = ref.watch(currentUserProfileProvider).valueOrNull;
@@ -480,7 +494,7 @@ class _TeamDetailView extends ConsumerWidget {
               Navigator.of(context).pop();
               await ref
                   .read(teamRepositoryProvider)
-                  .promoteToAdmin(team.teamId, userId);
+                  .promoteToAdmin(widget.team.teamId, userId);
             },
             child: const Text('Promote'),
           ),
@@ -508,7 +522,7 @@ class _TeamDetailView extends ConsumerWidget {
               Navigator.of(context).pop();
               await ref
                   .read(teamRepositoryProvider)
-                  .removePlayer(team.teamId, userId);
+                  .removePlayer(widget.team.teamId, userId);
             },
             child: const Text('Remove'),
           ),
@@ -524,8 +538,8 @@ class _TeamDetailView extends ConsumerWidget {
       builder: (_) => AlertDialog(
         title: Text(archive ? 'Archive Team' : 'Restore Team'),
         content: Text(archive
-            ? 'Archive "${team.name}"? It will be hidden from the main list but nothing will be deleted. You can restore it any time.'
-            : 'Restore "${team.name}"? It will reappear in the main teams list.'),
+            ? 'Archive "${widget.team.name}"? It will be hidden from the main list but nothing will be deleted. You can restore it any time.'
+            : 'Restore "${widget.team.name}"? It will reappear in the main teams list.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -535,13 +549,13 @@ class _TeamDetailView extends ConsumerWidget {
               Navigator.of(context).pop();
               await ref
                   .read(teamRepositoryProvider)
-                  .archiveTeam(team.teamId, archived: archive);
+                  .archiveTeam(widget.team.teamId, archived: archive);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text(archive
-                          ? '"${team.name}" archived.'
-                          : '"${team.name}" restored.')),
+                          ? '"${widget.team.name}" archived.'
+                          : '"${widget.team.name}" restored.')),
                 );
               }
             },
@@ -558,7 +572,7 @@ class _TeamDetailView extends ConsumerWidget {
       builder: (_) => AlertDialog(
         title: const Text('Delete Team'),
         content: Text(
-          'Permanently delete "${team.name}"? This will remove all members, events, lineups, and data. This cannot be undone.',
+          'Permanently delete "${widget.team.name}"? This will remove all members, events, lineups, and data. This cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -570,7 +584,7 @@ class _TeamDetailView extends ConsumerWidget {
             onPressed: () async {
               Navigator.of(context).pop();
               try {
-                await ref.read(teamRepositoryProvider).deleteTeam(team.teamId);
+                await ref.read(teamRepositoryProvider).deleteTeam(widget.team.teamId);
                 if (context.mounted) context.go('/teams');
               } catch (e) {
                 if (context.mounted) {

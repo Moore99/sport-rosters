@@ -41,13 +41,28 @@ class EventDetailScreen extends ConsumerWidget {
   }
 }
 
-class _EventDetailView extends ConsumerWidget {
+class _EventDetailView extends ConsumerStatefulWidget {
   final Event event;
   final String teamId;
   const _EventDetailView({required this.event, required this.teamId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_EventDetailView> createState() => _EventDetailViewState();
+}
+
+class _EventDetailViewState extends ConsumerState<_EventDetailView> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final event = widget.event;
+    final teamId = widget.teamId;
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final teamAsync = ref.watch(teamProvider(teamId));
     final isAdmin = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
@@ -334,6 +349,7 @@ class _EventDetailView extends ConsumerWidget {
       body: SafeArea(
           top: false,
           child: ListView(
+            controller: _scrollController,
             padding: const EdgeInsets.all(16),
             children: [
               // ── Event header card ──────────────────────────────────────────
