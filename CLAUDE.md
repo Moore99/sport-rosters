@@ -409,6 +409,10 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 14 | Email notifications opt-out toggle (emailNotificationsEnabled) in Profile → Notifications | ✅ Done |
 | 14 | Google Search Console verification meta tag added; sitemap.xml submitted (pending GSC re-crawl) | ✅ Done |
 | 14 | firebase.json: Content-Type headers for sitemap.xml (application/xml) and robots.txt (text/plain) | ✅ Done |
+| 15 | RouterNotifier + refreshListenable pattern — GoRouter no longer recreates on Firestore user doc updates | ✅ Done |
+| 15 | Scroll position preserved on Profile, TeamDetail, EventDetail, TeamAnnouncements screens | ✅ Done |
+| 15 | iOS SPM conflict fix: flutter.config.enable-swift-package-manager: false (google_mobile_ads CocoaPods) | ✅ Done |
+| 15 | Email notifications opt-out (emailNotificationsEnabled) — toggle in Profile → Notifications | ✅ Done |
 
 ## Current Production Versions
 
