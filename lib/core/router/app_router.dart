@@ -42,6 +42,8 @@ import '../../features/teams/presentation/screens/join_via_link_screen.dart';
 import '../../features/admin/presentation/screens/sports_admin_screen.dart';
 import '../../features/admin/presentation/screens/app_stats_screen.dart';
 import '../../features/shared/screens/landing_screen.dart';
+import '../../features/shared/screens/onboarding_screen.dart';
+import '../../features/teams/presentation/providers/teams_provider.dart';
 
 // Route paths
 class AppRoutes {
@@ -80,11 +82,13 @@ class AppRoutes {
   static const spareResponse = '/spare-response/:eventId/:teamId';
   static const playerAttendance = '/teams/:teamId/attendance/:userId';
   static const teamStats = '/teams/:teamId/stats';
+  static const onboarding = '/onboarding';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
   final bioLocked = ref.watch(biometricLockProvider);
+  final userProfile = ref.watch(currentUserProfileProvider);
   final analyticsObserver = ref.read(analyticsObserverProvider);
 
   return GoRouter(
@@ -107,6 +111,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           currentPath == AppRoutes.privacy ||
           currentPath == AppRoutes.terms ||
           currentPath == AppRoutes.accessibility ||
+          currentPath == AppRoutes.help ||
           currentPath == AppRoutes.tour ||
           currentPath.startsWith('/join/');
 
@@ -145,7 +150,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.teams;
       }
 
-      if (isLoggedIn && currentPath == AppRoutes.login) return AppRoutes.teams;
+      // After login/register, honour ?from= param (e.g. redirected from join page).
+      if (isLoggedIn && (currentPath == AppRoutes.login || currentPath == AppRoutes.register)) {
+        return state.uri.queryParameters['from'] ?? AppRoutes.teams;
+      }
+
+      // New users with no teams → onboarding (exempt: onboarding itself, join flow, team screens).
+      final teamsEmpty = userProfile is AsyncData &&
+          (userProfile as AsyncData).value?.teams.isEmpty == true;
+      final isEmailPending = (authState.valueOrNull?.providerData
+              .any((p) => p.providerId == 'password') ??
+          false) &&
+          authState.valueOrNull?.emailVerified == false;
+      if (isLoggedIn &&
+          !bioLocked &&
+          !isEmailPending &&
+          teamsEmpty &&
+          currentPath != AppRoutes.onboarding &&
+          !currentPath.startsWith('/teams') &&
+          !currentPath.startsWith('/join/')) {
+        return AppRoutes.onboarding;
+      }
+
       return null;
     },
     routes: [
@@ -305,6 +331,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.joinViaLink,
           builder: (_, state) => JoinViaLinkScreen(
               teamId: state.pathParameters['teamId']!)),
+      GoRoute(
+          path: AppRoutes.onboarding,
+          builder: (_, __) => const OnboardingScreen()),
       GoRoute(
           path: AppRoutes.mySchedule,
           builder: (_, __) => const MyScheduleScreen()),

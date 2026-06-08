@@ -89,7 +89,10 @@ class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
                           submitting: _submitting,
                           error: _error,
                           onJoin: _sendRequest,
-                          onLogin: () => context.push(AppRoutes.login),
+                          onLogin: () => context.push(
+                              '${AppRoutes.login}?from=/join/${widget.teamId}'),
+                          onRegister: () => context.push(
+                              '${AppRoutes.register}?from=/join/${widget.teamId}'),
                         ),
         ),
       ),
@@ -104,6 +107,7 @@ class _JoinPrompt extends StatelessWidget {
   final String? error;
   final VoidCallback onJoin;
   final VoidCallback onLogin;
+  final VoidCallback onRegister;
 
   const _JoinPrompt({
     required this.team,
@@ -112,6 +116,7 @@ class _JoinPrompt extends StatelessWidget {
     required this.error,
     required this.onJoin,
     required this.onLogin,
+    required this.onRegister,
   });
 
   @override
@@ -149,8 +154,14 @@ class _JoinPrompt extends StatelessWidget {
           const SizedBox(height: 16),
           FilledButton.icon(
             icon: const Icon(Icons.login),
-            label: const Text('Sign In / Register'),
+            label: const Text('Sign In'),
             onPressed: onLogin,
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.person_add_outlined),
+            label: const Text('Create Account'),
+            onPressed: onRegister,
           ),
         ] else ...[
           if (error != null) ...[
