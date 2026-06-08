@@ -397,6 +397,15 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 14 | Google + Apple Sign-In added to register screen (matches login screen) | ✅ Done |
 | 14 | Stripe price ID price_1TftI8Lc7EXpUmQL7nnnZlIy configured in functions/index.js | ✅ Done |
 | 14 | share_plus upgraded ^12 → ^13 (API fix — code already used v13 API); package_info_plus ^9 → ^10 | ✅ Done |
+| 14 | SEO: Open Graph tags, Twitter Card, canonical URL, Apple Smart App Banner (id6761060200) | ✅ Done |
+| 14 | SEO: robots.txt + sitemap.xml added to web/ | ✅ Done |
+| 14 | manifest.json: name, description, theme_color fixed; functions/node_modules gitignored | ✅ Done |
+| 14 | Onboarding screen (/onboarding) — shown to new users with no teams; Create/Join CTAs | ✅ Done |
+| 14 | Team join deep-link: ?from=/join/:teamId param threads through login/register → bounces back | ✅ Done |
+| 14 | Web push notifications: firebase-messaging-sw.js + FCM web token registration (VAPID set) | ✅ Done |
+| 14 | Help link in landing page footer made accessible to unauthenticated users | ✅ Done |
+| 14 | Email notifications via nodemailer: event reminders (push fallback) + spare requests (all spares) | ✅ Done |
+| 14 | App Store URL fixed in landing screen (id6761060200); App Store badge links live | ✅ Done |
 
 ## Current Production Versions
 
