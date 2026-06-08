@@ -406,6 +406,9 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 | 14 | Help link in landing page footer made accessible to unauthenticated users | ✅ Done |
 | 14 | Email notifications via nodemailer: event reminders (push fallback) + spare requests (all spares) | ✅ Done |
 | 14 | App Store URL fixed in landing screen (id6761060200); App Store badge links live | ✅ Done |
+| 14 | Email notifications opt-out toggle (emailNotificationsEnabled) in Profile → Notifications | ✅ Done |
+| 14 | Google Search Console verification meta tag added; sitemap.xml submitted (pending GSC re-crawl) | ✅ Done |
+| 14 | firebase.json: Content-Type headers for sitemap.xml (application/xml) and robots.txt (text/plain) | ✅ Done |
 
 ## Current Production Versions
 
