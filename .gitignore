@@ -28,6 +28,7 @@ node_modules/
 # Environment
 .env
 *.env.local
+env.json
 
 # Claude Code
 .claude/

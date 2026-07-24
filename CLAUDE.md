@@ -12,10 +12,10 @@ Read this file first. Reflects the actual current state, not the original spec.
 
 ## Running the Application
 
-**Google Places API key**: not committed to this repo (it was previously hardcoded here and got flagged/rotated — see git history note below). Set it as an env var (`GOOGLE_PLACES_API_KEY`) in your shell profile or a local untracked `.env`, then run commands as shown below. Get the current value from Google Cloud Console → Credentials, or from the Codemagic "Keys" env group.
+**Google Places API key**: not committed to this repo (it was previously hardcoded here and got flagged/rotated). Real values live in `env.json` at repo root (gitignored). Copy `env.example.json` → `env.json` and fill in the current key from Google Cloud Console → Credentials, or from the Codemagic "Keys" env group. All commands below load it via `--dart-define-from-file=env.json`.
 
 ```bash
-flutter run --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY
+flutter run --dart-define-from-file=env.json
 flutter pub get   # After modifying pubspec.yaml
 flutter clean     # Often fails on OneDrive repos due to file locking — safe to ignore
 flutter doctor
@@ -23,12 +23,12 @@ flutter doctor
 
 **Build APK for Android:**
 ```bash
-flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY
+flutter build apk --release --dart-define-from-file=env.json
 ```
 
 **Build AAB for Play Store:**
 ```bash
-flutter build appbundle --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY
+flutter build appbundle --release --dart-define-from-file=env.json
 ```
 AAB output: `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab`
 Note: Flutter reports "failed to produce .aab file" due to the build junction — the file IS there at the path above, ignore the warning.
@@ -273,7 +273,7 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 ## Development Workflow
 
 ### Android Testing
-1. `flutter build apk --release --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY`
+1. `flutter build apk --release --dart-define-from-file=env.json`
 2. `adb install -r build/app/outputs/flutter-apk/app-release.apk`
 3. `adb shell am force-stop com.sportsrostering.app`
 4. Launch manually; `flutter logs` to monitor
@@ -428,7 +428,7 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 ```bash
 # Build (must use --output to bypass Windows junction issue with flutter_assets deletion)
-flutter build web --release --output C:\BuildTemp\web-output --dart-define=GOOGLE_PLACES_API_KEY_ANDROID=$GOOGLE_PLACES_API_KEY --dart-define=GOOGLE_PLACES_API_KEY_IOS=$GOOGLE_PLACES_API_KEY
+flutter build web --release --output C:\BuildTemp\web-output --dart-define-from-file=env.json
 
 # Local test
 cd C:\BuildTemp\web-output && python -m http.server 8080
@@ -476,9 +476,9 @@ Note: `flutter run -d chrome` fails due to junction — use `flutter build web -
 - **Single key used for both platforms** — set to "No application restrictions" in Google Cloud Console (API restriction: Places API only)
 - Both SHA-1s registered in Cloud Console: debug `6F:04:08:95:C2:07:C5:AC:6C:AC:51:47:5D:83:16:D6:ED:1B:D5:8F`, release `1F:0B:6E:08:1D:5F:DB:85:0F:2B:23:48:76:99:A6:BD:77:8F:BE:40`
 - **Important**: `google_places_flutter` makes REST HTTP calls from the device — Android app restrictions block it. Key must be set to "None" for app restrictions, restricted by API only.
-- Keys injected at build time via `--dart-define=GOOGLE_PLACES_API_KEY_ANDROID=...` and `--dart-define=GOOGLE_PLACES_API_KEY_IOS=...`
-- Codemagic: set both `GOOGLE_PLACES_API_KEY_ANDROID` and `GOOGLE_PLACES_API_KEY_IOS` in Keys group
-- The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without `--dart-define`)
+- Keys injected at build time via `--dart-define-from-file=env.json` (local) — see `env.example.json` for the expected shape
+- Codemagic: set both `GOOGLE_PLACES_API_KEY_ANDROID` and `GOOGLE_PLACES_API_KEY_IOS` in Keys group (Codemagic build steps still pass them as individual `--dart-define` flags from its own env vars)
+- The location field falls back gracefully to plain text if Places is unavailable (e.g. local `flutter run` without a valid `env.json`)
 
 ---
 
