@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/providers.dart';
+import '../../../../core/services/app_functions.dart';
 import '../../data/announcement_repository.dart';
 import '../../domain/announcement.dart';
 import '../providers/announcements_provider.dart';
@@ -194,10 +194,8 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
                   ));
                   if (notifyTeam) {
                     try {
-                      await FirebaseFunctions
-                          .instanceFor(region: 'northamerica-northeast1')
-                          .httpsCallable('sendTeamNotification')
-                          .call({'teamId': widget.teamId, 'title': title, 'body': body});
+                      await AppFunctions.call('sendTeamNotification',
+                          data: {'teamId': widget.teamId, 'title': title, 'body': body});
                     } catch (_) {
                       // Notification failure is non-fatal — announcement is saved
                     }

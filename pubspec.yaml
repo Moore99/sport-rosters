@@ -81,6 +81,10 @@ dependencies:
   # Typography
   google_fonts: ^6.2.1
 
+  # HTTP client — used on Windows to call Cloud Functions HTTPS callable
+  # endpoints directly (cloud_functions has no Windows platform plugin)
+  http: ^1.2.0
+
   # Notifications badge — deferred to Phase 3
   # app_badge_plus: ^1.2.6
 
@@ -94,13 +98,15 @@ dev_dependencies:
   riverpod_generator: ^2.3.9
   flutter_launcher_icons: ^0.14.4
 
+  # Packages the Windows build as an .msix for Microsoft Store submission
+  msix: ^3.16.7
+
 flutter:
   uses-material-design: true
   config:
     enable-swift-package-manager: false
 
   assets:
-    - assets/images/
     - assets/icons/
     - assets/sport_icons/
 
@@ -116,7 +122,38 @@ flutter_launcher_icons:
   web:
     generate: false
   windows:
-    generate: false
+    generate: true
+
+# MSIX packaging for Microsoft Store submission.
+# Build with: flutter build windows --release --dart-define-from-file=env.json
+# Then:       dart run msix:create
+#
+# identity_name / publisher reserved in Partner Center (Store ID: 9NMWGL6X028C,
+# Package Family Name: KernkraftConsultingInc.SportsRostering_660a73mhqnjyy).
+# msix_version must be bumped (X.Y.Z.0, matches version.txt) on every
+# Store-bound package; a version already used in a submission is rejected.
+# store: true is required for a Store-bound package — it skips local test-
+# certificate signing (which otherwise overwrites publisher/identity with the
+# test cert's own subject, producing a package family name Partner Center
+# rejects) and uses the real reserved identity below instead. The Store
+# re-signs the package on ingestion, so no local certificate is needed.
+msix_config:
+  store: true
+  # Must exactly match the product name reserved in Partner Center (shown as
+  # the page title there: "Sports Rostering | Packages") — NOT the in-app
+  # branding name "Sport Rosters" used elsewhere (app title, splash screen).
+  display_name: Sports Rostering
+  publisher_display_name: Kernkraft Consulting Inc.
+  identity_name: KernkraftConsultingInc.SportsRostering
+  publisher: CN=BCB6FFA0-B60B-41E1-BFD5-DA72A34681B1
+  msix_version: 1.3.2.0
+  logo_path: assets/icons/app_icon.png
+  start_menu_icon_path: assets/icons/app_icon.png
+  tile_icon_path: assets/icons/app_icon.png
+  capabilities: internetClient
+  languages: en-us
+  app_installer:
+    publish_folder_path: build\windows\app_installer
 
 flutter_native_splash:
   # Light mode — white background, icon centred

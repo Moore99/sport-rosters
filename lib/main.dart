@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -7,6 +9,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'core/config/app_config.dart';
 import 'core/router/app_router.dart';
 import 'core/services/biometric_service.dart';
 import 'core/services/notification_service.dart';
@@ -22,34 +25,39 @@ void main() async {
 
   await Future.wait([
     Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
-    if (!kIsWeb) MobileAds.instance.initialize(),
+    if (AppConfig.isNativeMobile) MobileAds.instance.initialize(),
   ]);
 
   // ── App Check ──────────────────────────────────────────────────────────────
   // Debug provider in debug mode; Play Integrity / DeviceCheck in release.
   // Web uses reCAPTCHA v3 — register site key in Google Cloud Console.
-  await FirebaseAppCheck.instance.activate(
-    providerAndroid: kDebugMode
-        ? const AndroidDebugProvider()
-        : const AndroidPlayIntegrityProvider(),
-    providerApple: kDebugMode
-        ? const AppleDebugProvider()
-        : const AppleAppAttestWithDeviceCheckFallbackProvider(),
-    // Web uses reCAPTCHA v3. In debug mode, WebDebugProvider auto-generates a
-    // token (printed to browser console) — register it in Firebase Console.
-    // In production, replace TODO_RECAPTCHA_V3_SITE_KEY with the site key
-    // from Google Cloud Console → Security → reCAPTCHA.
-    webProvider: kDebugMode
-        ? WebDebugProvider()
-        : ReCaptchaV3Provider('6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8'),
-  );
+  // firebase_app_check has no Windows plugin at all — skip entirely there.
+  // (The Cloud Functions Windows actually calls all have enforceAppCheck:
+  // false for this reason — see functions/index.js.)
+  if (kIsWeb || !Platform.isWindows) {
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
+      // Web uses reCAPTCHA v3. In debug mode, WebDebugProvider auto-generates a
+      // token (printed to browser console) — register it in Firebase Console.
+      // In production, replace TODO_RECAPTCHA_V3_SITE_KEY with the site key
+      // from Google Cloud Console → Security → reCAPTCHA.
+      webProvider: kDebugMode
+          ? WebDebugProvider()
+          : ReCaptchaV3Provider('6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8'),
+    );
+  }
 
   FlutterNativeSplash.remove();
 
   // ── Crashlytics ────────────────────────────────────────────────────────────
   // Disable in debug so crash reports don't pollute the console.
-  // firebase_crashlytics does not support web — skip entirely on web.
-  if (!kIsWeb) {
+  // firebase_crashlytics does not support web or Windows — skip on both.
+  if (AppConfig.isNativeMobile) {
     await FirebaseCrashlytics.instance
         .setCrashlyticsCollectionEnabled(!kDebugMode);
 

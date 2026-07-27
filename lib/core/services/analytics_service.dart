@@ -1,5 +1,11 @@
+import 'dart:io';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// firebase_analytics has no Windows plugin — every call below is a no-op there.
+bool get _analyticsAvailable => kIsWeb || !Platform.isWindows;
 
 /// Thin wrapper around [FirebaseAnalytics] exposed as a Riverpod provider.
 ///
@@ -10,53 +16,50 @@ class AnalyticsService {
   final FirebaseAnalytics _a;
   const AnalyticsService(this._a);
 
-  FirebaseAnalyticsObserver get observer =>
-      FirebaseAnalyticsObserver(analytics: _a);
+  FirebaseAnalyticsObserver? get observer =>
+      _analyticsAvailable ? FirebaseAnalyticsObserver(analytics: _a) : null;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
 
   Future<void> logLogin(String method) =>
-      _a.logLogin(loginMethod: method);
+      _analyticsAvailable ? _a.logLogin(loginMethod: method) : Future.value();
 
   Future<void> logSignUp(String method) =>
-      _a.logSignUp(signUpMethod: method);
+      _analyticsAvailable ? _a.logSignUp(signUpMethod: method) : Future.value();
 
   // ── Teams ──────────────────────────────────────────────────────────────────
 
-  Future<void> logTeamCreated(String sport) =>
-      _a.logEvent(name: 'team_created', parameters: {'sport': sport});
+  Future<void> logTeamCreated(String sport) => logEvent('team_created', {'sport': sport});
 
-  Future<void> logTeamJoined(String sport) =>
-      _a.logEvent(name: 'team_joined', parameters: {'sport': sport});
+  Future<void> logTeamJoined(String sport) => logEvent('team_joined', {'sport': sport});
 
   // ── Events ─────────────────────────────────────────────────────────────────
 
-  Future<void> logEventCreated(String sport) =>
-      _a.logEvent(name: 'event_created', parameters: {'sport': sport});
+  Future<void> logEventCreated(String sport) => logEvent('event_created', {'sport': sport});
 
   Future<void> logAvailabilitySet(String status) =>
-      _a.logEvent(name: 'availability_set', parameters: {'status': status});
+      logEvent('availability_set', {'status': status});
 
   // ── Drop-ins ───────────────────────────────────────────────────────────────
 
-  Future<void> logDropInSignup() =>
-      _a.logEvent(name: 'dropin_signup');
+  Future<void> logDropInSignup() => logEvent('dropin_signup');
 
   // ── IAP ────────────────────────────────────────────────────────────────────
 
-  Future<void> logRemoveAdsPurchased() =>
-      _a.logEvent(name: 'remove_ads_purchased');
+  Future<void> logRemoveAdsPurchased() => logEvent('remove_ads_purchased');
 
   // ── Generic ────────────────────────────────────────────────────────────────
 
   Future<void> logEvent(String name, [Map<String, Object>? params]) =>
-      _a.logEvent(name: name, parameters: params);
+      _analyticsAvailable
+          ? _a.logEvent(name: name, parameters: params)
+          : Future.value();
 }
 
 final analyticsServiceProvider = Provider<AnalyticsService>(
   (ref) => AnalyticsService(FirebaseAnalytics.instance),
 );
 
-final analyticsObserverProvider = Provider<FirebaseAnalyticsObserver>(
+final analyticsObserverProvider = Provider<FirebaseAnalyticsObserver?>(
   (ref) => ref.read(analyticsServiceProvider).observer,
 );

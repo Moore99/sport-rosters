@@ -129,7 +129,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: kIsWeb ? AppRoutes.landing : AppRoutes.teams,
-    observers: [analyticsObserver],
+    observers: [if (analyticsObserver != null) analyticsObserver],
     refreshListenable: notifier,
     redirect: (context, state) {
       final authState = notifier.authState;

@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../config/app_config.dart';
+import 'app_functions.dart';
 
 /// Loads and shows a rewarded interstitial ad, resolving to true if the user
 /// earned a reward (watched enough), false if dismissed early or ad failed.
@@ -39,8 +39,8 @@ class RewardedAdService {
   static Future<bool> showAndAwaitReward() async {
     if (kDebugMode) return true;
 
-    // Web: no rewarded ads — gate behind Stripe Remove Ads purchase instead.
-    if (kIsWeb) return _launchStripeCheckout();
+    // Web/Windows: no rewarded ads — gate behind Stripe Remove Ads purchase instead.
+    if (AppConfig.usesStripeCheckout) return _launchStripeCheckout();
 
     final completer = Completer<bool>();
 
@@ -85,14 +85,16 @@ class RewardedAdService {
     if (uid == null) return false;
 
     try {
-      final callable =
-          FirebaseFunctions.instance.httpsCallable('createStripeCheckout');
-      final result = await callable.call({
+      // On Windows there is no browser "page" to return to after checkout —
+      // fall back to the web app's own URL as a safe landing page. The
+      // Stripe webhook (not this redirect) is what actually sets adFree.
+      final redirectUrl = kIsWeb ? Uri.base.toString() : 'https://sports-rostering.web.app';
+      final result = await AppFunctions.call('createStripeCheckout', data: {
         'userId': uid,
-        'returnUrl': Uri.base.toString(),
-        'cancelUrl': Uri.base.toString(),
+        'returnUrl': redirectUrl,
+        'cancelUrl': redirectUrl,
       });
-      final checkoutUrl = result.data['url'] as String?;
+      final checkoutUrl = (result as Map)['url'] as String?;
       if (checkoutUrl == null) return false;
 
       final uri = Uri.parse(checkoutUrl);

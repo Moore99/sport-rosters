@@ -13,6 +13,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/providers.dart';
 import '../../auth/data/user_repository.dart';
+import '../../../core/services/app_functions.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../auth/presentation/providers/auth_notifier.dart';
 import '../../teams/domain/team.dart';
@@ -727,8 +728,7 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
       _error = null;
     });
     try {
-      final fn = FirebaseFunctions.instanceFor(region: 'northamerica-northeast1');
-      await fn.httpsCallable('deleteAccount').call();
+      await AppFunctions.call('deleteAccount');
       if (mounted) Navigator.of(context).pop();
       await widget.ref.read(authNotifierProvider.notifier).signOut();
     } on FirebaseFunctionsException catch (e) {
@@ -908,9 +908,8 @@ class _ExportDataButtonState extends ConsumerState<_ExportDataButton> {
   Future<void> _export() async {
     setState(() => _exporting = true);
     try {
-      final fn = FirebaseFunctions.instanceFor(region: 'northamerica-northeast1');
-      final result = await fn.httpsCallable('exportUserData').call();
-      final json = const JsonEncoder.withIndent('  ').convert(result.data);
+      final result = await AppFunctions.call('exportUserData');
+      final json = const JsonEncoder.withIndent('  ').convert(result);
       await SharePlus.instance.share(
         ShareParams(
           text:    json,

@@ -38,7 +38,8 @@ class _BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
         AppConfig.adsensePublisherId,
         AppConfig.adsenseBannerAdUnitWeb,
       );
-    } else {
+    } else if (AppConfig.isNativeMobile) {
+      // google_mobile_ads has no Windows plugin — no banner ads there.
       _loadAd();
     }
   }

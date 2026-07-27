@@ -26,6 +26,8 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
+      case TargetPlatform.windows:
+        return windows;
       default:
         throw UnsupportedError('DefaultFirebaseOptions not configured for this platform.');
     }
@@ -58,6 +60,19 @@ class DefaultFirebaseOptions {
     projectId: 'sports-rostering',
     storageBucket: 'sports-rostering.firebasestorage.app',
     iosBundleId: 'com.sportsrostering.app',
+  );
+
+  // Registered as a dedicated Firebase Web app (Firebase has no native
+  // "Windows" app type) — firebase_core's Windows plugin uses the same
+  // FirebaseOptions shape as web.
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyBkRZZVCLprvRmOFdE55Vy0-VRGJGJRnDQ',
+    appId: '1:363898653310:web:70ae96fa3258e0bf5ce62f',
+    messagingSenderId: '363898653310',
+    projectId: 'sports-rostering',
+    authDomain: 'sports-rostering.firebaseapp.com',
+    storageBucket: 'sports-rostering.firebasestorage.app',
+    measurementId: 'G-BZH57BJE33',
   );
 
 }

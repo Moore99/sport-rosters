@@ -40,6 +40,13 @@ AAB output: `build\app\outputs\bundle\release\app-release.aab`
 
 **iOS builds**: No Mac available — all iOS builds via **Codemagic** (cloud CI). Push to GitHub, trigger Codemagic manually.
 
+**Build Windows desktop app / MSIX for Microsoft Store:**
+```bash
+flutter build windows --release --dart-define-from-file=env.json
+dart run msix:create
+```
+Output: signed `.msix` under `build\windows\x64\runner\Release\`. See "Windows / MSIX (Microsoft Store)" below for what's disabled on this platform and why, and `store/microsoft_store_listing.md` for submission copy. Product already reserved in Partner Center — Store ID `9NMWGL6X028C`, identity `KernkraftConsultingInc.SportsRostering`.
+
 **(Historical note, 2026-07-27)**: this repo used to live under OneDrive, which caused Gradle/Flutter file-locking failures — the previous workaround was a Windows junction on `build/` plus a hardcoded `C:\BuildTemp\sports-rostering` Gradle build-dir override in `android/build.gradle.kts`. The repo now lives on a non-OneDrive-synced drive, so neither workaround is needed — both removed. Build output now lands in the standard `build/` folder under the project root.
 
 ---
@@ -226,6 +233,56 @@ Reuse the corrected IAP flow from nuclear-motd-mobile (build 1.0.2+99):
 - `PurchaseStatus.error` must NOT call `setAdsFree(true)`
 - Wait for `PurchaseStatus.restored` or `PurchaseStatus.purchased` before granting entitlement
 - Store `adFree: true` in Firestore `users` doc (survives reinstall)
+
+---
+
+## Windows / MSIX (Microsoft Store)
+
+Added as a third client platform alongside mobile and web, sharing the same Firebase
+backend. `windows/` was scaffolded with `flutter create --platforms=windows .`; Firebase
+was wired up with `flutterfire configure --platforms=windows` (registered as a Firebase
+*Web* app under the hood — Firebase has no distinct "Windows" app type — see
+`DefaultFirebaseOptions.windows` in `lib/firebase_options.dart`).
+
+**Plugin platform support** (checked directly against each package's `pubspec.yaml` — do
+not assume, verify again if bumping versions):
+| Plugin | Windows support | Handling |
+|---|---|---|
+| `firebase_core`, `firebase_auth`, `cloud_firestore`, `firebase_storage` | ✅ Native | Used as-is |
+| `local_auth` | ✅ Native (`local_auth_windows`, Windows Hello) | Used as-is |
+| `cloud_functions` | ❌ No Windows plugin | `lib/core/services/app_functions.dart` — `AppFunctions.call(name, data:)` POSTs directly to the callable's HTTPS endpoint on Windows, uses `FirebaseFunctions.httpsCallable` everywhere else. **Every call site in the app goes through this wrapper, not `FirebaseFunctions` directly** — if you add a new callable-function call site, use `AppFunctions.call`, not `httpsCallable`. |
+| `firebase_app_check` | ❌ No Windows plugin at all | Skipped entirely in `main.dart` (`if (kIsWeb \|\| !Platform.isWindows)`) |
+| `google_mobile_ads`, `in_app_purchase`, `firebase_messaging`, `firebase_analytics`, `firebase_crashlytics`, `sign_in_with_apple` | ❌ No Windows support | Guarded off via `AppConfig.isNativeMobile` (true only on Android/iOS) or explicit `Platform.isWindows` checks — see `main.dart`, `banner_ad_widget.dart`, `ads_provider.dart`, `notification_service.dart`, `analytics_service.dart` |
+
+**App Check tradeoff — read before touching `enforceAppCheck` in `functions/index.js`:**
+Because Windows can never present an App Check token, `enforceAppCheck` was set to
+`false` on the functions a Windows client needs to reach: `deleteTeam`, `deleteAccount`,
+`exportUserData`, `sendTeamNotification`, `notifySpares`, `createStripeCheckout`. Each of
+these still checks `request.auth?.uid` (and admin-role where relevant), so security now
+rests on Firebase Auth rather than App Check + Auth for just these six functions.
+`validateIap` stays `enforceAppCheck: true` — it's mobile-only (no native IAP on
+Windows), so a Windows client never calls it.
+
+**Remove Ads on Windows**: no native IAP, so it reuses the same Stripe Checkout flow as
+the web app (`rewarded_ad_service.dart` → `createStripeCheckout`). Ads themselves are
+simply not shown on Windows (no AdMob SDK there) — the purchase only unlocks the
+rewarded-ad-gated features (auto-generate lineup, auto-balance boat seating).
+
+**MSIX packaging**: `msix_config` block in `pubspec.yaml`. `identity_name` / `publisher`
+are the real values reserved in Partner Center (Store ID `9NMWGL6X028C`) — do not
+regenerate/replace them. Bump `msix_version` (`X.Y.Z.0`, keep in sync with `version.txt`)
+before every Store-bound package; Partner Center rejects a version number that's already
+been submitted, even from a withdrawn submission.
+
+```bash
+flutter build windows --release --dart-define-from-file=env.json
+dart run msix:create
+```
+
+See `store/microsoft_store_listing.md` for submission copy and the full feature-parity
+table. Note: `msix:create` prompts interactively to install a local test certificate
+after packing — answer `N` (not needed for Store submission) unless you want to
+sideload-test the unsigned package on this machine; run it in a real terminal, not piped.
 
 ---
 

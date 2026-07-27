@@ -36,7 +36,9 @@ const stripeWebhookSecret       = defineSecret('STRIPE_WEBHOOK_SECRET');
  *
  * Must be called by a team admin.
  */
-exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
+// security relies on the Firebase Auth uid + admin-role check below instead.
+exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
 
@@ -107,7 +109,9 @@ exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck
  *
  * Must be called by the authenticated user deleting their own account.
  */
-exports.deleteAccount = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
+// security relies on the Firebase Auth uid check below instead.
+exports.deleteAccount = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Must be signed in to delete account.');
@@ -245,7 +249,9 @@ exports.previewTeam = onCall(
  * Sensitive internal fields (fcmToken, adFree) are excluded.
  * Must be called by the authenticated user requesting their own data.
  */
-exports.exportUserData = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
+// security relies on the Firebase Auth uid check below instead.
+exports.exportUserData = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
 
@@ -475,7 +481,9 @@ async function _validateGooglePurchase(purchaseToken, productId, serviceAccountJ
  * FCM tokens are read from users/{uid}.fcmToken.
  * Tokens for users who have not granted permission will simply be absent.
  */
-exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enforceAppCheck: true }, async (request) => {
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
+// security relies on the Firebase Auth uid + admin-role check below instead.
+exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
 
@@ -958,8 +966,10 @@ exports.onAvailabilityChanged = onDocumentUpdated(
  *   eventDate  — ISO date string of the event
  *   batchSize  — Number of spares to notify (default 10)
  */
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
+// security relies on the Firebase Auth uid + admin-role check below instead.
 exports.notifySpares = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: true, secrets: [gmailUser, gmailAppPassword] },
+  { region: 'northamerica-northeast1', enforceAppCheck: false, secrets: [gmailUser, gmailAppPassword] },
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
@@ -1374,10 +1384,13 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
  * @param {string} returnUrl  - URL to redirect to after successful payment
  * @param {string} cancelUrl  - URL to redirect to if user cancels
  */
+// enforceAppCheck: false — firebase_app_check has no Windows desktop plugin,
+// and Windows is the primary caller of this function (no native IAP there);
+// security relies on the Firebase Auth uid check below instead.
 exports.createStripeCheckout = onCall(
   {
     region: 'northamerica-northeast1',
-    enforceAppCheck: true,
+    enforceAppCheck: false,
     secrets: [stripeSecretKey],
   },
   async (request) => {

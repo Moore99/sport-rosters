@@ -7,6 +7,17 @@ import 'package:flutter/material.dart' show Color, Colors;
 class AppConfig {
   AppConfig._();
 
+  // ── Platform ─────────────────────────────────────────────────────────────
+  // True on Android/iOS — the only platforms with native AdMob, in-app
+  // purchase, biometrics, and Sign in with Apple support. Web and Windows
+  // both fall back to the Stripe "Remove Ads" checkout flow instead.
+  static bool get isNativeMobile =>
+      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+  // True on web or Windows desktop — platforms with no native AdMob/IAP SDK,
+  // gated features route through Stripe Checkout instead.
+  static bool get usesStripeCheckout => !isNativeMobile;
+
   // ── IAP ──────────────────────────────────────────────────────────────────
   static const String removeAdsSku = 'com.sportsrostering.app.remove_ads';
 

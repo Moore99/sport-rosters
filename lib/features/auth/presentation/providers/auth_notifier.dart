@@ -120,7 +120,13 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Signs in with Google. Creates a Firestore profile if first sign-in.
+  /// google_sign_in has no Windows plugin — not reachable there (button is
+  /// hidden on Windows in login/register screens), but guard anyway.
   Future<bool> signInWithGoogle() async {
+    if (!kIsWeb && Platform.isWindows) {
+      state = AsyncError('Google Sign-In is not available on Windows. Please use email/password.', StackTrace.current);
+      return false;
+    }
     state = const AsyncLoading();
     try {
       final UserCredential userCred;

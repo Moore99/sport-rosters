@@ -1,13 +1,12 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/services/app_functions.dart';
+
 final _appStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
-  final result = await FirebaseFunctions.instanceFor(region: 'northamerica-northeast1')
-      .httpsCallable('getAppStats')
-      .call();
-  return Map<String, dynamic>.from(result.data as Map);
+  final result = await AppFunctions.call('getAppStats');
+  return Map<String, dynamic>.from(result as Map);
 });
 
 class AppStatsScreen extends ConsumerWidget {

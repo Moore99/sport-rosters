@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/app_functions.dart';
 import '../domain/admin_role.dart';
 import '../domain/join_request.dart';
 import '../domain/team.dart';
@@ -106,11 +106,7 @@ class TeamRepository {
     final bytes = await imageFile.readAsBytes();
     final imageBase64 = base64Encode(bytes);
 
-    final callable = FirebaseFunctions
-        .instanceFor(region: 'northamerica-northeast1')
-        .httpsCallable('uploadTeamLogo');
-
-    await callable.call(<String, dynamic>{
+    await AppFunctions.call('uploadTeamLogo', data: {
       'teamId':      teamId,
       'imageBase64': imageBase64,
     });
@@ -147,10 +143,7 @@ class TeamRepository {
 
   /// Permanently deletes a team and all its data via Cloud Function (admin only).
   Future<void> deleteTeam(String teamId) async {
-    final callable = FirebaseFunctions
-        .instanceFor(region: 'northamerica-northeast1')
-        .httpsCallable('deleteTeam');
-    await callable.call(<String, dynamic>{'teamId': teamId});
+    await AppFunctions.call('deleteTeam', data: {'teamId': teamId});
   }
 
   /// Admin removes a player from the team + removes teamId from their profile.

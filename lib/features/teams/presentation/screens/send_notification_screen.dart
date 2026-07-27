@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/providers.dart';
+import '../../../../core/services/app_functions.dart';
 
 class SendNotificationScreen extends ConsumerStatefulWidget {
   final String teamId;
@@ -38,16 +39,14 @@ class _SendNotificationScreenState
     setState(() => _sending = true);
 
     try {
-      final result = await FirebaseFunctions.instanceFor(
-        region: 'northamerica-northeast1',
-      ).httpsCallable('sendTeamNotification').call({
+      final result = await AppFunctions.call('sendTeamNotification', data: {
         'teamId': widget.teamId,
         'title':  _titleCtrl.text.trim(),
         'body':   _bodyCtrl.text.trim(),
         if (widget.eventId != null) 'eventId': widget.eventId,
       });
 
-      final sent = (result.data as Map)['sent'] ?? 0;
+      final sent = (result as Map)['sent'] ?? 0;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Notification sent to $sent member${sent == 1 ? '' : 's'}.')),

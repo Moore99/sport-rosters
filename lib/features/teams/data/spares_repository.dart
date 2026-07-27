@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/services/app_functions.dart';
 import '../domain/spare_request.dart';
 import '../domain/spares.dart';
 
@@ -90,14 +91,14 @@ class SparesRepository {
     int batchSize = 10,
   }) async {
     try {
-      final result = await _fn.httpsCallable('notifySpares').call({
+      final result = await AppFunctions.call('notifySpares', data: {
         'eventId': eventId,
         'teamId': teamId,
         'teamName': teamName,
         'eventDate': eventDate.toIso8601String(),
         'batchSize': batchSize,
       });
-      return result.data['sent'] as int? ?? 0;
+      return (result as Map)['sent'] as int? ?? 0;
     } on FirebaseFunctionsException {
       return 0;
     }

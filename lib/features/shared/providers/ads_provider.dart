@@ -36,8 +36,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   void _listenPurchases() {
-    // in_app_purchase is not supported on web — IAP handled via Stripe instead.
-    if (kIsWeb) return;
+    // in_app_purchase is not supported on web/Windows — IAP handled via Stripe instead.
+    if (!AppConfig.isNativeMobile) return;
     _sub = InAppPurchase.instance.purchaseStream.listen(
       _handlePurchases,
       onError: (e) => state = IapStatus(IapState.error, e.toString()),
@@ -104,8 +104,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   Future<void> purchaseRemoveAds() async {
-    // On web, Remove Ads is purchased via Stripe (see rewarded_ad_service.dart).
-    if (kIsWeb) return;
+    // On web/Windows, Remove Ads is purchased via Stripe (see rewarded_ad_service.dart).
+    if (!AppConfig.isNativeMobile) return;
     state = const IapStatus(IapState.loading);
 
     final available = await InAppPurchase.instance.isAvailable();
@@ -132,7 +132,7 @@ class IapNotifier extends StateNotifier<IapStatus> {
   }
 
   Future<void> restorePurchases() async {
-    if (kIsWeb) return;
+    if (!AppConfig.isNativeMobile) return;
     state = const IapStatus(IapState.loading);
     await InAppPurchase.instance.restorePurchases();
     // Restored purchases arrive via purchaseStream → _handlePurchases

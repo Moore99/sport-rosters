@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/app_functions.dart';
 import '../providers/auth_notifier.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -154,7 +155,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ]),
                     const SizedBox(height: 16),
 
-                    // ── Google Sign-In ────────────────────────────────────
+                    // ── Google Sign-In (no Windows support — google_sign_in
+                    //    has no Windows plugin) ─────────────────────────────
+                    if (kIsWeb || Platform.isAndroid || Platform.isIOS)
                     OutlinedButton.icon(
                       icon:  Image.asset('assets/icons/google_logo.png',
                           height: 20,
@@ -289,11 +292,11 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
     if (id.isEmpty) return;
     setState(() { _loading = true; _error = null; _teamName = null; });
     try {
-      final fn     = FirebaseFunctions.instanceFor(region: 'northamerica-northeast1');
-      final result = await fn.httpsCallable('previewTeam').call({'teamId': id});
+      final result = await AppFunctions.call('previewTeam', data: {'teamId': id});
+      final map = result as Map;
       setState(() {
-        _teamName  = result.data['name']  as String?;
-        _teamSport = result.data['sport'] as String?;
+        _teamName  = map['name']  as String?;
+        _teamSport = map['sport'] as String?;
       });
     } on FirebaseFunctionsException catch (e) {
       setState(() => _error = e.code == 'not-found'

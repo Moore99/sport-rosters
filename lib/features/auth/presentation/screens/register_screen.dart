@@ -284,7 +284,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ]),
                     const SizedBox(height: 16),
 
-                    // ── Google Sign-In ────────────────────────────────────
+                    // ── Google Sign-In (no Windows support — google_sign_in
+                    //    has no Windows plugin) ─────────────────────────────
+                    if (kIsWeb || Platform.isAndroid || Platform.isIOS)
                     OutlinedButton.icon(
                       icon: Image.asset('assets/icons/google_logo.png',
                           height: 20,
