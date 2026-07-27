@@ -35,3 +35,9 @@ env.json
 
 # Firestore emulator
 firestore-debug.log
+
+# Crash dumps / debug logs (e.g. Gradle daemon hs_err_pid*.log, flutter_*.log)
+*.log
+
+# Unclear origin, not source (Windows/OneDrive-adjacent artifact) — seen recurring
+_ul
