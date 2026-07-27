@@ -85,8 +85,8 @@ All three must be present in `google-services.json`. The Play App Signing SHA-1 
 ## CI/CD
 - **Android**: built locally → APK or AAB → installed via ADB or uploaded to Play Console manually.
 - **iOS**: built via Codemagic (cloud CI) → TestFlight → App Store. Triggered manually on push to `main`. After the IPA is built, a post-build step uploads all dSYMs to Crashlytics via `upload-symbols -gsp ios/Runner/GoogleService-Info.plist`. dSYM files are also saved as Codemagic artifacts.
-- **Web**: `flutter build web --release --output C:\BuildTemp\web-output --dart-define=...` then `firebase deploy --only hosting`. `firebase.json` `public` is set to `C:\\BuildTemp\\web-output` (the `build/` Windows junction is not traversable by Firebase CLI). `flutter run -d chrome` also fails due to the junction — use a local HTTP server (`python -m http.server 8080`) for web testing.
-- **Build output**: `build/` is a Windows junction → `C:\BuildTemp\sports-rostering` to avoid OneDrive file locking.
+- **Web**: `flutter build web --release --dart-define=...` then `firebase deploy --only hosting`. `firebase.json` `public` is set to `build/web`. `flutter run -d chrome` — use a local HTTP server (`python -m http.server 8080`) for web testing if hot-reload dev mode isn't needed.
+- **Build output**: standard `build/` folder under the project root (previously a Windows junction to `C:\BuildTemp\sports-rostering` to avoid OneDrive file locking — no longer needed since the repo moved off OneDrive, 2026-07-27).
 - **Version source of truth**: `version.txt` at repo root. `pubspec.yaml` stays in sync. Codemagic reads `version.txt` for `--build-name`; `$BUILD_NUMBER` env var sets the build number.
 
 ## Riverpod Patterns

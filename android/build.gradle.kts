@@ -7,7 +7,7 @@ allprojects {
 
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
-        .dir("C:\\BuildTemp\\sports-rostering")
+        .dir("../../build")
         .get()
 rootProject.layout.buildDirectory.value(newBuildDir)
 

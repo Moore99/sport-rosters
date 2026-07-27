@@ -30,22 +30,17 @@ flutter build apk --release --dart-define-from-file=env.json
 ```bash
 flutter build appbundle --release --dart-define-from-file=env.json
 ```
-AAB output: `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab`
-Note: Flutter reports "failed to produce .aab file" due to the build junction — the file IS there at the path above, ignore the warning.
+AAB output: `build\app\outputs\bundle\release\app-release.aab`
 
 **Install APK on connected device:**
 ```bash
-& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\app-release.apk"
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" install -r "build\app\outputs\flutter-apk\app-release.apk"
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" shell am force-stop com.sportsrostering.app
 ```
 
 **iOS builds**: No Mac available — all iOS builds via **Codemagic** (cloud CI). Push to GitHub, trigger Codemagic manually.
 
-**Note**: The `build/` directory is a Windows junction pointing to `C:\BuildTemp\sports-rostering` to avoid OneDrive file locking. APK output lands at `C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\app-release.apk`. If the junction is ever lost, recreate with:
-```
-cmd /c "mklink /J C:\users\john\onedrive\projects\sports-rostering\build C:\BuildTemp\sports-rostering"
-```
-To force a clean build, delete `C:\BuildTemp\sports-rostering` contents (not the folder itself) then rebuild.
+**(Historical note, 2026-07-27)**: this repo used to live under OneDrive, which caused Gradle/Flutter file-locking failures — the previous workaround was a Windows junction on `build/` plus a hardcoded `C:\BuildTemp\sports-rostering` Gradle build-dir override in `android/build.gradle.kts`. The repo now lives on a non-OneDrive-synced drive, so neither workaround is needed — both removed. Build output now lands in the standard `build/` folder under the project root.
 
 ---
 
@@ -427,17 +422,16 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 ## Web Build & Deploy
 
 ```bash
-# Build (must use --output to bypass Windows junction issue with flutter_assets deletion)
-flutter build web --release --output C:\BuildTemp\web-output --dart-define-from-file=env.json
+flutter build web --release --dart-define-from-file=env.json
 
 # Local test
-cd C:\BuildTemp\web-output && python -m http.server 8080
+cd build/web && python -m http.server 8080
 
-# Deploy (firebase.json public: "C:\\BuildTemp\\web-output" — junction not traversable by Firebase CLI)
+# Deploy (firebase.json public: "build/web")
 firebase deploy --only hosting
 ```
 
-Note: `flutter run -d chrome` fails due to junction — use `flutter build web --output` + local HTTP server for web development.
+(Historical note, 2026-07-27): previously used `--output C:\BuildTemp\web-output` plus a matching `firebase.json` path to work around Windows junction/OneDrive file-locking issues. No longer needed — repo lives on a non-OneDrive-synced drive now, both simplified to the standard `build/web` location.
 
 ## Store URLs
 
@@ -488,9 +482,7 @@ Note: `flutter run -d chrome` fails due to junction — use `flutter build web -
 
 | Issue | Solution |
 |-------|----------|
-| `flutter clean` fails on OneDrive | Safe to ignore — file locking issue. Delete `C:\BuildTemp\sports-rostering` manually if needed |
-| APK not found after build | Check `C:\BuildTemp\sports-rostering\app\outputs\flutter-apk\` (Windows junction path) |
-| AAB build says "failed" but file exists | Ignore — Flutter reports this falsely due to build junction. File is at `C:\BuildTemp\sports-rostering\app\outputs\bundle\release\app-release.aab` |
+| APK not found after build | Check `build\app\outputs\flutter-apk\` |
 | iOS build fails with SIGABRT | Check `Info.plist` — `UISceneDelegateClassName` must be `$(PRODUCT_MODULE_NAME).SceneDelegate`, NOT `AppDelegate` |
 | Biometrics fail on Android | Check `android/app/build.gradle.kts` — `minSdk` must be ≥23 |
 
