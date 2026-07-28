@@ -1,0 +1,22 @@
+name: Lint / Format Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+      - name: Install Flutter dependencies
+        run: flutter pub get
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
