@@ -73,7 +73,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<bool> signIn(String email, String password) async {
     state = const AsyncLoading();
     try {
-      await _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+      await _auth.signInWithEmailAndPassword(
+          email: email.trim(), password: password);
       unawaited(_analytics.logLogin(loginMethod: 'email'));
       state = const AsyncData(null);
       return true;
@@ -99,14 +100,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
 
       // Create Firestore profile
       await _users.createUser(AppUser(
-        userId:    uid,
-        name:      name.trim(),
-        email:     email.trim(),
-        phone:     phone?.trim().isEmpty == true ? null : phone?.trim(),
-        teams:     [],
-        adFree:    false,
-        role:      'player',
-        deleted:   false,
+        userId: uid,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone?.trim().isEmpty == true ? null : phone?.trim(),
+        teams: [],
+        adFree: false,
+        role: 'player',
+        deleted: false,
         createdAt: DateTime.now(),
       ));
 
@@ -124,7 +125,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   /// hidden on Windows in login/register screens), but guard anyway.
   Future<bool> signInWithGoogle() async {
     if (!kIsWeb && Platform.isWindows) {
-      state = AsyncError('Google Sign-In is not available on Windows. Please use email/password.', StackTrace.current);
+      state = AsyncError(
+          'Google Sign-In is not available on Windows. Please use email/password.',
+          StackTrace.current);
       return false;
     }
     state = const AsyncLoading();
@@ -144,7 +147,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         final googleAuth = await googleUser.authentication;
         final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken,
-          idToken:     googleAuth.idToken,
+          idToken: googleAuth.idToken,
         );
         userCred = await _auth.signInWithCredential(credential);
       }
@@ -154,14 +157,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       final existing = await _users.getUser(user.uid);
       if (existing == null) {
         await _users.createUser(AppUser(
-          userId:    user.uid,
-          name:      user.displayName ?? '',
-          email:     user.email ?? '',
-          photoUrl:  user.photoURL,
-          teams:     [],
-          adFree:    false,
-          role:      'player',
-          deleted:   false,
+          userId: user.uid,
+          name: user.displayName ?? '',
+          email: user.email ?? '',
+          photoUrl: user.photoURL,
+          teams: [],
+          adFree: false,
+          role: 'player',
+          deleted: false,
           createdAt: DateTime.now(),
         ));
         unawaited(_analytics.logSignUp(signUpMethod: 'google'));
@@ -175,7 +178,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       state = AsyncError(friendlyAuthError(e), StackTrace.current);
       return false;
     } catch (e) {
-      state = AsyncError('Google sign-in failed. Please try again.', StackTrace.current);
+      state = AsyncError(
+          'Google sign-in failed. Please try again.', StackTrace.current);
       return false;
     }
   }
@@ -190,7 +194,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     try {
       final UserCredential userCred;
       String appleFirstName = '';
-      String appleLastName  = '';
+      String appleLastName = '';
       if (kIsWeb) {
         final provider = OAuthProvider('apple.com')
           ..addScope('email')
@@ -204,9 +208,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           ],
         );
         appleFirstName = appleCredential.givenName ?? '';
-        appleLastName  = appleCredential.familyName ?? '';
+        appleLastName = appleCredential.familyName ?? '';
         final oauthCredential = OAuthProvider('apple.com').credential(
-          idToken:     appleCredential.identityToken,
+          idToken: appleCredential.identityToken,
           accessToken: appleCredential.authorizationCode,
         );
         userCred = await _auth.signInWithCredential(oauthCredential);
@@ -217,19 +221,19 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       final existing = await _users.getUser(user.uid);
       if (existing == null) {
         final firstName = appleFirstName;
-        final lastName  = appleLastName;
-        final fullName  = '$firstName $lastName'.trim();
+        final lastName = appleLastName;
+        final fullName = '$firstName $lastName'.trim();
 
         await _users.createUser(AppUser(
-          userId:    user.uid,
-          name:      fullName.isNotEmpty
+          userId: user.uid,
+          name: fullName.isNotEmpty
               ? fullName
               : (user.displayName ?? user.email?.split('@').first ?? 'Player'),
-          email:     user.email ?? '',
-          teams:     [],
-          adFree:    false,
-          role:      'player',
-          deleted:   false,
+          email: user.email ?? '',
+          teams: [],
+          adFree: false,
+          role: 'player',
+          deleted: false,
           createdAt: DateTime.now(),
         ));
         unawaited(_analytics.logSignUp(signUpMethod: 'apple'));
@@ -245,13 +249,15 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         state = const AsyncData(null);
         return false;
       }
-      state = AsyncError('Apple sign-in failed. Please try again.', StackTrace.current);
+      state = AsyncError(
+          'Apple sign-in failed. Please try again.', StackTrace.current);
       return false;
     } on FirebaseAuthException catch (e) {
       state = AsyncError(friendlyAuthError(e), StackTrace.current);
       return false;
     } catch (e) {
-      state = AsyncError('Apple sign-in failed. Please try again.', StackTrace.current);
+      state = AsyncError(
+          'Apple sign-in failed. Please try again.', StackTrace.current);
       return false;
     }
   }
@@ -329,7 +335,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       }
       // Re-authenticate first — required by Firebase before sensitive operations.
       final credential = EmailAuthProvider.credential(
-        email:    user.email!,
+        email: user.email!,
         password: currentPassword,
       );
       await user.reauthenticateWithCredential(credential);

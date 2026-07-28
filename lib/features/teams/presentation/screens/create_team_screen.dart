@@ -21,26 +21,27 @@ class CreateTeamScreen extends ConsumerStatefulWidget {
 
 // Common North American IANA timezones shown with friendly labels
 const _kTimezones = [
-  ('America/Toronto',    'Eastern — Toronto / New York'),
-  ('America/Winnipeg',   'Central — Winnipeg / Chicago'),
-  ('America/Edmonton',   'Mountain — Calgary / Denver'),
-  ('America/Phoenix',    'Mountain — Phoenix (no DST)'),
-  ('America/Vancouver',  'Pacific — Vancouver / Los Angeles'),
-  ('America/Halifax',    'Atlantic — Halifax'),
-  ('America/St_Johns',   'Newfoundland — St. John\'s'),
-  ('America/Anchorage',  'Alaska — Anchorage'),
-  ('Pacific/Honolulu',   'Hawaii — Honolulu'),
+  ('America/Toronto', 'Eastern — Toronto / New York'),
+  ('America/Winnipeg', 'Central — Winnipeg / Chicago'),
+  ('America/Edmonton', 'Mountain — Calgary / Denver'),
+  ('America/Phoenix', 'Mountain — Phoenix (no DST)'),
+  ('America/Vancouver', 'Pacific — Vancouver / Los Angeles'),
+  ('America/Halifax', 'Atlantic — Halifax'),
+  ('America/St_Johns', 'Newfoundland — St. John\'s'),
+  ('America/Anchorage', 'Alaska — Anchorage'),
+  ('Pacific/Honolulu', 'Hawaii — Honolulu'),
 ];
 
 class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
-  final _formKey    = GlobalKey<FormState>();
-  final _nameCtrl   = TextEditingController();
-  String  _sport    = AppConfig.defaultSports.first; // updated to first Firestore sport in build
-  String  _timezone = 'America/Toronto';
-  int     _minPlayers = 1;
-  int     _maxPlayers = 20;
-  bool    _dropIn   = false;
-  bool    _loading  = false;
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  String _sport = AppConfig
+      .defaultSports.first; // updated to first Firestore sport in build
+  String _timezone = 'America/Toronto';
+  int _minPlayers = 1;
+  int _maxPlayers = 20;
+  bool _dropIn = false;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -52,20 +53,20 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
-    final uid  = ref.read(currentUserProvider)!.uid;
+    final uid = ref.read(currentUserProvider)!.uid;
     final ref2 = FirebaseFirestore.instance.collection('teams').doc();
 
     final team = Team(
-      teamId:       ref2.id,
-      name:         _nameCtrl.text.trim(),
-      sport:        _sport,
-      admins:       [uid],
-      players:      [],
-      minPlayers:   _minPlayers,
-      maxPlayers:   _maxPlayers,
+      teamId: ref2.id,
+      name: _nameCtrl.text.trim(),
+      sport: _sport,
+      admins: [uid],
+      players: [],
+      minPlayers: _minPlayers,
+      maxPlayers: _maxPlayers,
       dropInEnabled: _dropIn,
-      createdAt:    DateTime.now(),
-      timezone:     _timezone,
+      createdAt: DateTime.now(),
+      timezone: _timezone,
     );
 
     try {
@@ -75,12 +76,16 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
         // Ask the new admin how they participate before navigating away
         final participation = await _askParticipation(context);
         await ref.read(teamRepositoryProvider).setAdminRole(
-          team.teamId, uid, participation,
-        );
+              team.teamId,
+              uid,
+              participation,
+            );
         if (mounted) {
           context.pop();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${team.name} created! Share the Team ID: ${team.teamId}')),
+            SnackBar(
+                content: Text(
+                    '${team.name} created! Share the Team ID: ${team.teamId}')),
           );
         }
       }
@@ -108,7 +113,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
     // Keep _sport valid as Firestore list loads (may differ from AppConfig order).
     final sportNames = ref.watch(sportNamesProvider);
     if (!sportNames.contains(_sport) && sportNames.isNotEmpty) {
-      Future.microtask(() { if (mounted) setState(() => _sport = sportNames.first); });
+      Future.microtask(() {
+        if (mounted) setState(() => _sport = sportNames.first);
+      });
     }
 
     return Scaffold(
@@ -134,8 +141,9 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                         prefixIcon: Icon(Icons.group),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Team name is required.' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Team name is required.'
+                          : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -148,7 +156,8 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                         border: OutlineInputBorder(),
                       ),
                       items: sportNames
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
                       onChanged: (v) => setState(() => _sport = v!),
                     ),
@@ -166,7 +175,8 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                       items: _kTimezones
                           .map((t) => DropdownMenuItem(
                                 value: t.$1,
-                                child: Text(t.$2, overflow: TextOverflow.ellipsis),
+                                child:
+                                    Text(t.$2, overflow: TextOverflow.ellipsis),
                               ))
                           .toList(),
                       onChanged: (v) => setState(() => _timezone = v!),
@@ -218,7 +228,8 @@ class _CreateTeamScreenState extends ConsumerState<CreateTeamScreen> {
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
-                              height: 20, width: 20,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Create Team'),
                     ),
@@ -257,13 +268,14 @@ class _ParticipationDialogState extends State<_ParticipationDialog> {
             style: TextStyle(fontSize: 13),
           ),
           const SizedBox(height: 12),
-          ...AdminParticipation.values.map((p) => RadioListTile<AdminParticipation>(
-            contentPadding: EdgeInsets.zero,
-            title: Text(p.label),
-            value: p,
-            groupValue: _selected,
-            onChanged: (v) => setState(() => _selected = v!),
-          )),
+          ...AdminParticipation.values
+              .map((p) => RadioListTile<AdminParticipation>(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(p.label),
+                    value: p,
+                    groupValue: _selected,
+                    onChanged: (v) => setState(() => _selected = v!),
+                  )),
         ],
       ),
       actions: [

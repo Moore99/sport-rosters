@@ -8,5 +8,7 @@ final teamAnnouncementsProvider =
     StreamProvider.family<List<Announcement>, String>((ref, teamId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return const Stream.empty();
-  return ref.read(announcementRepositoryProvider).watchTeamAnnouncements(teamId);
+  return ref
+      .read(announcementRepositoryProvider)
+      .watchTeamAnnouncements(teamId);
 });

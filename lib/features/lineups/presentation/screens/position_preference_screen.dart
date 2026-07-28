@@ -30,10 +30,10 @@ class PositionPreferenceScreen extends ConsumerStatefulWidget {
 class _PositionPreferenceScreenState
     extends ConsumerState<PositionPreferenceScreen> {
   late Set<String> _selected;
-  bool _initialized    = false;
-  bool _saving         = false;
+  bool _initialized = false;
+  bool _saving = false;
   // Dragon Boating only
-  final _weightCtrl    = TextEditingController();
+  final _weightCtrl = TextEditingController();
   bool _weightInitialized = false;
 
   void _initFrom(PlayerPreference? pref) {
@@ -84,8 +84,8 @@ class _PositionPreferenceScreenState
     if (_anySelected) return true;
     if (_selected.contains(position)) return true;
     final cats = ref.read(categoriesForSportProvider(widget.sport));
-    return cats.entries.any(
-        (e) => _selected.contains(e.key) && e.value.contains(position));
+    return cats.entries
+        .any((e) => _selected.contains(e.key) && e.value.contains(position));
   }
 
   Future<void> _save() async {
@@ -98,7 +98,9 @@ class _PositionPreferenceScreenState
         if (parsed == null || parsed <= 0) {
           final unit = ref.read(weightUnitProvider);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Enter a valid weight in ${unit.name}, or leave blank.')),
+            SnackBar(
+                content: Text(
+                    'Enter a valid weight in ${unit.name}, or leave blank.')),
           );
           return;
         }
@@ -108,16 +110,17 @@ class _PositionPreferenceScreenState
 
     setState(() => _saving = true);
     final pref = PlayerPreference(
-      userId:             widget.userId,
-      teamId:             widget.teamId,
+      userId: widget.userId,
+      teamId: widget.teamId,
       preferredPositions: _selected.toList(),
-      updatedAt:          DateTime.now(),
+      updatedAt: DateTime.now(),
     );
     await ref.read(playerPreferenceRepositoryProvider).savePreference(pref);
     if (weightKg != null) {
       await ref.read(userRepositoryProvider).updateProfile(
-        widget.userId, weightKg: weightKg,
-      );
+            widget.userId,
+            weightKg: weightKg,
+          );
     }
     if (mounted) {
       setState(() => _saving = false);
@@ -146,7 +149,7 @@ class _PositionPreferenceScreenState
         if (widget.sport == 'Dragon Boating') {
           _initWeight(userAsync?.valueOrNull?.weightKg);
         }
-        final positions  = ref.watch(positionsForSportProvider(widget.sport));
+        final positions = ref.watch(positionsForSportProvider(widget.sport));
         final categories = ref.watch(categoriesForSportProvider(widget.sport));
 
         return Scaffold(
@@ -168,8 +171,7 @@ class _PositionPreferenceScreenState
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(widget.sport,
-                  style: Theme.of(context).textTheme.labelLarge),
+              Text(widget.sport, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 4),
               const Text(
                 'Select the positions you\'re willing to play. '
@@ -187,7 +189,7 @@ class _PositionPreferenceScreenState
                     controller: _weightCtrl,
                     decoration: InputDecoration(
                       labelText: 'Weight (${unit.name})',
-                      hintText:  'Used for boat balance — optional',
+                      hintText: 'Used for boat balance — optional',
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.monitor_weight_outlined),
                     ),
@@ -213,11 +215,11 @@ class _PositionPreferenceScreenState
               if (categories.isNotEmpty) ...[
                 _SectionHeader('Position Groups'),
                 Wrap(
-                  spacing:    8,
+                  spacing: 8,
                   runSpacing: 4,
                   children: categories.keys.map((cat) {
                     return FilterChip(
-                      label:    Text(cat),
+                      label: Text(cat),
                       selected: !_anySelected && _selected.contains(cat),
                       onSelected: _anySelected ? null : (_) => _toggle(cat),
                     );
@@ -229,7 +231,7 @@ class _PositionPreferenceScreenState
               // ── Individual positions ───────────────────────────────────────
               _SectionHeader('Specific Positions'),
               Wrap(
-                spacing:    8,
+                spacing: 8,
                 runSpacing: 4,
                 children: positions.map((pos) {
                   final effectivelyOn = _isEffectivelySelected(pos);
@@ -238,9 +240,10 @@ class _PositionPreferenceScreenState
                     label: Text(pos),
                     selected: effectivelyOn,
                     // Greyed out if covered by a category or "Any" (not directly toggled)
-                    onSelected: (_anySelected || (effectivelyOn && !directlySelected))
-                        ? null
-                        : (_) => _toggle(pos),
+                    onSelected:
+                        (_anySelected || (effectivelyOn && !directlySelected))
+                            ? null
+                            : (_) => _toggle(pos),
                   );
                 }).toList(),
               ),
@@ -254,7 +257,8 @@ class _PositionPreferenceScreenState
                 onPressed: _saving ? null : _save,
                 child: _saving
                     ? const SizedBox(
-                        height: 20, width: 20,
+                        height: 20,
+                        width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2))
                     : Text(_selected.isEmpty
                         ? 'Save (no preference — any position)'

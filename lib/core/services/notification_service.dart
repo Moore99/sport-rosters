@@ -45,7 +45,8 @@ class NotificationService {
   final Ref _ref;
   NotificationService(this._ref);
 
-  static const _vapidKey = 'BCbbuuCRr03_-L_8lZUApVkyICNsf1WXcLDQc4D2C9r6lCC9GlQGeyBxwR8MqF_hcJwkrQSVXKypRn82TUULkF8';
+  static const _vapidKey =
+      'BCbbuuCRr03_-L_8lZUApVkyICNsf1WXcLDQc4D2C9r6lCC9GlQGeyBxwR8MqF_hcJwkrQSVXKypRn82TUULkF8';
 
   Future<void> initialize() async {
     if (kIsWeb) {
@@ -168,15 +169,16 @@ class NotificationService {
   void _handleNotificationTap(RemoteMessage? message) {
     if (message == null) return;
     final data = message.data;
-    final type    = data['type'] as String?;
+    final type = data['type'] as String?;
     final eventId = data['eventId'] as String?;
-    final teamId  = data['teamId']  as String?;
+    final teamId = data['teamId'] as String?;
 
     if (type == 'spareNeeded' && eventId != null && teamId != null) {
       _ref.read(pendingSpareNavigationProvider.notifier).state =
           PendingNavigation(eventId: eventId, teamId: teamId);
     } else if ((type == 'eventReminder' || type == 'teamNotification') &&
-        eventId != null && teamId != null) {
+        eventId != null &&
+        teamId != null) {
       // Navigate to event detail so user can RSVP
       _ref.read(pendingEventNavigationProvider.notifier).state =
           PendingNavigation(eventId: eventId, teamId: teamId);

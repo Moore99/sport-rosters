@@ -13,18 +13,21 @@ This Privacy Policy applies to all mobile applications and services published by
 We collect information you provide directly to us when creating an account or using our Apps:
 
 **All Apps:**
+
 - **Account Information:** Name and email address
 - **Optional Profile Data:** Phone number and profile photo, collected only if you choose to provide them
 - **Push Notification Token:** A device token used to deliver push notifications, if you grant permission
 - **Usage Data:** Basic information about how you interact with our Apps, used to improve the service
 
 **Nuclear MOTD only:**
+
 - Company or organization (optional)
 - Country and timezone
 - Selected topic preferences and email delivery preferences
 - Safety insights or content you voluntarily submit for publication
 
 **Sports Rostering only:**
+
 - Team memberships, event RSVPs, availability responses, and drop-in sign-ups you submit
 - Player position preferences (per team)
 
@@ -159,4 +162,4 @@ If you have questions about this Privacy Policy or wish to exercise your privacy
 
 ---
 
-*This policy applies to all apps and services published by Kernkraft Consulting Inc. App-specific privacy details are also available within each app under Profile → Privacy Policy.*
+_This policy applies to all apps and services published by Kernkraft Consulting Inc. App-specific privacy details are also available within each app under Profile → Privacy Policy._

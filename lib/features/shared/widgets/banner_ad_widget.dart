@@ -27,8 +27,9 @@ class _BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
   BannerAd? _ad;
   bool _loaded = false;
 
-  String get _adUnitId =>
-      Platform.isAndroid ? AppConfig.bannerAdUnitAndroid : AppConfig.bannerAdUnitIos;
+  String get _adUnitId => Platform.isAndroid
+      ? AppConfig.bannerAdUnitAndroid
+      : AppConfig.bannerAdUnitIos;
 
   @override
   void initState() {

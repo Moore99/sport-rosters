@@ -13,7 +13,8 @@ class TeamRepository {
   final FirebaseFirestore _db;
   TeamRepository(this._db);
 
-  CollectionReference<Map<String, dynamic>> get _teams => _db.collection('teams');
+  CollectionReference<Map<String, dynamic>> get _teams =>
+      _db.collection('teams');
 
   CollectionReference<Map<String, dynamic>> _requests(String teamId) =>
       _teams.doc(teamId).collection('joinRequests');
@@ -28,8 +29,7 @@ class TeamRepository {
     return doc.exists ? Team.fromFirestore(doc) : null;
   }
 
-  Stream<Team?> watchTeam(String teamId) =>
-      _teams.doc(teamId).snapshots().map(
+  Stream<Team?> watchTeam(String teamId) => _teams.doc(teamId).snapshots().map(
         (doc) => doc.exists ? Team.fromFirestore(doc) : null,
       );
 
@@ -62,15 +62,16 @@ class TeamRepository {
   // ── Join Request ───────────────────────────────────────────────────────────
 
   /// Player submits a join request. Idempotent — overwrites any prior request.
-  Future<void> requestToJoin(String teamId, String userId, String userName, String userEmail) =>
+  Future<void> requestToJoin(
+          String teamId, String userId, String userName, String userEmail) =>
       _requests(teamId).doc(userId).set(JoinRequest(
-        requestId: userId,
-        userId:    userId,
-        userName:  userName,
-        userEmail: userEmail,
-        status:    JoinRequestStatus.pending,
-        createdAt: DateTime.now(),
-      ).toFirestore());
+            requestId: userId,
+            userId: userId,
+            userName: userName,
+            userEmail: userEmail,
+            status: JoinRequestStatus.pending,
+            createdAt: DateTime.now(),
+          ).toFirestore());
 
   /// Admin approves a join request — adds player to team + team to user profile.
   Future<void> approveRequest(String teamId, String userId) async {
@@ -96,8 +97,8 @@ class TeamRepository {
   /// Admin promotes a player to co-admin.
   Future<void> promoteToAdmin(String teamId, String userId) =>
       _teams.doc(teamId).update({
-        'admins':   FieldValue.arrayUnion([userId]),
-        'players':  FieldValue.arrayRemove([userId]),
+        'admins': FieldValue.arrayUnion([userId]),
+        'players': FieldValue.arrayRemove([userId]),
       });
 
   /// Uploads a logo image via the uploadTeamLogo Cloud Function (admin-verified).
@@ -107,7 +108,7 @@ class TeamRepository {
     final imageBase64 = base64Encode(bytes);
 
     await AppFunctions.call('uploadTeamLogo', data: {
-      'teamId':      teamId,
+      'teamId': teamId,
       'imageBase64': imageBase64,
     });
     // logoUrl is written to Firestore by the function — no local update needed.
@@ -115,7 +116,8 @@ class TeamRepository {
 
   // ── Admin roles ────────────────────────────────────────────────────────────
 
-  Future<void> setAdminRole(String teamId, String uid, AdminParticipation participates) =>
+  Future<void> setAdminRole(
+          String teamId, String uid, AdminParticipation participates) =>
       _adminRoles(teamId).doc(uid).set({'participates': participates.name});
 
   Future<AdminParticipation?> getAdminRole(String teamId, String uid) async {
@@ -130,12 +132,12 @@ class TeamRepository {
 
   Stream<Map<String, AdminParticipation>> watchAdminRoles(String teamId) =>
       _adminRoles(teamId).snapshots().map((s) => {
-        for (final doc in s.docs)
-          doc.id: AdminParticipation.values.firstWhere(
-            (e) => e.name == (doc.data()['participates'] as String?),
-            orElse: () => AdminParticipation.player,
-          ),
-      });
+            for (final doc in s.docs)
+              doc.id: AdminParticipation.values.firstWhere(
+                (e) => e.name == (doc.data()['participates'] as String?),
+                orElse: () => AdminParticipation.player,
+              ),
+          });
 
   /// Archives or restores a team (admin only).
   Future<void> archiveTeam(String teamId, {bool archived = true}) =>

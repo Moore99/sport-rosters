@@ -46,321 +46,343 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userAsync        = ref.watch(currentUserProfileProvider);
-    final teamsAsync       = ref.watch(userTeamsProvider);
-    final uid              = ref.watch(currentUserProvider)?.uid ?? '';
-    final adFree           = ref.watch(adFreeProvider);
-    final iapState         = ref.watch(iapProvider);
-    final themeMode        = ref.watch(themeModeProvider);
-    final weightUnit       = ref.watch(weightUnitProvider);
-    final bioAvailable     = ref.watch(_biometricAvailableProvider).valueOrNull ?? false;
-    final bioEnabled       = ref.watch(biometricEnabledProvider);
+    final userAsync = ref.watch(currentUserProfileProvider);
+    final teamsAsync = ref.watch(userTeamsProvider);
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
+    final adFree = ref.watch(adFreeProvider);
+    final iapState = ref.watch(iapProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final weightUnit = ref.watch(weightUnitProvider);
+    final bioAvailable =
+        ref.watch(_biometricAvailableProvider).valueOrNull ?? false;
+    final bioEnabled = ref.watch(biometricEnabledProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: SafeArea(top: false, child: userAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data: (user) => ListView(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          children: [
-            // ── Profile header ─────────────────────────────────────────
-            _ProfileHeader(
-              uid:        uid,
-              user:       user,
-              adFree:     adFree,
-              weightUnit: weightUnit,
-            ),
-            const SizedBox(height: 20),
-
-            // ── My Teams & Roles ───────────────────────────────────────
-            Text('My Teams', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            teamsAsync.when(
-              loading: () => const LinearProgressIndicator(),
-              error:   (e, _) => Text('Could not load teams: $e',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              data: (teams) => teams.isEmpty
-                  ? Text('No teams yet.',
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.outline))
-                  : Column(
-                      children: teams.map((t) => _TeamRoleTile(team: t, uid: uid)).toList(),
-                    ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Appearance ─────────────────────────────────────────────
-            Text('Appearance', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.brightness_6_outlined),
-                        SizedBox(width: 8),
-                        Text('Theme'),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<ThemeMode>(
-                        segments: const [
-                          ButtonSegment(
-                            value: ThemeMode.light,
-                            icon: Icon(Icons.light_mode),
-                            label: Text('Light'),
-                          ),
-                          ButtonSegment(
-                            value: ThemeMode.system,
-                            icon: Icon(Icons.brightness_auto),
-                            label: Text('Auto'),
-                          ),
-                          ButtonSegment(
-                            value: ThemeMode.dark,
-                            icon: Icon(Icons.dark_mode),
-                            label: Text('Dark'),
-                          ),
-                        ],
-                        selected: {themeMode},
-                        onSelectionChanged: (modes) => ref
-                            .read(themeModeProvider.notifier)
-                            .setMode(modes.first),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: const [
-                        Icon(Icons.monitor_weight_outlined),
-                        SizedBox(width: 8),
-                        Text('Weight Unit'),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: SegmentedButton<WeightUnit>(
-                        segments: const [
-                          ButtonSegment(
-                            value: WeightUnit.kg,
-                            label: Text('kg'),
-                            icon: Icon(Icons.fitness_center),
-                          ),
-                          ButtonSegment(
-                            value: WeightUnit.lbs,
-                            label: Text('lbs'),
-                            icon: Icon(Icons.scale_outlined),
-                          ),
-                        ],
-                        selected: {weightUnit},
-                        onSelectionChanged: (units) => ref
-                            .read(weightUnitProvider.notifier)
-                            .setUnit(units.first),
-                      ),
-                    ),
-                  ],
+      body: SafeArea(
+          top: false,
+          child: userAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (user) => ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ── Profile header ─────────────────────────────────────────
+                _ProfileHeader(
+                  uid: uid,
+                  user: user,
+                  adFree: adFree,
+                  weightUnit: weightUnit,
                 ),
-              ),
-            ),
-            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-            // ── Remove Ads ─────────────────────────────────────────────
-            if (!adFree) ...[
-              Text('Upgrade', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.block, color: Colors.orange),
-                          SizedBox(width: 8),
-                          Text('Remove Ads',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'One-time purchase — removes all ads permanently. '
-                        'Synced across your devices.',
-                        style: TextStyle(fontSize: 13),
-                      ),
-                      const SizedBox(height: 12),
-                      if (iapState.state == IapState.error)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            iapState.message ?? 'Purchase failed.',
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                                fontSize: 13),
+                // ── My Teams & Roles ───────────────────────────────────────
+                Text('My Teams', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                teamsAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, _) => Text('Could not load teams: $e',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
+                  data: (teams) => teams.isEmpty
+                      ? Text('No teams yet.',
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.outline))
+                      : Column(
+                          children: teams
+                              .map((t) => _TeamRoleTile(team: t, uid: uid))
+                              .toList(),
+                        ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Appearance ─────────────────────────────────────────────
+                Text('Appearance',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.brightness_6_outlined),
+                            SizedBox(width: 8),
+                            Text('Theme'),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SegmentedButton<ThemeMode>(
+                            segments: const [
+                              ButtonSegment(
+                                value: ThemeMode.light,
+                                icon: Icon(Icons.light_mode),
+                                label: Text('Light'),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.system,
+                                icon: Icon(Icons.brightness_auto),
+                                label: Text('Auto'),
+                              ),
+                              ButtonSegment(
+                                value: ThemeMode.dark,
+                                icon: Icon(Icons.dark_mode),
+                                label: Text('Dark'),
+                              ),
+                            ],
+                            selected: {themeMode},
+                            onSelectionChanged: (modes) => ref
+                                .read(themeModeProvider.notifier)
+                                .setMode(modes.first),
                           ),
                         ),
-                      FilledButton(
-                        onPressed: iapState.state == IapState.loading ||
-                                iapState.state == IapState.purchasing
-                            ? null
-                            : () => ref
-                                .read(iapProvider.notifier)
-                                .purchaseRemoveAds(),
-                        child: iapState.state == IapState.loading ||
-                                iapState.state == IapState.purchasing
-                            ? const SizedBox(
-                                height: 20, width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Remove Ads'),
-                      ),
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () =>
-                            ref.read(iapProvider.notifier).restorePurchases(),
-                        child: const Text('Restore Purchase'),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Row(
+                          children: const [
+                            Icon(Icons.monitor_weight_outlined),
+                            SizedBox(width: 8),
+                            Text('Weight Unit'),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SegmentedButton<WeightUnit>(
+                            segments: const [
+                              ButtonSegment(
+                                value: WeightUnit.kg,
+                                label: Text('kg'),
+                                icon: Icon(Icons.fitness_center),
+                              ),
+                              ButtonSegment(
+                                value: WeightUnit.lbs,
+                                label: Text('lbs'),
+                                icon: Icon(Icons.scale_outlined),
+                              ),
+                            ],
+                            selected: {weightUnit},
+                            onSelectionChanged: (units) => ref
+                                .read(weightUnitProvider.notifier)
+                                .setUnit(units.first),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 20),
 
-            // ── Legal & Account ────────────────────────────────────────
-            Text('Account', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              secondary: const Icon(Icons.notifications_outlined),
-              title:     const Text('Push Notifications'),
-              subtitle:  const Text('Event reminders and team announcements'),
-              value:     user?.notificationsEnabled ?? true,
-              onChanged: (v) => ref
-                  .read(userRepositoryProvider)
-                  .updateNotificationsEnabled(uid, v),
-            ),
-            if (user?.notificationsEnabled ?? true) ...[
-              SwitchListTile(
-                contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                title:    const Text('Game reminders'),
-                value:    user?.eventTypePrefs['game'] ?? true,
-                onChanged: (v) => ref
-                    .read(userRepositoryProvider)
-                    .updateEventTypePref(uid, 'game', v),
-              ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                title:    const Text('Practice reminders'),
-                value:    user?.eventTypePrefs['practice'] ?? true,
-                onChanged: (v) => ref
-                    .read(userRepositoryProvider)
-                    .updateEventTypePref(uid, 'practice', v),
-              ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                title:    const Text('Drop-in reminders'),
-                value:    user?.eventTypePrefs['drop_in'] ?? true,
-                onChanged: (v) => ref
-                    .read(userRepositoryProvider)
-                    .updateEventTypePref(uid, 'drop_in', v),
-              ),
-            ],
-            SwitchListTile(
-              secondary: const Icon(Icons.email_outlined),
-              title:     const Text('Email Notifications'),
-              subtitle:  const Text('Event reminders and spare requests via email'),
-              value:     user?.emailNotificationsEnabled ?? true,
-              onChanged: (v) => ref
-                  .read(userRepositoryProvider)
-                  .updateEmailNotificationsEnabled(uid, v),
-            ),
-            if (bioAvailable)
-              SwitchListTile(
-                secondary: const Icon(Icons.fingerprint),
-                title:     const Text('Face ID / Fingerprint'),
-                subtitle:  const Text('Lock the app when you leave'),
-                value:     bioEnabled,
-                onChanged: (v) async {
-                  if (v) {
-                    // Verify they can authenticate before enabling
-                    final ok = await ref
-                        .read(biometricServiceProvider)
-                        .authenticate();
-                    if (!ok) return;
-                  }
-                  await ref.read(biometricEnabledProvider.notifier).set(v);
-                },
-              ),
-            ListTile(
-              leading: const Icon(Icons.help_outline),
-              title:   const Text('Help'),
-              onTap:   () => context.push(AppRoutes.help),
-            ),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title:   const Text('Privacy Policy'),
-              onTap:   () => context.push(AppRoutes.privacy),
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title:   const Text('Terms of Service'),
-              onTap:   () => context.push(AppRoutes.terms),
-            ),
-            ListTile(
-              leading: const Icon(Icons.accessibility_outlined),
-              title:   const Text('Accessibility'),
-              onTap:   () => context.push(AppRoutes.accessibility),
-            ),
-            const _ExportDataButton(),
-            // Show change password only for email/password accounts
-            if (ref.watch(currentUserProvider)
-                    ?.providerData
-                    .any((p) => p.providerId == 'password') ==
-                true)
-              ListTile(
-                leading: const Icon(Icons.password_outlined),
-                title:   const Text('Change Password'),
-                onTap:   () => showDialog(
-                  context: context,
-                  builder: (_) => const _ChangePasswordDialog(),
-                ),
-              ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title:   const Text('Sign Out'),
-              onTap:   () async {
-                await ref.read(authNotifierProvider.notifier).signOut();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.delete_forever,
-                  color: Theme.of(context).colorScheme.error),
-              title: Text('Delete Account',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: () => _confirmDelete(context, ref),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: ref.watch(_appVersionProvider).whenOrNull(
-                    data: (v) => Text(
-                      'Sport Rosters v$v',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline),
+                // ── Remove Ads ─────────────────────────────────────────────
+                if (!adFree) ...[
+                  Text('Upgrade',
+                      style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.block, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text('Remove Ads',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'One-time purchase — removes all ads permanently. '
+                            'Synced across your devices.',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                          const SizedBox(height: 12),
+                          if (iapState.state == IapState.error)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                iapState.message ?? 'Purchase failed.',
+                                style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                    fontSize: 13),
+                              ),
+                            ),
+                          FilledButton(
+                            onPressed: iapState.state == IapState.loading ||
+                                    iapState.state == IapState.purchasing
+                                ? null
+                                : () => ref
+                                    .read(iapProvider.notifier)
+                                    .purchaseRemoveAds(),
+                            child: iapState.state == IapState.loading ||
+                                    iapState.state == IapState.purchasing
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2))
+                                : const Text('Remove Ads'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => ref
+                                .read(iapProvider.notifier)
+                                .restorePurchases(),
+                            child: const Text('Restore Purchase'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ) ?? const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                // ── Legal & Account ────────────────────────────────────────
+                Text('Account', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  secondary: const Icon(Icons.notifications_outlined),
+                  title: const Text('Push Notifications'),
+                  subtitle:
+                      const Text('Event reminders and team announcements'),
+                  value: user?.notificationsEnabled ?? true,
+                  onChanged: (v) => ref
+                      .read(userRepositoryProvider)
+                      .updateNotificationsEnabled(uid, v),
+                ),
+                if (user?.notificationsEnabled ?? true) ...[
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: const Text('Game reminders'),
+                    value: user?.eventTypePrefs['game'] ?? true,
+                    onChanged: (v) => ref
+                        .read(userRepositoryProvider)
+                        .updateEventTypePref(uid, 'game', v),
+                  ),
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: const Text('Practice reminders'),
+                    value: user?.eventTypePrefs['practice'] ?? true,
+                    onChanged: (v) => ref
+                        .read(userRepositoryProvider)
+                        .updateEventTypePref(uid, 'practice', v),
+                  ),
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: const Text('Drop-in reminders'),
+                    value: user?.eventTypePrefs['drop_in'] ?? true,
+                    onChanged: (v) => ref
+                        .read(userRepositoryProvider)
+                        .updateEventTypePref(uid, 'drop_in', v),
+                  ),
+                ],
+                SwitchListTile(
+                  secondary: const Icon(Icons.email_outlined),
+                  title: const Text('Email Notifications'),
+                  subtitle: const Text(
+                      'Event reminders and spare requests via email'),
+                  value: user?.emailNotificationsEnabled ?? true,
+                  onChanged: (v) => ref
+                      .read(userRepositoryProvider)
+                      .updateEmailNotificationsEnabled(uid, v),
+                ),
+                if (bioAvailable)
+                  SwitchListTile(
+                    secondary: const Icon(Icons.fingerprint),
+                    title: const Text('Face ID / Fingerprint'),
+                    subtitle: const Text('Lock the app when you leave'),
+                    value: bioEnabled,
+                    onChanged: (v) async {
+                      if (v) {
+                        // Verify they can authenticate before enabling
+                        final ok = await ref
+                            .read(biometricServiceProvider)
+                            .authenticate();
+                        if (!ok) return;
+                      }
+                      await ref.read(biometricEnabledProvider.notifier).set(v);
+                    },
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.help_outline),
+                  title: const Text('Help'),
+                  onTap: () => context.push(AppRoutes.help),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy Policy'),
+                  onTap: () => context.push(AppRoutes.privacy),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Terms of Service'),
+                  onTap: () => context.push(AppRoutes.terms),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.accessibility_outlined),
+                  title: const Text('Accessibility'),
+                  onTap: () => context.push(AppRoutes.accessibility),
+                ),
+                const _ExportDataButton(),
+                // Show change password only for email/password accounts
+                if (ref
+                        .watch(currentUserProvider)
+                        ?.providerData
+                        .any((p) => p.providerId == 'password') ==
+                    true)
+                  ListTile(
+                    leading: const Icon(Icons.password_outlined),
+                    title: const Text('Change Password'),
+                    onTap: () => showDialog(
+                      context: context,
+                      builder: (_) => const _ChangePasswordDialog(),
+                    ),
+                  ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Sign Out'),
+                  onTap: () async {
+                    await ref.read(authNotifierProvider.notifier).signOut();
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: Icon(Icons.delete_forever,
+                      color: Theme.of(context).colorScheme.error),
+                  title: Text('Delete Account',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error)),
+                  onTap: () => _confirmDelete(context, ref),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: ref.watch(_appVersionProvider).whenOrNull(
+                            data: (v) => Text(
+                              'Sport Rosters v$v',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outline),
+                            ),
+                          ) ??
+                      const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      )),
+          )),
     );
   }
 
@@ -375,10 +397,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 // ── Profile header ─────────────────────────────────────────────────────────────
 
 class _ProfileHeader extends ConsumerStatefulWidget {
-  final String      uid;
-  final dynamic     user;   // AppUser?
-  final bool        adFree;
-  final WeightUnit  weightUnit;
+  final String uid;
+  final dynamic user; // AppUser?
+  final bool adFree;
+  final WeightUnit weightUnit;
   const _ProfileHeader({
     required this.uid,
     required this.user,
@@ -394,8 +416,8 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
   bool _uploading = false;
 
   Future<void> _pickAndUploadPhoto() async {
-    final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery, imageQuality: 85);
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked == null || !mounted) return;
 
     final cropped = await ImageCropper().cropImage(
@@ -416,12 +438,13 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
 
     setState(() => _uploading = true);
     try {
-      await ref.read(userRepositoryProvider).uploadProfilePhoto(
-            widget.uid, File(cropped.path));
+      await ref
+          .read(userRepositoryProvider)
+          .uploadProfilePhoto(widget.uid, File(cropped.path));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Photo upload failed: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Photo upload failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _uploading = false);
@@ -430,9 +453,9 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final user       = widget.user;
-    final photoUrl   = user?.photoUrl as String?;
-    final initial    = (user?.name as String?)?.isNotEmpty == true
+    final user = widget.user;
+    final photoUrl = user?.photoUrl as String?;
+    final initial = (user?.name as String?)?.isNotEmpty == true
         ? (user!.name as String).substring(0, 1).toUpperCase()
         : '?';
 
@@ -446,29 +469,36 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
               child: Stack(
                 children: [
                   CircleAvatar(
-                    radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                    radius: 32 *
+                        MediaQuery.textScalerOf(context)
+                            .scale(1.0)
+                            .clamp(1.0, 1.5),
                     backgroundImage: photoUrl != null
                         ? NetworkImage(photoUrl) as ImageProvider
                         : null,
                     child: photoUrl == null
-                        ? Text(initial,
-                            style: const TextStyle(fontSize: 24))
+                        ? Text(initial, style: const TextStyle(fontSize: 24))
                         : null,
                   ),
                   if (_uploading)
                     Positioned.fill(
                       child: CircleAvatar(
-                        radius: 32 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                        radius: 32 *
+                            MediaQuery.textScalerOf(context)
+                                .scale(1.0)
+                                .clamp(1.0, 1.5),
                         backgroundColor: Colors.black38,
                         child: const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white)),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white)),
                       ),
                     )
                   else
                     Positioned(
-                      bottom: 0, right: 0,
+                      bottom: 0,
+                      right: 0,
                       child: CircleAvatar(
                         radius: 11,
                         backgroundColor:
@@ -494,8 +524,7 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
                       style: Theme.of(context).textTheme.bodyMedium),
                   if (user?.weightKg != null)
                     Text(
-                      formatWeight(
-                          user!.weightKg as double, widget.weightUnit),
+                      formatWeight(user!.weightKg as double, widget.weightUnit),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   if ((user?.role as String?) == 'systemAdmin') ...[
@@ -528,8 +557,8 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
               onPressed: () => showDialog(
                 context: context,
                 builder: (_) => _EditProfileDialog(
-                  uid:           widget.uid,
-                  currentName:   user?.name ?? '',
+                  uid: widget.uid,
+                  currentName: user?.name ?? '',
                   currentWeight: user?.weightKg as double?,
                 ),
               ),
@@ -544,8 +573,8 @@ class _ProfileHeaderState extends ConsumerState<_ProfileHeader> {
 // ── Edit profile dialog ────────────────────────────────────────────────────────
 
 class _EditProfileDialog extends ConsumerStatefulWidget {
-  final String  uid;
-  final String  currentName;
+  final String uid;
+  final String currentName;
   final double? currentWeight;
   const _EditProfileDialog({
     required this.uid,
@@ -600,16 +629,22 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
       }
       weightKg = toStorageKg(parsed, ref.read(weightUnitProvider));
     }
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       await ref.read(userRepositoryProvider).updateProfile(
-        widget.uid,
-        name:     name,
-        weightKg: weightKg,
-      );
+            widget.uid,
+            name: name,
+            weightKg: weightKg,
+          );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      setState(() { _saving = false; _error = 'Save failed. Please try again.'; });
+      setState(() {
+        _saving = false;
+        _error = 'Save failed. Please try again.';
+      });
     }
   }
 
@@ -621,20 +656,21 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-            controller:  _nameCtrl,
-            decoration:  const InputDecoration(labelText: 'Display name'),
+            controller: _nameCtrl,
+            decoration: const InputDecoration(labelText: 'Display name'),
             textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 12),
           Builder(builder: (context) {
             final unit = ref.watch(weightUnitProvider);
             return TextField(
-              controller:  _weightCtrl,
+              controller: _weightCtrl,
               decoration: InputDecoration(
                 labelText: 'Weight (${unit.name})',
-                hintText:  'Optional — used for dragon boat balance',
+                hintText: 'Optional — used for dragon boat balance',
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             );
           }),
           if (_error != null) ...[
@@ -654,7 +690,8 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(
-                  height: 18, width: 18,
+                  height: 18,
+                  width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Save'),
         ),
@@ -695,8 +732,8 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
             const SizedBox(height: 12),
             Text(
               _error!,
-              style:
-                  TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13),
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.error, fontSize: 13),
             ),
           ],
         ],
@@ -756,12 +793,12 @@ class _ChangePasswordDialog extends ConsumerStatefulWidget {
 }
 
 class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
-  final _formKey     = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _currentCtrl = TextEditingController();
-  final _newCtrl     = TextEditingController();
+  final _newCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _obscureCurrent = true;
-  bool _obscureNew     = true;
+  bool _obscureNew = true;
   bool _obscureConfirm = true;
   bool _saving = false;
 
@@ -777,9 +814,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final ok = await ref.read(authNotifierProvider.notifier).changePassword(
-      currentPassword: _currentCtrl.text,
-      newPassword:     _newCtrl.text,
-    );
+          currentPassword: _currentCtrl.text,
+          newPassword: _newCtrl.text,
+        );
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
@@ -803,13 +840,13 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFormField(
-              controller:  _currentCtrl,
+              controller: _currentCtrl,
               obscureText: _obscureCurrent,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText:  'Current password',
+                labelText: 'Current password',
                 prefixIcon: const Icon(Icons.lock_outlined),
-                border:     const OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(_obscureCurrent
                       ? Icons.visibility_outlined
@@ -818,18 +855,19 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
                       setState(() => _obscureCurrent = !_obscureCurrent),
                 ),
               ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Enter your current password.' : null,
+              validator: (v) => (v == null || v.isEmpty)
+                  ? 'Enter your current password.'
+                  : null,
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller:  _newCtrl,
+              controller: _newCtrl,
               obscureText: _obscureNew,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                labelText:  'New password',
+                labelText: 'New password',
                 prefixIcon: const Icon(Icons.lock_outlined),
-                border:     const OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(_obscureNew
                       ? Icons.visibility_outlined
@@ -839,20 +877,21 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'Enter a new password.';
-                if (v.length < 6) return 'Password must be at least 6 characters.';
+                if (v.length < 6)
+                  return 'Password must be at least 6 characters.';
                 return null;
               },
             ),
             const SizedBox(height: 12),
             TextFormField(
-              controller:  _confirmCtrl,
+              controller: _confirmCtrl,
               obscureText: _obscureConfirm,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _save(),
               decoration: InputDecoration(
-                labelText:  'Confirm new password',
+                labelText: 'Confirm new password',
                 prefixIcon: const Icon(Icons.lock_outlined),
-                border:     const OutlineInputBorder(),
+                border: const OutlineInputBorder(),
                 suffixIcon: IconButton(
                   icon: Icon(_obscureConfirm
                       ? Icons.visibility_outlined
@@ -884,7 +923,8 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(
-                  height: 18, width: 18,
+                  height: 18,
+                  width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Update Password'),
         ),
@@ -912,7 +952,7 @@ class _ExportDataButtonState extends ConsumerState<_ExportDataButton> {
       final json = const JsonEncoder.withIndent('  ').convert(result);
       await SharePlus.instance.share(
         ShareParams(
-          text:    json,
+          text: json,
           subject: 'Sport Rosters — My Data',
         ),
       );
@@ -936,9 +976,9 @@ class _ExportDataButtonState extends ConsumerState<_ExportDataButton> {
               height: 24,
               child: CircularProgressIndicator(strokeWidth: 2))
           : const Icon(Icons.download_outlined),
-      title:    const Text('Export My Data'),
+      title: const Text('Export My Data'),
       subtitle: const Text('Download a copy of your personal data'),
-      onTap:    _exporting ? null : _export,
+      onTap: _exporting ? null : _export,
     );
   }
 }
@@ -946,7 +986,7 @@ class _ExportDataButtonState extends ConsumerState<_ExportDataButton> {
 // ── Team role tile ─────────────────────────────────────────────────────────────
 
 class _TeamRoleTile extends StatelessWidget {
-  final Team   team;
+  final Team team;
   final String uid;
   const _TeamRoleTile({required this.team, required this.uid});
 
@@ -956,7 +996,8 @@ class _TeamRoleTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+        radius:
+            20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(team.sport.substring(0, 1)),
       ),
       title: Text(team.name),

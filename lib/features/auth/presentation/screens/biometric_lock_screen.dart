@@ -8,11 +8,12 @@ class BiometricLockScreen extends ConsumerStatefulWidget {
   const BiometricLockScreen({super.key});
 
   @override
-  ConsumerState<BiometricLockScreen> createState() => _BiometricLockScreenState();
+  ConsumerState<BiometricLockScreen> createState() =>
+      _BiometricLockScreenState();
 }
 
 class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
-  bool    _busy  = false;
+  bool _busy = false;
   String? _error;
 
   @override
@@ -22,7 +23,10 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
   }
 
   Future<void> _authenticate() async {
-    setState(() { _busy = true; _error = null; });
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
 
     final service = ref.read(biometricServiceProvider);
 
@@ -42,7 +46,7 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
       ref.read(biometricLockProvider.notifier).unlock();
     } else {
       setState(() {
-        _busy  = false;
+        _busy = false;
         _error = 'Authentication failed. Tap the button to try again.';
       });
     }
@@ -73,8 +77,10 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Authenticate to continue',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.outline),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
                 ),
                 const SizedBox(height: 40),
                 if (_busy)
@@ -82,7 +88,7 @@ class _BiometricLockScreenState extends ConsumerState<BiometricLockScreen> {
                 else
                   FilledButton.icon(
                     onPressed: _authenticate,
-                    icon:  const Icon(Icons.fingerprint),
+                    icon: const Icon(Icons.fingerprint),
                     label: const Text('Authenticate'),
                   ),
                 if (_error != null) ...[

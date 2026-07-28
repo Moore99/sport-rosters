@@ -4,23 +4,23 @@ enum AvailabilityResponse { yes, no, maybe }
 
 extension AvailabilityLabel on AvailabilityResponse {
   String get label => switch (this) {
-    AvailabilityResponse.yes   => 'Yes',
-    AvailabilityResponse.no    => 'No',
-    AvailabilityResponse.maybe => 'Maybe',
-  };
+        AvailabilityResponse.yes => 'Yes',
+        AvailabilityResponse.no => 'No',
+        AvailabilityResponse.maybe => 'Maybe',
+      };
   String get emoji => switch (this) {
-    AvailabilityResponse.yes   => '✅',
-    AvailabilityResponse.no    => '❌',
-    AvailabilityResponse.maybe => '❓',
-  };
+        AvailabilityResponse.yes => '✅',
+        AvailabilityResponse.no => '❌',
+        AvailabilityResponse.maybe => '❓',
+      };
 }
 
 class Availability {
-  final String               userId;
-  final String               eventId;
-  final String               teamId;   // denormalized for Firestore rules
+  final String userId;
+  final String eventId;
+  final String teamId; // denormalized for Firestore rules
   final AvailabilityResponse response;
-  final DateTime             updatedAt;
+  final DateTime updatedAt;
 
   const Availability({
     required this.userId,
@@ -33,23 +33,25 @@ class Availability {
   factory Availability.fromFirestore(DocumentSnapshot doc) {
     final d = doc.data() as Map<String, dynamic>;
     return Availability(
-      userId:    d['userId']   as String? ?? doc.id,  // field preferred; doc.id for legacy docs
-      eventId:   d['eventId']  as String? ?? '',
-      teamId:    d['teamId']   as String? ?? '',
-      response:  _responseFrom(d['response'] as String? ?? 'maybe'),
+      userId: d['userId'] as String? ??
+          doc.id, // field preferred; doc.id for legacy docs
+      eventId: d['eventId'] as String? ?? '',
+      teamId: d['teamId'] as String? ?? '',
+      response: _responseFrom(d['response'] as String? ?? 'maybe'),
       updatedAt: (d['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-    'userId':    userId,   // denormalized so collectionGroup queries can filter by userId
-    'eventId':   eventId,
-    'teamId':    teamId,
-    'response':  response.name,
-    'updatedAt': Timestamp.fromDate(updatedAt),
-  };
+        'userId':
+            userId, // denormalized so collectionGroup queries can filter by userId
+        'eventId': eventId,
+        'teamId': teamId,
+        'response': response.name,
+        'updatedAt': Timestamp.fromDate(updatedAt),
+      };
 
-  static AvailabilityResponse _responseFrom(String s) =>
-      AvailabilityResponse.values.firstWhere((e) => e.name == s,
-          orElse: () => AvailabilityResponse.maybe);
+  static AvailabilityResponse _responseFrom(String s) => AvailabilityResponse
+      .values
+      .firstWhere((e) => e.name == s, orElse: () => AvailabilityResponse.maybe);
 }

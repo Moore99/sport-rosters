@@ -21,8 +21,8 @@ class AnnouncementRepository {
 
   Future<void> updateAnnouncement(Announcement a) =>
       _col(a.teamId).doc(a.announcementId).update({
-        'title':  a.title,
-        'body':   a.body,
+        'title': a.title,
+        'body': a.body,
         'pinned': a.pinned,
       });
 

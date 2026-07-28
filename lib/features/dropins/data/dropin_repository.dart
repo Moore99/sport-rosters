@@ -12,8 +12,8 @@ class DropInRepository {
 
   Stream<DropInSession?> watchSession(String eventId) =>
       _sessions.doc(eventId).snapshots().map(
-        (doc) => doc.exists ? DropInSession.fromFirestore(doc) : null,
-      );
+            (doc) => doc.exists ? DropInSession.fromFirestore(doc) : null,
+          );
 
   /// Signs up uid. If [maxPlayers] is reached, adds to waitlist instead.
   Future<void> signUp(String eventId, String teamId, String uid,
@@ -23,21 +23,24 @@ class DropInRepository {
 
     if (!doc.exists) {
       await ref.set(DropInSession(
-        sessionId:     eventId,
-        eventId:       eventId,
-        teamId:        teamId,
-        signups:       [uid],
+        sessionId: eventId,
+        eventId: eventId,
+        teamId: teamId,
+        signups: [uid],
         generatedTeams: [],
-        createdAt:     DateTime.now(),
+        createdAt: DateTime.now(),
       ).toFirestore());
     } else {
       final session = DropInSession.fromFirestore(doc);
-      final isFull  = maxPlayers != null &&
-          session.signups.length >= maxPlayers;
+      final isFull = maxPlayers != null && session.signups.length >= maxPlayers;
       if (isFull) {
-        await ref.update({'waitlist': FieldValue.arrayUnion([uid])});
+        await ref.update({
+          'waitlist': FieldValue.arrayUnion([uid])
+        });
       } else {
-        await ref.update({'signups': FieldValue.arrayUnion([uid])});
+        await ref.update({
+          'signups': FieldValue.arrayUnion([uid])
+        });
       }
     }
   }
@@ -46,12 +49,12 @@ class DropInRepository {
   /// waitlisted, the first waitlisted player is promoted to signups atomically.
   Future<void> withdraw(String eventId, String uid) =>
       _db.runTransaction((tx) async {
-        final ref  = _sessions.doc(eventId);
+        final ref = _sessions.doc(eventId);
         final snap = await tx.get(ref);
         if (!snap.exists) return;
 
-        final s        = DropInSession.fromFirestore(snap);
-        final signups  = List<String>.from(s.signups);
+        final s = DropInSession.fromFirestore(snap);
+        final signups = List<String>.from(s.signups);
         final waitlist = List<String>.from(s.waitlist);
 
         if (waitlist.contains(uid)) {
@@ -67,8 +70,7 @@ class DropInRepository {
         tx.update(ref, {'signups': signups, 'waitlist': waitlist});
       });
 
-  Future<void> saveGeneratedTeams(
-      String eventId, List<List<String>> teams) =>
+  Future<void> saveGeneratedTeams(String eventId, List<List<String>> teams) =>
       _sessions.doc(eventId).update({'generatedTeams': teams});
 }
 

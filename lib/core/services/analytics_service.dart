@@ -29,13 +29,16 @@ class AnalyticsService {
 
   // ── Teams ──────────────────────────────────────────────────────────────────
 
-  Future<void> logTeamCreated(String sport) => logEvent('team_created', {'sport': sport});
+  Future<void> logTeamCreated(String sport) =>
+      logEvent('team_created', {'sport': sport});
 
-  Future<void> logTeamJoined(String sport) => logEvent('team_joined', {'sport': sport});
+  Future<void> logTeamJoined(String sport) =>
+      logEvent('team_joined', {'sport': sport});
 
   // ── Events ─────────────────────────────────────────────────────────────────
 
-  Future<void> logEventCreated(String sport) => logEvent('event_created', {'sport': sport});
+  Future<void> logEventCreated(String sport) =>
+      logEvent('event_created', {'sport': sport});
 
   Future<void> logAvailabilitySet(String status) =>
       logEvent('availability_set', {'status': status});

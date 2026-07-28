@@ -4,17 +4,17 @@
 
 ## Product Identity (reserved in Partner Center)
 
-| Field | Value |
-|-------|-------|
-| App name | Sport Rosters |
-| Package/Identity/Name | KernkraftConsultingInc.SportsRostering |
-| Package/Identity/Publisher | CN=BCB6FFA0-B60B-41E1-BFD5-DA72A34681B1 |
-| Publisher display name | Kernkraft Consulting Inc. |
-| Package Family Name (PFN) | KernkraftConsultingInc.SportsRostering_660a73mhqnjyy |
-| Store ID | 9NMWGL6X028C |
-| Category | Sports |
-| Age rating | PEGI 3 / Everyone (matches Play Store rating) |
-| Privacy policy URL | https://nuclear-motd.com/privacy |
+| Field                      | Value                                                |
+| -------------------------- | ---------------------------------------------------- |
+| App name                   | Sport Rosters                                        |
+| Package/Identity/Name      | KernkraftConsultingInc.SportsRostering               |
+| Package/Identity/Publisher | CN=BCB6FFA0-B60B-41E1-BFD5-DA72A34681B1              |
+| Publisher display name     | Kernkraft Consulting Inc.                            |
+| Package Family Name (PFN)  | KernkraftConsultingInc.SportsRostering_660a73mhqnjyy |
+| Store ID                   | 9NMWGL6X028C                                         |
+| Category                   | Sports                                               |
+| Age rating                 | PEGI 3 / Everyone (matches Play Store rating)        |
+| Privacy policy URL         | https://nuclear-motd.com/privacy                     |
 
 ---
 
@@ -25,16 +25,16 @@ northamerica-northeast2/Toronto) as the mobile and web apps, so teams, events, l
 rankings, and drop-ins are fully synced across every platform. A few mobile-only pieces
 have no Windows equivalent and are disabled in this build:
 
-| Feature | Status on Windows | Why |
-|---|---|---|
-| Core team/roster/schedule/lineup/rankings/drop-ins | ✅ Full support | Native Firestore/Auth Windows plugins |
-| Windows Hello lock (biometric-equivalent) | ✅ Full support | `local_auth` has a native Windows plugin |
-| Remove Ads (one-time purchase) | ✅ Via Stripe Checkout | Same flow already used on the web app |
-| Account deletion, GDPR data export, team notifications, spare notifications, team logo upload | ✅ Full support | Routed through the same Cloud Functions as mobile/web |
-| Banner ads | ❌ Not shown | No AdMob Windows SDK — desktop users see no ads either way |
-| Push notifications | ❌ Not available | No FCM Windows SDK |
-| Sign in with Apple | ❌ Not available | No Windows implementation; use email/password or Google Sign-In |
-| Crash reporting | ❌ Not available | No Crashlytics Windows SDK |
+| Feature                                                                                       | Status on Windows      | Why                                                             |
+| --------------------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------- |
+| Core team/roster/schedule/lineup/rankings/drop-ins                                            | ✅ Full support        | Native Firestore/Auth Windows plugins                           |
+| Windows Hello lock (biometric-equivalent)                                                     | ✅ Full support        | `local_auth` has a native Windows plugin                        |
+| Remove Ads (one-time purchase)                                                                | ✅ Via Stripe Checkout | Same flow already used on the web app                           |
+| Account deletion, GDPR data export, team notifications, spare notifications, team logo upload | ✅ Full support        | Routed through the same Cloud Functions as mobile/web           |
+| Banner ads                                                                                    | ❌ Not shown           | No AdMob Windows SDK — desktop users see no ads either way      |
+| Push notifications                                                                            | ❌ Not available       | No FCM Windows SDK                                              |
+| Sign in with Apple                                                                            | ❌ Not available       | No Windows implementation; use email/password or Google Sign-In |
+| Crash reporting                                                                               | ❌ Not available       | No Crashlytics Windows SDK                                      |
 
 ---
 
@@ -152,6 +152,7 @@ from `logo_path` in `pubspec.yaml`.
 ## Age Ratings Questionnaire
 
 Answer identically to the Play Store submission (see `play_store_listing.md`):
+
 - Violence / sexual content / profanity / controlled substances: No
 - User-generated content: Yes (team names, player names), private to team members only
 - Personal/sensitive data collected: Yes (name, email) — covered by privacy policy

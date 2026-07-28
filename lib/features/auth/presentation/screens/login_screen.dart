@@ -19,10 +19,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _formKey    = GlobalKey<FormState>();
-  final _emailCtrl  = TextEditingController();
-  final _passCtrl   = TextEditingController();
-  bool _obscure     = true;
+  final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -34,12 +34,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final ok = await ref.read(authNotifierProvider.notifier).signIn(
-      _emailCtrl.text,
-      _passCtrl.text,
-    );
+          _emailCtrl.text,
+          _passCtrl.text,
+        );
     // On success GoRouter redirect takes over — no manual navigation needed.
     if (!ok && mounted) {
-      final err = ref.read(authNotifierProvider).error?.toString() ?? 'Login failed.';
+      final err =
+          ref.read(authNotifierProvider).error?.toString() ?? 'Login failed.';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
   }
@@ -62,7 +63,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // ── Logo / Title ──────────────────────────────────────
-                    Image.asset('assets/icons/app_icon.png', width: 96, height: 96),
+                    Image.asset('assets/icons/app_icon.png',
+                        width: 96, height: 96),
                     const SizedBox(height: 16),
                     Text(
                       'Sport Rosters',
@@ -90,7 +92,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Email is required.';
+                        if (v == null || v.trim().isEmpty)
+                          return 'Email is required.';
                         if (!v.contains('@')) return 'Enter a valid email.';
                         return null;
                       },
@@ -109,12 +112,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outlined),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                          icon: Icon(_obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined),
                           onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
-                      validator: (v) =>
-                          (v == null || v.isEmpty) ? 'Password is required.' : null,
+                      validator: (v) => (v == null || v.isEmpty)
+                          ? 'Password is required.'
+                          : null,
                     ),
                     const SizedBox(height: 8),
 
@@ -135,8 +141,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: isLoading
                           ? const SizedBox(
                               height: 20,
-                              width:  20,
-                              child:  CircularProgressIndicator(strokeWidth: 2),
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Sign In'),
                     ),
@@ -158,45 +164,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // ── Google Sign-In (no Windows support — google_sign_in
                     //    has no Windows plugin) ─────────────────────────────
                     if (kIsWeb || Platform.isAndroid || Platform.isIOS)
-                    OutlinedButton.icon(
-                      icon:  Image.asset('assets/icons/google_logo.png',
-                          height: 20,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.login)),
-                      label: const Text('Continue with Google'),
-                      onPressed: isLoading ? null : () async {
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .signInWithGoogle();
-                        if (context.mounted) {
-                          final authState = ref.read(authNotifierProvider);
-                          if (authState is AsyncError) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(authState.error.toString())),
-                            );
-                          }
-                        }
-                      },
-                    ),
+                      OutlinedButton.icon(
+                        icon: Image.asset('assets/icons/google_logo.png',
+                            height: 20,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.login)),
+                        label: const Text('Continue with Google'),
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                await ref
+                                    .read(authNotifierProvider.notifier)
+                                    .signInWithGoogle();
+                                if (context.mounted) {
+                                  final authState =
+                                      ref.read(authNotifierProvider);
+                                  if (authState is AsyncError) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(authState.error.toString())),
+                                    );
+                                  }
+                                }
+                              },
+                      ),
 
                     // ── Sign in with Apple (iOS + Web — required by App Store;
                     //    available on web via redirect flow) ──────────────────
                     if (kIsWeb || Platform.isIOS) ...[
                       const SizedBox(height: 12),
                       SignInWithAppleButton(
-                        onPressed: isLoading ? () {} : () async {
-                          await ref
-                              .read(authNotifierProvider.notifier)
-                              .signInWithApple();
-                          if (context.mounted) {
-                            final authState = ref.read(authNotifierProvider);
-                            if (authState is AsyncError) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(authState.error.toString())),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: isLoading
+                            ? () {}
+                            : () async {
+                                await ref
+                                    .read(authNotifierProvider.notifier)
+                                    .signInWithApple();
+                                if (context.mounted) {
+                                  final authState =
+                                      ref.read(authNotifierProvider);
+                                  if (authState is AsyncError) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(authState.error.toString())),
+                                    );
+                                  }
+                                }
+                              },
                       ),
                     ],
                     const SizedBox(height: 24),
@@ -245,12 +261,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         TextButton(
                           onPressed: () => context.push(AppRoutes.privacy),
-                          child: const Text('Privacy Policy', style: TextStyle(fontSize: 12)),
+                          child: const Text('Privacy Policy',
+                              style: TextStyle(fontSize: 12)),
                         ),
                         const Text('·', style: TextStyle(fontSize: 12)),
                         TextButton(
                           onPressed: () => context.push(AppRoutes.terms),
-                          child: const Text('Terms', style: TextStyle(fontSize: 12)),
+                          child: const Text('Terms',
+                              style: TextStyle(fontSize: 12)),
                         ),
                       ],
                     ),
@@ -276,7 +294,7 @@ class _TeamPreviewDialog extends StatefulWidget {
 
 class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
   final _idCtrl = TextEditingController();
-  bool    _loading = false;
+  bool _loading = false;
   String? _teamName;
   String? _teamSport;
   String? _error;
@@ -290,12 +308,17 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
   Future<void> _lookup() async {
     final id = _idCtrl.text.trim();
     if (id.isEmpty) return;
-    setState(() { _loading = true; _error = null; _teamName = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+      _teamName = null;
+    });
     try {
-      final result = await AppFunctions.call('previewTeam', data: {'teamId': id});
+      final result =
+          await AppFunctions.call('previewTeam', data: {'teamId': id});
       final map = result as Map;
       setState(() {
-        _teamName  = map['name']  as String?;
+        _teamName = map['name'] as String?;
         _teamSport = map['sport'] as String?;
       });
     } on FirebaseFunctionsException catch (e) {
@@ -328,13 +351,13 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
             children: [
               Expanded(
                 child: TextField(
-                  controller:     _idCtrl,
-                  autocorrect:    false,
+                  controller: _idCtrl,
+                  autocorrect: false,
                   textCapitalization: TextCapitalization.none,
                   decoration: const InputDecoration(
-                    labelText:   'Team ID',
-                    border:      OutlineInputBorder(),
-                    prefixIcon:  Icon(Icons.tag),
+                    labelText: 'Team ID',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.tag),
                   ),
                   onSubmitted: (_) => _lookup(),
                 ),
@@ -343,7 +366,8 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
               IconButton.filled(
                 icon: _loading
                     ? const SizedBox(
-                        width: 18, height: 18,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.search),
@@ -351,15 +375,12 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
               ),
             ],
           ),
-
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(_error!,
                 style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 13)),
+                    color: Theme.of(context).colorScheme.error, fontSize: 13)),
           ],
-
           if (hasPreview) ...[
             const SizedBox(height: 16),
             Card(
@@ -369,7 +390,8 @@ class _TeamPreviewDialogState extends State<_TeamPreviewDialog> {
                 child: Row(
                   children: [
                     Icon(Icons.groups,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        color:
+                            Theme.of(context).colorScheme.onPrimaryContainer),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

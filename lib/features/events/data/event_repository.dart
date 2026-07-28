@@ -71,7 +71,7 @@ class EventRepository {
         'date': Timestamp.fromDate(newDate),
         // Clear reminder flags so the shifted events re-trigger reminders
         'reminder24Sent': false,
-        'reminder2Sent':  false,
+        'reminder2Sent': false,
       });
     }
     await batch.commit();
@@ -94,7 +94,8 @@ class EventRepository {
       _events.doc(eventId).update({'cancelled': cancelled});
 
   /// Cancels (or restores) all events in a recurring series.
-  Future<void> cancelEventSeries(String groupId, {bool cancelled = true}) async {
+  Future<void> cancelEventSeries(String groupId,
+      {bool cancelled = true}) async {
     final snap =
         await _events.where('recurrenceGroupId', isEqualTo: groupId).get();
     final batch = _db.batch();

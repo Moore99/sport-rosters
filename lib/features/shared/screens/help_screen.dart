@@ -17,12 +17,14 @@ class HelpScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: SafeArea(top: false, child: TabBarView(
-          children: const [
-            _PlayerHelp(),
-            _CoachHelp(),
-          ],
-        )),
+        body: SafeArea(
+            top: false,
+            child: TabBarView(
+              children: const [
+                _PlayerHelp(),
+                _CoachHelp(),
+              ],
+            )),
       ),
     );
   }
@@ -38,7 +40,8 @@ class _PlayerHelp extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: const [
-        _SectionHeader(icon: Icons.rocket_launch_outlined, label: 'Getting Started'),
+        _SectionHeader(
+            icon: Icons.rocket_launch_outlined, label: 'Getting Started'),
         _HelpTile(
           title: 'Joining a team',
           body:
@@ -49,8 +52,8 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'If a team is inactive but you don\'t want to leave, open it and tap the eye icon in the top bar to hide it. Hidden teams are collapsed at the bottom of your Teams list. Tap the eye again to show it.',
         ),
-
-        _SectionHeader(icon: Icons.calendar_today_outlined, label: 'Events & Schedule'),
+        _SectionHeader(
+            icon: Icons.calendar_today_outlined, label: 'Events & Schedule'),
         _HelpTile(
           title: 'Viewing upcoming events',
           body:
@@ -71,14 +74,12 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'Cancelled events remain visible with an orange "Cancelled" banner so you\'re aware of the change. You won\'t receive reminders for cancelled events.',
         ),
-
         _SectionHeader(icon: Icons.campaign_outlined, label: 'Announcements'),
         _HelpTile(
           title: 'Reading team announcements',
           body:
               'Tap the megaphone icon on the team screen to open the announcements feed. Pinned announcements appear at the top. New posts from your coach appear here in real time.',
         ),
-
         _SectionHeader(icon: Icons.group_outlined, label: 'Drop-In Sessions'),
         _HelpTile(
           title: 'What is a drop-in session?',
@@ -90,7 +91,6 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'Open the event and tap the people icon (Drop-in). Tap "Sign Up" to add yourself to the list. Tap again to remove yourself. The coach can see who\'s signed up and generate balanced teams.',
         ),
-
         _SectionHeader(icon: Icons.person_add_outlined, label: 'Spares'),
         _HelpTile(
           title: 'Joining the spares pool',
@@ -102,8 +102,8 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'If your team is short of players for an event, the coach can notify all spares. You\'ll receive a push notification with the event details and a link to respond.',
         ),
-
-        _SectionHeader(icon: Icons.tune_outlined, label: 'Your Profile & Preferences'),
+        _SectionHeader(
+            icon: Icons.tune_outlined, label: 'Your Profile & Preferences'),
         _HelpTile(
           title: 'Setting your position preferences',
           body:
@@ -119,8 +119,8 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'In Profile, use the Theme selector to choose Light, Dark, or System (follows your device setting).',
         ),
-
-        _SectionHeader(icon: Icons.notifications_outlined, label: 'Notifications'),
+        _SectionHeader(
+            icon: Icons.notifications_outlined, label: 'Notifications'),
         _HelpTile(
           title: 'Turning notifications on or off',
           body:
@@ -131,7 +131,6 @@ class _PlayerHelp extends StatelessWidget {
           body:
               'Tap the inbox icon on any team screen to see all notifications your coach has sent to that team, including ones you missed.',
         ),
-
         _SectionHeader(icon: Icons.lock_outline, label: 'Privacy & Security'),
         _HelpTile(
           title: 'Can other players see my ranking?',
@@ -163,7 +162,8 @@ class _CoachHelp extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: const [
-        _SectionHeader(icon: Icons.rocket_launch_outlined, label: 'Getting Started'),
+        _SectionHeader(
+            icon: Icons.rocket_launch_outlined, label: 'Getting Started'),
         _HelpTile(
           title: 'Creating a team',
           body:
@@ -189,8 +189,8 @@ class _CoachHelp extends StatelessWidget {
           body:
               'Tap the ⋮ overflow menu in the team\'s top bar and choose "Archive Team". Archived teams move out of the main list but nothing is deleted. Restore any time from the same menu.',
         ),
-
-        _SectionHeader(icon: Icons.calendar_today_outlined, label: 'Scheduling Events'),
+        _SectionHeader(
+            icon: Icons.calendar_today_outlined, label: 'Scheduling Events'),
         _HelpTile(
           title: 'Creating an event',
           body:
@@ -221,14 +221,12 @@ class _CoachHelp extends StatelessWidget {
           body:
               'After a game, open the event and tap "Log Result". Enter your team\'s score and the opponent\'s score. Results are shown on the event card and contribute to team stats.',
         ),
-
         _SectionHeader(icon: Icons.campaign_outlined, label: 'Announcements'),
         _HelpTile(
           title: 'Posting an announcement',
           body:
               'Tap the megaphone icon on the team screen. Tap the + button to write an announcement. Toggle "Send push notification" to alert your players immediately. Pin important announcements to keep them at the top.',
         ),
-
         _SectionHeader(icon: Icons.sports_score_outlined, label: 'Rankings'),
         _HelpTile(
           title: 'Rating your players',
@@ -240,7 +238,6 @@ class _CoachHelp extends StatelessWidget {
           body:
               'Rankings feed into the auto-lineup generator and the drop-in balanced team generator. Higher-ranked players are distributed evenly across teams using a snake draft.',
         ),
-
         _SectionHeader(icon: Icons.view_list_outlined, label: 'Lineups'),
         _HelpTile(
           title: 'Building a lineup manually',
@@ -267,7 +264,6 @@ class _CoachHelp extends StatelessWidget {
           body:
               'On the Lineup screen tap the PDF icon. The PDF lists every position and the assigned player, ready to print or share.',
         ),
-
         _SectionHeader(icon: Icons.group_outlined, label: 'Drop-In Sessions'),
         _HelpTile(
           title: 'Enabling drop-in for an event',
@@ -279,7 +275,6 @@ class _CoachHelp extends StatelessWidget {
           body:
               'Once players have signed up, tap "Generate Teams" on the drop-in screen. Choose 2–4 teams. A snake draft by ranking produces balanced teams shown as colour-coded cards.',
         ),
-
         _SectionHeader(icon: Icons.person_add_outlined, label: 'Spares'),
         _HelpTile(
           title: 'Managing the spares list',
@@ -291,15 +286,15 @@ class _CoachHelp extends StatelessWidget {
           body:
               'On an event detail screen, if the Yes count is below your minimum, a "Notify Spares" button appears. Tap it to send a push notification to all available spares with a link to respond.',
         ),
-
-        _SectionHeader(icon: Icons.notifications_outlined, label: 'Push Notifications'),
+        _SectionHeader(
+            icon: Icons.notifications_outlined, label: 'Push Notifications'),
         _HelpTile(
           title: 'Sending a notification to the team',
           body:
               'Tap the notification bell icon on the team or event screen. Enter a title and message. For event-specific notifications, the event context is pre-filled.',
         ),
-
-        _SectionHeader(icon: Icons.bar_chart_outlined, label: 'Stats & Attendance'),
+        _SectionHeader(
+            icon: Icons.bar_chart_outlined, label: 'Stats & Attendance'),
         _HelpTile(
           title: 'Team statistics',
           body:
@@ -310,8 +305,8 @@ class _CoachHelp extends StatelessWidget {
           body:
               'Open the team roster and tap a player\'s name, then "Attendance". See a full history of events the player RSVPd Yes/No/Maybe to.',
         ),
-
-        _SectionHeader(icon: Icons.admin_panel_settings_outlined, label: 'Admin Tips'),
+        _SectionHeader(
+            icon: Icons.admin_panel_settings_outlined, label: 'Admin Tips'),
         _HelpTile(
           title: 'Managing multiple teams',
           body:
@@ -367,8 +362,7 @@ class _HelpTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        childrenPadding:
-            const EdgeInsets.only(left: 16, right: 16, bottom: 14),
+        childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 14),
         title: Text(
           title,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),

@@ -16,24 +16,32 @@ void main() {
       expect(AppConfig.defaultSports.last, equals('Other'));
     });
     test('no duplicates', () {
-      expect(AppConfig.defaultSports.toSet().length, equals(AppConfig.defaultSports.length));
+      expect(AppConfig.defaultSports.toSet().length,
+          equals(AppConfig.defaultSports.length));
     });
   });
 
   group('AppConfig.sportIconAsset', () {
     test('known sports return correct paths', () {
-      expect(AppConfig.sportIconAsset('Ice Hockey'),          contains('ice_hockey.svg'));
-      expect(AppConfig.sportIconAsset('Basketball'),          contains('basketball.svg'));
-      expect(AppConfig.sportIconAsset('Football (American)'), contains('american_football.svg'));
-      expect(AppConfig.sportIconAsset('Football (Canadian)'), contains('american_football.svg'));
-      expect(AppConfig.sportIconAsset('Dragon Boating'),      contains('dragon_boating.svg'));
+      expect(
+          AppConfig.sportIconAsset('Ice Hockey'), contains('ice_hockey.svg'));
+      expect(
+          AppConfig.sportIconAsset('Basketball'), contains('basketball.svg'));
+      expect(AppConfig.sportIconAsset('Football (American)'),
+          contains('american_football.svg'));
+      expect(AppConfig.sportIconAsset('Football (Canadian)'),
+          contains('american_football.svg'));
+      expect(AppConfig.sportIconAsset('Dragon Boating'),
+          contains('dragon_boating.svg'));
     });
     test('unknown sport falls back to other.svg', () {
-      expect(AppConfig.sportIconAsset('Underwater Basket Weaving'), contains('other.svg'));
+      expect(AppConfig.sportIconAsset('Underwater Basket Weaving'),
+          contains('other.svg'));
     });
     test('every default sport has a non-empty icon path', () {
       for (final sport in AppConfig.defaultSports) {
-        expect(AppConfig.sportIconAsset(sport), isNotEmpty, reason: '$sport missing icon');
+        expect(AppConfig.sportIconAsset(sport), isNotEmpty,
+            reason: '$sport missing icon');
       }
     });
   });
@@ -49,14 +57,16 @@ void main() {
       expect(pos, contains('K – Kicker'));
     });
     test('Football (Canadian) has Slotback', () {
-      expect(AppConfig.positionsForSport('Football (Canadian)'), contains('SB – Slotback'));
+      expect(AppConfig.positionsForSport('Football (Canadian)'),
+          contains('SB – Slotback'));
     });
     test('Football (American) does NOT have Slotback', () {
-      expect(AppConfig.positionsForSport('Football (American)'), isNot(contains('SB – Slotback')));
+      expect(AppConfig.positionsForSport('Football (American)'),
+          isNot(contains('SB – Slotback')));
     });
     test('unknown sport falls back to Other positions', () {
       expect(AppConfig.positionsForSport('Made Up Sport'),
-             equals(AppConfig.sportPositions['Other']));
+          equals(AppConfig.sportPositions['Other']));
     });
   });
 
@@ -64,7 +74,8 @@ void main() {
     test('Ice Hockey has Any Forward', () {
       final cats = AppConfig.categoriesForSport('Ice Hockey');
       expect(cats, contains('Any Forward'));
-      expect(cats['Any Forward'], containsAll(['Left Wing', 'Centre', 'Right Wing']));
+      expect(cats['Any Forward'],
+          containsAll(['Left Wing', 'Centre', 'Right Wing']));
     });
     test('Football (American) has expected categories', () {
       final cats = AppConfig.categoriesForSport('Football (American)');
@@ -84,22 +95,39 @@ void main() {
 
   group('AppConfig.positionMatchesPreference', () {
     test('Any matches any position', () {
-      expect(AppConfig.positionMatchesPreference('Goalie', 'Any', 'Ice Hockey'), isTrue);
-      expect(AppConfig.positionMatchesPreference('Left Wing', 'Any', 'Ice Hockey'), isTrue);
+      expect(AppConfig.positionMatchesPreference('Goalie', 'Any', 'Ice Hockey'),
+          isTrue);
+      expect(
+          AppConfig.positionMatchesPreference('Left Wing', 'Any', 'Ice Hockey'),
+          isTrue);
     });
     test('exact position match', () {
-      expect(AppConfig.positionMatchesPreference('Goalie', 'Goalie', 'Ice Hockey'), isTrue);
+      expect(
+          AppConfig.positionMatchesPreference('Goalie', 'Goalie', 'Ice Hockey'),
+          isTrue);
     });
     test('category match', () {
-      expect(AppConfig.positionMatchesPreference('Left Wing', 'Any Forward', 'Ice Hockey'), isTrue);
-      expect(AppConfig.positionMatchesPreference('Centre',    'Any Forward', 'Ice Hockey'), isTrue);
+      expect(
+          AppConfig.positionMatchesPreference(
+              'Left Wing', 'Any Forward', 'Ice Hockey'),
+          isTrue);
+      expect(
+          AppConfig.positionMatchesPreference(
+              'Centre', 'Any Forward', 'Ice Hockey'),
+          isTrue);
     });
     test('no match', () {
-      expect(AppConfig.positionMatchesPreference('Goalie', 'Any Forward', 'Ice Hockey'), isFalse);
+      expect(
+          AppConfig.positionMatchesPreference(
+              'Goalie', 'Any Forward', 'Ice Hockey'),
+          isFalse);
     });
     test('position in different sport does not cross-match', () {
       // 'Any Forward' in Ice Hockey shouldn't match a Basketball position
-      expect(AppConfig.positionMatchesPreference('Point Guard', 'Any Forward', 'Basketball'), isFalse);
+      expect(
+          AppConfig.positionMatchesPreference(
+              'Point Guard', 'Any Forward', 'Basketball'),
+          isFalse);
     });
   });
 }

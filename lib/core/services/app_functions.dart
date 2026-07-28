@@ -40,7 +40,8 @@ class AppFunctions {
     Map<String, dynamic>? data,
   }) async {
     final projectId = Firebase.app().options.projectId;
-    final uri = Uri.parse('https://$region-$projectId.cloudfunctions.net/$name');
+    final uri =
+        Uri.parse('https://$region-$projectId.cloudfunctions.net/$name');
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     final response = await http.post(

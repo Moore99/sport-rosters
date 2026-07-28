@@ -22,8 +22,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
     _Slide(
       icon: Icons.calendar_month_outlined,
       title: 'Schedule Events',
-      body:
-          'Create practices, games, and drop-in sessions. Set player limits, '
+      body: 'Create practices, games, and drop-in sessions. Set player limits, '
           'RSVP deadlines, and locations — all in one place.',
     ),
     _Slide(
@@ -36,15 +35,13 @@ class _AppTourScreenState extends State<AppTourScreen> {
     _Slide(
       icon: Icons.view_list_outlined,
       title: 'Build Lineups',
-      body:
-          'Drag-and-drop lineup builder with auto-generate by player ranking '
+      body: 'Drag-and-drop lineup builder with auto-generate by player ranking '
           'and position preferences. Export to PDF for game day.',
     ),
     _Slide(
       icon: Icons.notifications_outlined,
       title: 'Stay Notified',
-      body:
-          'Push notifications keep everyone in the loop — event reminders, '
+      body: 'Push notifications keep everyone in the loop — event reminders, '
           'roster updates, and spare requests sent straight to your phone.',
     ),
   ];
@@ -68,7 +65,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast      = _page == _slides.length - 1;
+    final isLast = _page == _slides.length - 1;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -87,10 +84,10 @@ class _AppTourScreenState extends State<AppTourScreen> {
             // ── Slides ──────────────────────────────────────────────────────
             Expanded(
               child: PageView.builder(
-                controller:   _controller,
+                controller: _controller,
                 onPageChanged: (p) => setState(() => _page = p),
-                itemCount:    _slides.length,
-                itemBuilder:  (_, i) => _SlidePage(slide: _slides[i]),
+                itemCount: _slides.length,
+                itemBuilder: (_, i) => _SlidePage(slide: _slides[i]),
               ),
             ),
 
@@ -101,7 +98,7 @@ class _AppTourScreenState extends State<AppTourScreen> {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width:  _page == i ? 20 : 8,
+                  width: _page == i ? 20 : 8,
                   height: 8,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(4),
@@ -144,8 +141,8 @@ class _SlidePage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(slide.icon, size: 96,
-              color: Theme.of(context).colorScheme.primary),
+          Icon(slide.icon,
+              size: 96, color: Theme.of(context).colorScheme.primary),
           const SizedBox(height: 32),
           Text(
             slide.title,
@@ -171,8 +168,8 @@ class _SlidePage extends StatelessWidget {
 
 class _Slide {
   final IconData icon;
-  final String   title;
-  final String   body;
+  final String title;
+  final String body;
   const _Slide({
     required this.icon,
     required this.title,

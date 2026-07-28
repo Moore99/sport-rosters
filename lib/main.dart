@@ -62,8 +62,7 @@ void main() async {
         .setCrashlyticsCollectionEnabled(!kDebugMode);
 
     // Catch Flutter framework errors
-    FlutterError.onError =
-        FirebaseCrashlytics.instance.recordFlutterFatalError;
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
 
     // Catch async errors outside Flutter framework (platform channels, isolates)
     PlatformDispatcher.instance.onError = (error, stack) {
@@ -125,7 +124,7 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
   Widget build(BuildContext context) {
     // Wait for initial data load before showing app
     final userReady = ref.watch(userReadyProvider);
-    
+
     return userReady.when(
       data: (_) => _buildApp(context),
       loading: () => const _SplashScreen(),
@@ -157,7 +156,7 @@ class _SportsRosteringAppState extends ConsumerState<SportsRosteringApp>
     if (pendingEvent.eventId != null && pendingEvent.teamId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final eventId = pendingEvent.eventId;
-        final teamId  = pendingEvent.teamId;
+        final teamId = pendingEvent.teamId;
         ref.read(pendingEventNavigationProvider.notifier).state =
             const PendingNavigation();
         if (eventId != null && teamId != null) {

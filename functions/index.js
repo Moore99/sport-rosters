@@ -1,23 +1,33 @@
-const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
-const { onSchedule }        = require('firebase-functions/v2/scheduler');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
-const { defineSecret }      = require('firebase-functions/params');
-const { initializeApp }     = require('firebase-admin/app');
-const { getAuth }           = require('firebase-admin/auth');
-const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
-const { getMessaging }      = require('firebase-admin/messaging');
-const { getStorage }        = require('firebase-admin/storage');
-const { google }            = require('googleapis');
+const {
+  onCall,
+  onRequest,
+  HttpsError,
+} = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { defineSecret } = require("firebase-functions/params");
+const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const {
+  getFirestore,
+  FieldValue,
+  Timestamp,
+} = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+const { getStorage } = require("firebase-admin/storage");
+const { google } = require("googleapis");
 
 initializeApp();
 
 // ── Secrets (set via: firebase functions:secrets:set SECRET_NAME) ─────────────
-const appleSharedSecret         = defineSecret('APPLE_IAP_SHARED_SECRET');
-const googlePlayServiceAccount  = defineSecret('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON');
-const gmailUser                 = defineSecret('GMAIL_USER');
-const gmailAppPassword          = defineSecret('GMAIL_APP_PASSWORD');
-const stripeSecretKey           = defineSecret('STRIPE_SECRET_KEY');
-const stripeWebhookSecret       = defineSecret('STRIPE_WEBHOOK_SECRET');
+const appleSharedSecret = defineSecret("APPLE_IAP_SHARED_SECRET");
+const googlePlayServiceAccount = defineSecret(
+  "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+);
+const gmailUser = defineSecret("GMAIL_USER");
+const gmailAppPassword = defineSecret("GMAIL_APP_PASSWORD");
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 /**
  * deleteTeam — permanent team deletion cascade (admin only).
@@ -38,61 +48,74 @@ const stripeWebhookSecret       = defineSecret('STRIPE_WEBHOOK_SECRET');
  */
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
 // security relies on the Firebase Auth uid + admin-role check below instead.
-exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+exports.deleteTeam = onCall(
+  { region: "northamerica-northeast1", enforceAppCheck: false },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-  const { teamId } = request.data;
-  if (!teamId) throw new HttpsError('invalid-argument', 'teamId is required.');
+    const { teamId } = request.data;
+    if (!teamId)
+      throw new HttpsError("invalid-argument", "teamId is required.");
 
-  const db = getFirestore();
-  const teamRef = db.collection('teams').doc(teamId);
-  const teamDoc = await teamRef.get();
+    const db = getFirestore();
+    const teamRef = db.collection("teams").doc(teamId);
+    const teamDoc = await teamRef.get();
 
-  if (!teamDoc.exists) throw new HttpsError('not-found', 'Team not found.');
+    if (!teamDoc.exists) throw new HttpsError("not-found", "Team not found.");
 
-  const teamData = teamDoc.data();
-  const admins = teamData.admins ?? [];
-  if (!admins.includes(uid)) {
-    throw new HttpsError('permission-denied', 'Only team admins can delete a team.');
-  }
+    const teamData = teamDoc.data();
+    const admins = teamData.admins ?? [];
+    if (!admins.includes(uid)) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only team admins can delete a team.",
+      );
+    }
 
-  // ── 1 & 2. Events → availability + lineups subcollections ───────────────────
-  const eventsSnap = await db.collection('events')
-    .where('teamId', '==', teamId)
-    .get();
+    // ── 1 & 2. Events → availability + lineups subcollections ───────────────────
+    const eventsSnap = await db
+      .collection("events")
+      .where("teamId", "==", teamId)
+      .get();
 
-  for (const eventDoc of eventsSnap.docs) {
-    const availSnap = await eventDoc.ref.collection('availability').get();
-    await _deleteInBatches(db, availSnap.docs);
+    for (const eventDoc of eventsSnap.docs) {
+      const availSnap = await eventDoc.ref.collection("availability").get();
+      await _deleteInBatches(db, availSnap.docs);
 
-    const lineupSnap = await eventDoc.ref.collection('lineups').get();
-    await _deleteInBatches(db, lineupSnap.docs);
-  }
+      const lineupSnap = await eventDoc.ref.collection("lineups").get();
+      await _deleteInBatches(db, lineupSnap.docs);
+    }
 
-  // ── 3. Delete all events ────────────────────────────────────────────────────
-  await _deleteInBatches(db, eventsSnap.docs);
+    // ── 3. Delete all events ────────────────────────────────────────────────────
+    await _deleteInBatches(db, eventsSnap.docs);
 
-  // ── 4–8. Team subcollections ────────────────────────────────────────────────
-  const subcollections = [
-    'joinRequests', 'rankings', 'playerPreferences', 'spares', 'spareRequests',
-  ];
-  for (const sub of subcollections) {
-    const snap = await teamRef.collection(sub).get();
-    await _deleteInBatches(db, snap.docs);
-  }
+    // ── 4–8. Team subcollections ────────────────────────────────────────────────
+    const subcollections = [
+      "joinRequests",
+      "rankings",
+      "playerPreferences",
+      "spares",
+      "spareRequests",
+    ];
+    for (const sub of subcollections) {
+      const snap = await teamRef.collection(sub).get();
+      await _deleteInBatches(db, snap.docs);
+    }
 
-  // ── 9. dropInSessions referencing this team ─────────────────────────────────
-  const dropInSnap = await db.collection('dropInSessions')
-    .where('teamId', '==', teamId)
-    .get();
-  await _deleteInBatches(db, dropInSnap.docs);
+    // ── 9. dropInSessions referencing this team ─────────────────────────────────
+    const dropInSnap = await db
+      .collection("dropInSessions")
+      .where("teamId", "==", teamId)
+      .get();
+    await _deleteInBatches(db, dropInSnap.docs);
 
-  // ── 10. Delete team document ────────────────────────────────────────────────
-  await teamRef.delete();
+    // ── 10. Delete team document ────────────────────────────────────────────────
+    await teamRef.delete();
 
-  return { success: true };
-});
+    return { success: true };
+  },
+);
 
 /**
  * deleteAccount — GDPR/PIPEDA compliant account deletion cascade.
@@ -111,74 +134,92 @@ exports.deleteTeam = onCall({ region: 'northamerica-northeast1', enforceAppCheck
  */
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
 // security relies on the Firebase Auth uid check below instead.
-exports.deleteAccount = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) {
-    throw new HttpsError('unauthenticated', 'Must be signed in to delete account.');
-  }
+exports.deleteAccount = onCall(
+  { region: "northamerica-northeast1", enforceAppCheck: false },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Must be signed in to delete account.",
+      );
+    }
 
-  const db = getFirestore();
+    const db = getFirestore();
 
-  // ── 1. Availability (collection group) ──────────────────────────────────────
-  const availSnap = await db.collectionGroup('availability')
-    .where('userId', '==', uid)
-    .get();
-  await _deleteInBatches(db, availSnap.docs);
+    // ── 1. Availability (collection group) ──────────────────────────────────────
+    const availSnap = await db
+      .collectionGroup("availability")
+      .where("userId", "==", uid)
+      .get();
+    await _deleteInBatches(db, availSnap.docs);
 
-  // ── 2. Rankings (collection group) ──────────────────────────────────────────
-  const rankSnap = await db.collectionGroup('rankings')
-    .where(/* Firestore document ID field */ '__name__', '>=', `teams/`)
-    .get();
-  // Rankings docs use userId as the doc ID — fetch directly from each team
-  const userDoc = await db.collection('users').doc(uid).get();
-  const teamIds = userDoc.exists ? (userDoc.data().teams ?? []) : [];
+    // ── 2. Rankings (collection group) ──────────────────────────────────────────
+    const rankSnap = await db
+      .collectionGroup("rankings")
+      .where(/* Firestore document ID field */ "__name__", ">=", `teams/`)
+      .get();
+    // Rankings docs use userId as the doc ID — fetch directly from each team
+    const userDoc = await db.collection("users").doc(uid).get();
+    const teamIds = userDoc.exists ? (userDoc.data().teams ?? []) : [];
 
-  const rankDocs = [];
-  for (const teamId of teamIds) {
-    const rDoc = db.collection('teams').doc(teamId).collection('rankings').doc(uid);
-    rankDocs.push(rDoc);
-    const pDoc = db.collection('teams').doc(teamId).collection('playerPreferences').doc(uid);
-    rankDocs.push(pDoc);
-  }
-  if (rankDocs.length > 0) {
-    await _deleteDocRefs(db, rankDocs);
-  }
+    const rankDocs = [];
+    for (const teamId of teamIds) {
+      const rDoc = db
+        .collection("teams")
+        .doc(teamId)
+        .collection("rankings")
+        .doc(uid);
+      rankDocs.push(rDoc);
+      const pDoc = db
+        .collection("teams")
+        .doc(teamId)
+        .collection("playerPreferences")
+        .doc(uid);
+      rankDocs.push(pDoc);
+    }
+    if (rankDocs.length > 0) {
+      await _deleteDocRefs(db, rankDocs);
+    }
 
-  // ── 3. Remove uid from dropInSessions.signups ────────────────────────────────
-  const dropInSnap = await db.collection('dropInSessions')
-    .where('signups', 'array-contains', uid)
-    .get();
-  const dropInBatch = db.batch();
-  for (const doc of dropInSnap.docs) {
-    dropInBatch.update(doc.ref, { signups: FieldValue.arrayRemove(uid) });
-  }
-  if (!dropInSnap.empty) await dropInBatch.commit();
+    // ── 3. Remove uid from dropInSessions.signups ────────────────────────────────
+    const dropInSnap = await db
+      .collection("dropInSessions")
+      .where("signups", "array-contains", uid)
+      .get();
+    const dropInBatch = db.batch();
+    for (const doc of dropInSnap.docs) {
+      dropInBatch.update(doc.ref, { signups: FieldValue.arrayRemove(uid) });
+    }
+    if (!dropInSnap.empty) await dropInBatch.commit();
 
-  // ── 4. Remove uid from teams.players / teams.admins ──────────────────────────
-  const teamBatch = db.batch();
-  for (const teamId of teamIds) {
-    const teamRef = db.collection('teams').doc(teamId);
-    teamBatch.update(teamRef, {
-      players: FieldValue.arrayRemove(uid),
-      admins:  FieldValue.arrayRemove(uid),
-    });
-  }
-  if (teamIds.length > 0) await teamBatch.commit();
+    // ── 4. Remove uid from teams.players / teams.admins ──────────────────────────
+    const teamBatch = db.batch();
+    for (const teamId of teamIds) {
+      const teamRef = db.collection("teams").doc(teamId);
+      teamBatch.update(teamRef, {
+        players: FieldValue.arrayRemove(uid),
+        admins: FieldValue.arrayRemove(uid),
+      });
+    }
+    if (teamIds.length > 0) await teamBatch.commit();
 
-  // ── 5. Delete join requests created by this user ─────────────────────────────
-  const jrSnap = await db.collectionGroup('joinRequests')
-    .where('userId', '==', uid)
-    .get();
-  await _deleteInBatches(db, jrSnap.docs);
+    // ── 5. Delete join requests created by this user ─────────────────────────────
+    const jrSnap = await db
+      .collectionGroup("joinRequests")
+      .where("userId", "==", uid)
+      .get();
+    await _deleteInBatches(db, jrSnap.docs);
 
-  // ── 6. Delete users/{uid} document ──────────────────────────────────────────
-  await db.collection('users').doc(uid).delete();
+    // ── 6. Delete users/{uid} document ──────────────────────────────────────────
+    await db.collection("users").doc(uid).delete();
 
-  // ── 7. Delete Firebase Auth account ─────────────────────────────────────────
-  await getAuth().deleteUser(uid);
+    // ── 7. Delete Firebase Auth account ─────────────────────────────────────────
+    await getAuth().deleteUser(uid);
 
-  return { success: true };
-});
+    return { success: true };
+  },
+);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -214,27 +255,29 @@ async function _deleteDocRefs(db, refs) {
  * Returns: { name, sport }
  */
 exports.previewTeam = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: false },
+  { region: "northamerica-northeast1", enforceAppCheck: false },
   async (request) => {
     const { teamId } = request.data;
-    if (!teamId || typeof teamId !== 'string' || teamId.trim().length === 0) {
-      throw new HttpsError('invalid-argument', 'teamId is required.');
+    if (!teamId || typeof teamId !== "string" || teamId.trim().length === 0) {
+      throw new HttpsError("invalid-argument", "teamId is required.");
     }
 
-    const db       = getFirestore();
-    const teamSnap = await db.collection('teams').doc(teamId.trim()).get();
+    const db = getFirestore();
+    const teamSnap = await db.collection("teams").doc(teamId.trim()).get();
 
     if (!teamSnap.exists) {
-      throw new HttpsError('not-found',
-        'Team not found. Check the ID and try again.');
+      throw new HttpsError(
+        "not-found",
+        "Team not found. Check the ID and try again.",
+      );
     }
 
     const data = teamSnap.data();
     return {
-      name:  data.name  ?? '',
-      sport: data.sport ?? '',
+      name: data.name ?? "",
+      sport: data.sport ?? "",
     };
-  }
+  },
 );
 
 /**
@@ -251,73 +294,78 @@ exports.previewTeam = onCall(
  */
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
 // security relies on the Firebase Auth uid check below instead.
-exports.exportUserData = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+exports.exportUserData = onCall(
+  { region: "northamerica-northeast1", enforceAppCheck: false },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-  const db = getFirestore();
+    const db = getFirestore();
 
-  // ── 1. User profile ──────────────────────────────────────────────────────────
-  const userSnap = await db.collection('users').doc(uid).get();
-  const profileData = userSnap.exists ? userSnap.data() : {};
+    // ── 1. User profile ──────────────────────────────────────────────────────────
+    const userSnap = await db.collection("users").doc(uid).get();
+    const profileData = userSnap.exists ? userSnap.data() : {};
 
-  // ── 2. Team memberships ──────────────────────────────────────────────────────
-  const teamIds = profileData.teams ?? [];
-  const teams = [];
-  for (const teamId of teamIds) {
-    const teamSnap = await db.collection('teams').doc(teamId).get();
-    if (teamSnap.exists) {
-      const t = teamSnap.data();
-      teams.push({
-        teamId,
-        name:  t.name  ?? '',
-        sport: t.sport ?? '',
-        role:  (t.admins ?? []).includes(uid) ? 'admin' : 'player',
-      });
+    // ── 2. Team memberships ──────────────────────────────────────────────────────
+    const teamIds = profileData.teams ?? [];
+    const teams = [];
+    for (const teamId of teamIds) {
+      const teamSnap = await db.collection("teams").doc(teamId).get();
+      if (teamSnap.exists) {
+        const t = teamSnap.data();
+        teams.push({
+          teamId,
+          name: t.name ?? "",
+          sport: t.sport ?? "",
+          role: (t.admins ?? []).includes(uid) ? "admin" : "player",
+        });
+      }
     }
-  }
 
-  // ── 3. Availability records ──────────────────────────────────────────────────
-  const availSnap = await db.collectionGroup('availability')
-    .where('userId', '==', uid)
-    .get();
-  const availabilityRecords = availSnap.docs.map(d => {
-    const data = d.data();
+    // ── 3. Availability records ──────────────────────────────────────────────────
+    const availSnap = await db
+      .collectionGroup("availability")
+      .where("userId", "==", uid)
+      .get();
+    const availabilityRecords = availSnap.docs.map((d) => {
+      const data = d.data();
+      return {
+        eventId: data.eventId ?? "",
+        teamId: data.teamId ?? "",
+        response: data.response ?? "",
+        updatedAt: data.updatedAt?.toDate()?.toISOString() ?? null,
+      };
+    });
+
+    // ── 4. Drop-in participations ─────────────────────────────────────────────────
+    const dropInSnap = await db
+      .collection("dropInSessions")
+      .where("signups", "array-contains", uid)
+      .get();
+    const dropInParticipations = dropInSnap.docs.map((d) => {
+      const data = d.data();
+      return {
+        sessionId: d.id,
+        eventId: data.eventId ?? "",
+        teamId: data.teamId ?? "",
+      };
+    });
+
     return {
-      eventId:   data.eventId  ?? '',
-      teamId:    data.teamId   ?? '',
-      response:  data.response ?? '',
-      updatedAt: data.updatedAt?.toDate()?.toISOString() ?? null,
+      exportedAt: new Date().toISOString(),
+      profile: {
+        uid,
+        name: profileData.name ?? "",
+        email: profileData.email ?? "",
+        phone: profileData.phone ?? null,
+        weightKg: profileData.weightKg ?? null,
+      },
+      teams,
+      availabilityRecords,
+      dropInParticipations,
     };
-  });
-
-  // ── 4. Drop-in participations ─────────────────────────────────────────────────
-  const dropInSnap = await db.collection('dropInSessions')
-    .where('signups', 'array-contains', uid)
-    .get();
-  const dropInParticipations = dropInSnap.docs.map(d => {
-    const data = d.data();
-    return {
-      sessionId: d.id,
-      eventId:   data.eventId ?? '',
-      teamId:    data.teamId  ?? '',
-    };
-  });
-
-  return {
-    exportedAt: new Date().toISOString(),
-    profile: {
-      uid,
-      name:     profileData.name     ?? '',
-      email:    profileData.email    ?? '',
-      phone:    profileData.phone    ?? null,
-      weightKg: profileData.weightKg ?? null,
-    },
-    teams,
-    availabilityRecords,
-    dropInParticipations,
-  };
-});
+  },
+);
 
 /**
  * validateIap — server-side receipt validation for the "Remove Ads" one-time purchase.
@@ -346,80 +394,103 @@ const ANDROID_VALIDATION_ENABLED = true;
 
 exports.validateIap = onCall(
   {
-    region:          'northamerica-northeast1',
+    region: "northamerica-northeast1",
     enforceAppCheck: true,
-    secrets:         [appleSharedSecret, googlePlayServiceAccount],
+    secrets: [appleSharedSecret, googlePlayServiceAccount],
   },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-    const { platform, receiptData, productId, isRestore = false } = request.data;
+    const {
+      platform,
+      receiptData,
+      productId,
+      isRestore = false,
+    } = request.data;
     if (!platform || !receiptData || !productId) {
-      throw new HttpsError('invalid-argument',
-        'platform, receiptData, and productId are required.');
+      throw new HttpsError(
+        "invalid-argument",
+        "platform, receiptData, and productId are required.",
+      );
     }
-    if (!['ios', 'android'].includes(platform)) {
-      throw new HttpsError('invalid-argument', `Unknown platform: ${platform}`);
+    if (!["ios", "android"].includes(platform)) {
+      throw new HttpsError("invalid-argument", `Unknown platform: ${platform}`);
     }
 
     // Android validation deferred until Play Console API access is configured
-    if (platform === 'android' && !ANDROID_VALIDATION_ENABLED) {
-      console.log('Android validation not yet enabled — failing open.');
+    if (platform === "android" && !ANDROID_VALIDATION_ENABLED) {
+      console.log("Android validation not yet enabled — failing open.");
       const db = getFirestore();
-      await db.collection('users').doc(uid).update({ adFree: true });
+      await db.collection("users").doc(uid).update({ adFree: true });
       return { success: true };
     }
 
     let valid = false;
     try {
-      if (platform === 'ios') {
+      if (platform === "ios") {
         valid = await _validateAppleReceipt(
-          receiptData, productId, appleSharedSecret.value());
+          receiptData,
+          productId,
+          appleSharedSecret.value(),
+        );
       } else {
         valid = await _validateGooglePurchase(
-          receiptData, productId, googlePlayServiceAccount.value());
+          receiptData,
+          productId,
+          googlePlayServiceAccount.value(),
+        );
       }
     } catch (err) {
       console.error(`IAP validation error (${platform}):`, err.message);
       // Fail open on restore so a transient outage doesn't strand paying users
       if (isRestore) {
-        console.warn('Restore: failing open due to validation error.');
+        console.warn("Restore: failing open due to validation error.");
         valid = true;
       } else {
-        throw new HttpsError('internal',
-          'Could not verify purchase. Please try again.');
+        throw new HttpsError(
+          "internal",
+          "Could not verify purchase. Please try again.",
+        );
       }
     }
 
     if (!valid) {
-      throw new HttpsError('permission-denied',
-        'Purchase could not be verified with the store.');
+      throw new HttpsError(
+        "permission-denied",
+        "Purchase could not be verified with the store.",
+      );
     }
 
     // Grant entitlement via Admin SDK — cannot be spoofed by the client
     const db = getFirestore();
-    await db.collection('users').doc(uid).update({ adFree: true });
+    await db.collection("users").doc(uid).update({ adFree: true });
 
     return { success: true };
-  }
+  },
 );
 
 // ── Apple receipt validation (legacy /verifyReceipt) ─────────────────────────
 
 async function _validateAppleReceipt(receiptData, productId, sharedSecret) {
   const body = JSON.stringify({
-    'receipt-data': receiptData,
-    password:       sharedSecret,
-    'exclude-old-transactions': true,
+    "receipt-data": receiptData,
+    password: sharedSecret,
+    "exclude-old-transactions": true,
   });
 
   // Always try production first; Apple returns status 21007 for sandbox receipts
-  let data = await _applePost('https://buy.itunes.apple.com/verifyReceipt', body);
+  let data = await _applePost(
+    "https://buy.itunes.apple.com/verifyReceipt",
+    body,
+  );
 
   if (data.status === 21007) {
     // Sandbox receipt — retry against sandbox endpoint (expected during TestFlight)
-    data = await _applePost('https://sandbox.itunes.apple.com/verifyReceipt', body);
+    data = await _applePost(
+      "https://sandbox.itunes.apple.com/verifyReceipt",
+      body,
+    );
   }
 
   if (data.status !== 0) {
@@ -438,8 +509,8 @@ async function _validateAppleReceipt(receiptData, productId, sharedSecret) {
 
 async function _applePost(url, body) {
   const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body,
   });
   return res.json();
@@ -447,17 +518,21 @@ async function _applePost(url, body) {
 
 // ── Google Play purchase validation ──────────────────────────────────────────
 
-async function _validateGooglePurchase(purchaseToken, productId, serviceAccountJson) {
+async function _validateGooglePurchase(
+  purchaseToken,
+  productId,
+  serviceAccountJson,
+) {
   const credentials = JSON.parse(serviceAccountJson);
   const auth = new google.auth.GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/androidpublisher'],
+    scopes: ["https://www.googleapis.com/auth/androidpublisher"],
   });
 
-  const publisher = google.androidpublisher({ version: 'v3', auth });
+  const publisher = google.androidpublisher({ version: "v3", auth });
 
   const result = await publisher.purchases.products.get({
-    packageName: 'com.sportsrostering.app',
+    packageName: "com.sportsrostering.app",
     productId,
     token: purchaseToken,
   });
@@ -465,7 +540,9 @@ async function _validateGooglePurchase(purchaseToken, productId, serviceAccountJ
   // purchaseState: 0 = Purchased, 1 = Cancelled, 2 = Pending
   const purchaseState = result.data.purchaseState;
   if (purchaseState !== 0) {
-    console.warn(`Google Play purchaseState is ${purchaseState} (not purchased)`);
+    console.warn(
+      `Google Play purchaseState is ${purchaseState} (not purchased)`,
+    );
     return false;
   }
 
@@ -483,95 +560,116 @@ async function _validateGooglePurchase(purchaseToken, productId, serviceAccountJ
  */
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
 // security relies on the Firebase Auth uid + admin-role check below instead.
-exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enforceAppCheck: false }, async (request) => {
-  const uid = request.auth?.uid;
-  if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+exports.sendTeamNotification = onCall(
+  { region: "northamerica-northeast1", enforceAppCheck: false },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-  const { teamId, title, body, eventId } = request.data;
-  if (!teamId || !title || !body) {
-    throw new HttpsError('invalid-argument', 'teamId, title, and body are required.');
-  }
-
-  const db = getFirestore();
-
-  // Verify caller is a team admin
-  const teamSnap = await db.collection('teams').doc(teamId).get();
-  if (!teamSnap.exists) throw new HttpsError('not-found', 'Team not found.');
-  const admins = teamSnap.data().admins ?? [];
-  if (!admins.includes(uid)) {
-    throw new HttpsError('permission-denied', 'Only team admins can send notifications.');
-  }
-
-  // Collect all member UIDs (admins + players)
-  const players = teamSnap.data().players ?? [];
-  const allMembers = [...new Set([...admins, ...players])];
-
-  // Fetch FCM tokens — skip members with notifications disabled or team muted
-  const tokenPromises = allMembers.map((memberId) =>
-    db.collection('users').doc(memberId).get().then((s) => {
-      const data = s.data();
-      if (data?.notificationsEnabled === false) return null;
-      if ((data?.mutedTeams ?? []).includes(teamId)) return null;
-      return data?.fcmToken;
-    })
-  );
-  const allTokens = (await Promise.all(tokenPromises)).filter(Boolean);
-
-  if (allTokens.length === 0) return { sent: 0 };
-
-  // Build data payload for deep-link navigation on tap
-  const data = { teamId };
-  if (eventId) data.eventId = eventId;
-
-  // Send in batches of 500 (FCM multicast limit)
-  const BATCH = 500;
-  let sent = 0;
-  for (let i = 0; i < allTokens.length; i += BATCH) {
-    const batch = allTokens.slice(i, i + BATCH);
-    const response = await getMessaging().sendEachForMulticast({
-      tokens: batch,
-      notification: { title, body },
-      data,
-      android: { priority: 'high' },
-      apns: { payload: { aps: { sound: 'default' } } },
-    });
-    sent += response.successCount;
-
-    // Remove stale tokens (registration-not-registered)
-    const staleTokens = [];
-    response.responses.forEach((r, idx) => {
-      if (!r.success &&
-          (r.error?.code === 'messaging/registration-token-not-registered' ||
-           r.error?.code === 'messaging/invalid-registration-token')) {
-        staleTokens.push(batch[idx]);
-      }
-    });
-    if (staleTokens.length > 0) {
-      const staleBatch = db.batch();
-      for (const token of staleTokens) {
-        // Find which user has this token and clear it
-        const userSnap = await db.collection('users')
-          .where('fcmToken', '==', token).limit(1).get();
-        userSnap.docs.forEach((d) =>
-          staleBatch.update(d.ref, { fcmToken: FieldValue.delete() })
-        );
-      }
-      await staleBatch.commit();
+    const { teamId, title, body, eventId } = request.data;
+    if (!teamId || !title || !body) {
+      throw new HttpsError(
+        "invalid-argument",
+        "teamId, title, and body are required.",
+      );
     }
-  }
 
-  // Persist notification to Firestore for in-app inbox
-  await db.collection('teamNotifications').doc(teamId)
-    .collection('messages').add({
-      title,
-      body,
-      senderUid: uid,
-      sentAt: new Date(),
-      ...(eventId ? { eventId } : {}),
-    });
+    const db = getFirestore();
 
-  return { sent };
-});
+    // Verify caller is a team admin
+    const teamSnap = await db.collection("teams").doc(teamId).get();
+    if (!teamSnap.exists) throw new HttpsError("not-found", "Team not found.");
+    const admins = teamSnap.data().admins ?? [];
+    if (!admins.includes(uid)) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only team admins can send notifications.",
+      );
+    }
+
+    // Collect all member UIDs (admins + players)
+    const players = teamSnap.data().players ?? [];
+    const allMembers = [...new Set([...admins, ...players])];
+
+    // Fetch FCM tokens — skip members with notifications disabled or team muted
+    const tokenPromises = allMembers.map((memberId) =>
+      db
+        .collection("users")
+        .doc(memberId)
+        .get()
+        .then((s) => {
+          const data = s.data();
+          if (data?.notificationsEnabled === false) return null;
+          if ((data?.mutedTeams ?? []).includes(teamId)) return null;
+          return data?.fcmToken;
+        }),
+    );
+    const allTokens = (await Promise.all(tokenPromises)).filter(Boolean);
+
+    if (allTokens.length === 0) return { sent: 0 };
+
+    // Build data payload for deep-link navigation on tap
+    const data = { teamId };
+    if (eventId) data.eventId = eventId;
+
+    // Send in batches of 500 (FCM multicast limit)
+    const BATCH = 500;
+    let sent = 0;
+    for (let i = 0; i < allTokens.length; i += BATCH) {
+      const batch = allTokens.slice(i, i + BATCH);
+      const response = await getMessaging().sendEachForMulticast({
+        tokens: batch,
+        notification: { title, body },
+        data,
+        android: { priority: "high" },
+        apns: { payload: { aps: { sound: "default" } } },
+      });
+      sent += response.successCount;
+
+      // Remove stale tokens (registration-not-registered)
+      const staleTokens = [];
+      response.responses.forEach((r, idx) => {
+        if (
+          !r.success &&
+          (r.error?.code === "messaging/registration-token-not-registered" ||
+            r.error?.code === "messaging/invalid-registration-token")
+        ) {
+          staleTokens.push(batch[idx]);
+        }
+      });
+      if (staleTokens.length > 0) {
+        const staleBatch = db.batch();
+        for (const token of staleTokens) {
+          // Find which user has this token and clear it
+          const userSnap = await db
+            .collection("users")
+            .where("fcmToken", "==", token)
+            .limit(1)
+            .get();
+          userSnap.docs.forEach((d) =>
+            staleBatch.update(d.ref, { fcmToken: FieldValue.delete() }),
+          );
+        }
+        await staleBatch.commit();
+      }
+    }
+
+    // Persist notification to Firestore for in-app inbox
+    await db
+      .collection("teamNotifications")
+      .doc(teamId)
+      .collection("messages")
+      .add({
+        title,
+        body,
+        senderUid: uid,
+        sentAt: new Date(),
+        ...(eventId ? { eventId } : {}),
+      });
+
+    return { sent };
+  },
+);
 
 /**
  * sendEventReminders — runs every hour, sends push notifications to team
@@ -582,22 +680,27 @@ exports.sendTeamNotification = onCall({ region: 'northamerica-northeast1', enfor
  *   reminder2Sent:  bool
  */
 exports.sendEventReminders = onSchedule(
-  { schedule: 'every 60 minutes', region: 'northamerica-northeast1', secrets: [gmailUser, gmailAppPassword] },
+  {
+    schedule: "every 60 minutes",
+    region: "northamerica-northeast1",
+    secrets: [gmailUser, gmailAppPassword],
+  },
   async () => {
-    const db  = getFirestore();
+    const db = getFirestore();
     const now = new Date();
 
     // Query upcoming events in the next 25h (wider window to catch all)
     const cutoff = new Date(now.getTime() + 25 * 60 * 60 * 1000);
-    const snap = await db.collection('events')
-      .where('date', '>=', Timestamp.fromDate(now))
-      .where('date', '<=', Timestamp.fromDate(cutoff))
+    const snap = await db
+      .collection("events")
+      .where("date", ">=", Timestamp.fromDate(now))
+      .where("date", "<=", Timestamp.fromDate(cutoff))
       .get();
 
     if (snap.empty) return;
 
     for (const eventDoc of snap.docs) {
-      const event    = eventDoc.data();
+      const event = eventDoc.data();
 
       // Skip cancelled events
       if (event.cancelled === true) continue;
@@ -605,41 +708,47 @@ exports.sendEventReminders = onSchedule(
       const eventDate = event.date.toDate();
       const minsUntil = (eventDate - now) / 60000;
 
-      const teamSnap = await db.collection('teams').doc(event.teamId).get();
+      const teamSnap = await db.collection("teams").doc(event.teamId).get();
       if (!teamSnap.exists) continue;
       const team = teamSnap.data();
 
       // Use the team's configured timezone for reminder times (default Toronto)
-      const timeZone = team.timezone || 'America/Toronto';
+      const timeZone = team.timezone || "America/Toronto";
 
-      const allMembers = [...new Set([
-        ...(team.admins ?? []),
-        ...(team.players ?? []),
-      ])];
+      const allMembers = [
+        ...new Set([...(team.admins ?? []), ...(team.players ?? [])]),
+      ];
 
       // Exclude members who have explicitly said they cannot attend
-      const unavailSnap = await db.collection('events').doc(eventDoc.id)
-        .collection('availability')
-        .where('response', '==', 'no')
+      const unavailSnap = await db
+        .collection("events")
+        .doc(eventDoc.id)
+        .collection("availability")
+        .where("response", "==", "no")
         .get();
       const unavailableUids = new Set(
-        unavailSnap.docs.map(d => d.data().userId || d.id)
+        unavailSnap.docs.map((d) => d.data().userId || d.id),
       );
 
       // Fetch admin participation roles (coachOnly admins skip the RSVP nudge)
-      const adminRolesSnap = await db.collection('teams').doc(event.teamId)
-        .collection('adminRoles').get();
+      const adminRolesSnap = await db
+        .collection("teams")
+        .doc(event.teamId)
+        .collection("adminRoles")
+        .get();
       const coachOnlyUids = new Set(
         adminRolesSnap.docs
-          .filter(d => d.data().participates === 'coachOnly')
-          .map(d => d.id)
+          .filter((d) => d.data().participates === "coachOnly")
+          .map((d) => d.id),
       );
 
-      const eligibleMembers = allMembers.filter(uid => !unavailableUids.has(uid));
+      const eligibleMembers = allMembers.filter(
+        (uid) => !unavailableUids.has(uid),
+      );
 
       // Fetch user docs once — fcmToken + notificationsEnabled + mutedTeams
       const userDocs = await Promise.all(
-        eligibleMembers.map(uid => db.collection('users').doc(uid).get())
+        eligibleMembers.map((uid) => db.collection("users").doc(uid).get()),
       );
       const userDataByUid = {};
       for (const doc of userDocs) {
@@ -647,7 +756,8 @@ exports.sendEventReminders = onSchedule(
       }
 
       // Map Firestore event type → eventTypePrefs key
-      const eventTypePrefKey = event.type === 'dropIn' ? 'drop_in' : (event.type ?? 'game');
+      const eventTypePrefKey =
+        event.type === "dropIn" ? "drop_in" : (event.type ?? "game");
 
       function isNotifiable(uid) {
         const u = userDataByUid[uid];
@@ -661,18 +771,18 @@ exports.sendEventReminders = onSchedule(
       }
 
       // Split into players/sometimes (full reminder) and coachOnly (no RSVP nudge)
-      const regularMembers   = eligibleMembers.filter(uid =>
-        !coachOnlyUids.has(uid) && isNotifiable(uid)
+      const regularMembers = eligibleMembers.filter(
+        (uid) => !coachOnlyUids.has(uid) && isNotifiable(uid),
       );
-      const coachOnlyMembers = eligibleMembers.filter(uid =>
-        coachOnlyUids.has(uid) && isNotifiable(uid)
+      const coachOnlyMembers = eligibleMembers.filter(
+        (uid) => coachOnlyUids.has(uid) && isNotifiable(uid),
       );
 
       // Helper: send to a group of UIDs, then clean up any stale FCM tokens
       async function sendToGroup(uids, title, body) {
         if (uids.length === 0) return;
         const tokens = uids
-          .map(uid => userDataByUid[uid]?.fcmToken)
+          .map((uid) => userDataByUid[uid]?.fcmToken)
           .filter(Boolean);
         if (tokens.length === 0) return;
 
@@ -683,27 +793,32 @@ exports.sendEventReminders = onSchedule(
             tokens: batchTokens,
             notification: { title, body },
             data: { teamId: event.teamId, eventId: eventDoc.id },
-            android: { priority: 'high' },
-            apns: { payload: { aps: { sound: 'default' } } },
+            android: { priority: "high" },
+            apns: { payload: { aps: { sound: "default" } } },
           });
 
           // Remove stale tokens so they don't accumulate on user docs
           const staleTokens = [];
           response.responses.forEach((r, idx) => {
-            if (!r.success && (
-              r.error?.code === 'messaging/registration-token-not-registered' ||
-              r.error?.code === 'messaging/invalid-registration-token'
-            )) {
+            if (
+              !r.success &&
+              (r.error?.code ===
+                "messaging/registration-token-not-registered" ||
+                r.error?.code === "messaging/invalid-registration-token")
+            ) {
               staleTokens.push(batchTokens[idx]);
             }
           });
           if (staleTokens.length > 0) {
             const staleBatch = db.batch();
             for (const token of staleTokens) {
-              const userSnap = await db.collection('users')
-                .where('fcmToken', '==', token).limit(1).get();
-              userSnap.docs.forEach(d =>
-                staleBatch.update(d.ref, { fcmToken: FieldValue.delete() })
+              const userSnap = await db
+                .collection("users")
+                .where("fcmToken", "==", token)
+                .limit(1)
+                .get();
+              userSnap.docs.forEach((d) =>
+                staleBatch.update(d.ref, { fcmToken: FieldValue.delete() }),
               );
             }
             await staleBatch.commit();
@@ -713,37 +828,54 @@ exports.sendEventReminders = onSchedule(
 
       // Send reminder email to members without an FCM token (push fallback).
       async function sendReminderEmailToGroup(uids, title, body) {
-        const recipients = uids.filter(uid => {
+        const recipients = uids.filter((uid) => {
           const u = userDataByUid[uid];
           if (u?.fcmToken) return false; // has push token — push handles it
           if (u?.emailNotificationsEnabled === false) return false;
           return true;
         });
         if (recipients.length === 0) return;
-        const nodemailer = require('nodemailer');
+        const nodemailer = require("nodemailer");
         const transporter = nodemailer.createTransport({
-          service: 'gmail',
+          service: "gmail",
           auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
         });
-        const teamName  = team.name ?? 'Your team';
-        const timeZone  = team.timezone || 'America/Toronto';
-        const timeStr   = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
-        const dateStr   = eventDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', timeZone });
-        await Promise.all(recipients.map(uid => {
-          const u = userDataByUid[uid];
-          if (!u?.email) return null;
-          const firstName = (u.name ?? 'there').split(' ')[0];
-          return transporter.sendMail({
-            from:    `"Sports Rostering" <${gmailUser.value()}>`,
-            to:      u.email,
-            subject: `${title} — ${teamName}`,
-            text:    `Hi ${firstName},\n\n${body}\n\nTeam: ${teamName}\nDate: ${dateStr} at ${timeStr}\n\nOpen the app to update your availability:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
-            html:    `<p>Hi ${firstName},</p><p>${body}</p><table style="font-family:sans-serif;border-collapse:collapse"><tr><td style="color:#555;padding:4px 16px 4px 0">Team</td><td style="font-weight:bold">${teamName}</td></tr><tr><td style="color:#555;padding:4px 16px 4px 0">Date</td><td style="font-weight:bold">${dateStr} at ${timeStr}</td></tr></table><br><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Open App</a><p style="color:#aaa;font-size:12px">You received this because push notifications are not enabled on your device. To manage notifications, open the app and go to Profile → Notifications.</p>`,
-          });
-        }));
+        const teamName = team.name ?? "Your team";
+        const timeZone = team.timezone || "America/Toronto";
+        const timeStr = eventDate.toLocaleTimeString("en-CA", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone,
+        });
+        const dateStr = eventDate.toLocaleDateString("en-CA", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          timeZone,
+        });
+        await Promise.all(
+          recipients.map((uid) => {
+            const u = userDataByUid[uid];
+            if (!u?.email) return null;
+            const firstName = (u.name ?? "there").split(" ")[0];
+            return transporter.sendMail({
+              from: `"Sports Rostering" <${gmailUser.value()}>`,
+              to: u.email,
+              subject: `${title} — ${teamName}`,
+              text: `Hi ${firstName},\n\n${body}\n\nTeam: ${teamName}\nDate: ${dateStr} at ${timeStr}\n\nOpen the app to update your availability:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
+              html: `<p>Hi ${firstName},</p><p>${body}</p><table style="font-family:sans-serif;border-collapse:collapse"><tr><td style="color:#555;padding:4px 16px 4px 0">Team</td><td style="font-weight:bold">${teamName}</td></tr><tr><td style="color:#555;padding:4px 16px 4px 0">Date</td><td style="font-weight:bold">${dateStr} at ${timeStr}</td></tr></table><br><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Open App</a><p style="color:#aaa;font-size:12px">You received this because push notifications are not enabled on your device. To manage notifications, open the app and go to Profile → Notifications.</p>`,
+            });
+          }),
+        );
       }
 
-      async function sendReminderToTeam(regularTitle, regularBody, coachTitle, coachBody) {
+      async function sendReminderToTeam(
+        regularTitle,
+        regularBody,
+        coachTitle,
+        coachBody,
+      ) {
         await Promise.all([
           sendToGroup(regularMembers, regularTitle, regularBody),
           sendToGroup(coachOnlyMembers, coachTitle, coachBody),
@@ -753,11 +885,14 @@ exports.sendEventReminders = onSchedule(
 
         // Persist one inbox message representing the primary reminder
         if (regularMembers.length > 0 || coachOnlyMembers.length > 0) {
-          await db.collection('teamNotifications').doc(event.teamId)
-            .collection('messages').add({
+          await db
+            .collection("teamNotifications")
+            .doc(event.teamId)
+            .collection("messages")
+            .add({
               title: regularTitle,
-              body:  regularBody,
-              senderUid: 'system',
+              body: regularBody,
+              senderUid: "system",
               sentAt: new Date(),
               eventId: eventDoc.id,
             });
@@ -765,9 +900,18 @@ exports.sendEventReminders = onSchedule(
       }
 
       // 24-hour reminder: event is 23–25h away and flag not set
-      if (minsUntil >= 23 * 60 && minsUntil <= 25 * 60 && !event.reminder24Sent) {
-        const label   = event.type.charAt(0).toUpperCase() + event.type.slice(1);
-        const timeStr = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
+      if (
+        minsUntil >= 23 * 60 &&
+        minsUntil <= 25 * 60 &&
+        !event.reminder24Sent
+      ) {
+        const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const timeStr = eventDate.toLocaleTimeString("en-CA", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone,
+        });
         await sendReminderToTeam(
           `${label} tomorrow`,
           `Reminder: ${label} at ${timeStr}. Have you RSVPed?`,
@@ -779,8 +923,13 @@ exports.sendEventReminders = onSchedule(
 
       // 2-hour reminder: event is 1.5–2.5h away and flag not set
       if (minsUntil >= 90 && minsUntil <= 150 && !event.reminder2Sent) {
-        const label   = event.type.charAt(0).toUpperCase() + event.type.slice(1);
-        const timeStr = eventDate.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
+        const label = event.type.charAt(0).toUpperCase() + event.type.slice(1);
+        const timeStr = eventDate.toLocaleTimeString("en-CA", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone,
+        });
         await sendReminderToTeam(
           `${label} in 2 hours`,
           `Starting soon at ${timeStr}. See you there!`,
@@ -790,7 +939,7 @@ exports.sendEventReminders = onSchedule(
         await eventDoc.ref.update({ reminder2Sent: true });
       }
     }
-  }
+  },
 );
 
 /**
@@ -804,39 +953,45 @@ exports.sendEventReminders = onSchedule(
  *   imageBase64 — JPEG image data, base64-encoded (max ~2.67 MB after encoding)
  */
 exports.uploadTeamLogo = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: false },
+  { region: "northamerica-northeast1", enforceAppCheck: false },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
     const { teamId, imageBase64 } = request.data;
     if (!teamId || !imageBase64) {
-      throw new HttpsError('invalid-argument', 'teamId and imageBase64 are required.');
+      throw new HttpsError(
+        "invalid-argument",
+        "teamId and imageBase64 are required.",
+      );
     }
 
     const db = getFirestore();
 
     // Verify the caller is a team admin
-    const teamSnap = await db.collection('teams').doc(teamId).get();
-    if (!teamSnap.exists) throw new HttpsError('not-found', 'Team not found.');
+    const teamSnap = await db.collection("teams").doc(teamId).get();
+    if (!teamSnap.exists) throw new HttpsError("not-found", "Team not found.");
     const admins = teamSnap.data().admins ?? [];
     if (!admins.includes(uid)) {
-      throw new HttpsError('permission-denied', 'Only team admins can upload a team logo.');
+      throw new HttpsError(
+        "permission-denied",
+        "Only team admins can upload a team logo.",
+      );
     }
 
     // Write image to Storage via Admin SDK (bypasses client-facing rules).
     // Use a Firebase download token so the URL works regardless of bucket ACL settings.
-    const crypto  = require('crypto');
-    const bucket  = getStorage().bucket();
+    const crypto = require("crypto");
+    const bucket = getStorage().bucket();
     const filePath = `team_logos/${teamId}.jpg`;
-    const file    = bucket.file(filePath);
+    const file = bucket.file(filePath);
 
     const downloadToken = crypto.randomUUID();
-    const imageBuffer   = Buffer.from(imageBase64, 'base64');
+    const imageBuffer = Buffer.from(imageBase64, "base64");
 
     await file.save(imageBuffer, {
       metadata: {
-        contentType: 'image/jpeg',
+        contentType: "image/jpeg",
         metadata: { firebaseStorageDownloadTokens: downloadToken },
       },
       resumable: false,
@@ -847,10 +1002,10 @@ exports.uploadTeamLogo = onCall(
     const logoUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
 
     // Persist URL to Firestore
-    await db.collection('teams').doc(teamId).update({ logoUrl });
+    await db.collection("teams").doc(teamId).update({ logoUrl });
 
     return { logoUrl };
-  }
+  },
 );
 
 /**
@@ -860,24 +1015,24 @@ exports.uploadTeamLogo = onCall(
  * event date, the flags must be cleared so reminders fire again for the new time.
  */
 exports.onEventDateChanged = onDocumentUpdated(
-  { document: 'events/{eventId}', region: 'northamerica-northeast1' },
+  { document: "events/{eventId}", region: "northamerica-northeast1" },
   async (event) => {
     const before = event.data.before.data();
-    const after  = event.data.after.data();
+    const after = event.data.after.data();
 
     // Only act when the date actually changed
     const beforeMs = before?.date?.toMillis?.() ?? 0;
-    const afterMs  = after?.date?.toMillis?.()  ?? 0;
+    const afterMs = after?.date?.toMillis?.() ?? 0;
     if (beforeMs === afterMs) return;
 
     // Clear both reminder flags so the rescheduled event triggers fresh reminders
     const updates = {};
     if (after.reminder24Sent) updates.reminder24Sent = false;
-    if (after.reminder2Sent)  updates.reminder2Sent  = false;
+    if (after.reminder2Sent) updates.reminder2Sent = false;
     if (Object.keys(updates).length === 0) return;
 
     await event.data.after.ref.update(updates);
-  }
+  },
 );
 
 /**
@@ -887,70 +1042,84 @@ exports.onEventDateChanged = onDocumentUpdated(
  * 'no' and the event starts within 24h, each team admin receives an FCM push.
  */
 exports.onAvailabilityChanged = onDocumentUpdated(
-  { document: 'events/{eventId}/availability/{userId}', region: 'northamerica-northeast1' },
+  {
+    document: "events/{eventId}/availability/{userId}",
+    region: "northamerica-northeast1",
+  },
   async (event) => {
     const before = event.data.before.data();
-    const after  = event.data.after.data();
+    const after = event.data.after.data();
 
     // Only care about cancellations (response changed to 'no')
-    if (after?.response !== 'no' || before?.response === 'no') return;
+    if (after?.response !== "no" || before?.response === "no") return;
 
-    const db      = getFirestore();
+    const db = getFirestore();
     const eventId = event.params.eventId;
-    const userId  = event.params.userId;
+    const userId = event.params.userId;
 
     // Fetch the event doc
-    const eventSnap = await db.collection('events').doc(eventId).get();
+    const eventSnap = await db.collection("events").doc(eventId).get();
     if (!eventSnap.exists) return;
     const eventData = eventSnap.data();
 
     // Only notify if the event is within the next 24h
-    const now      = new Date();
+    const now = new Date();
     const eventDate = eventData.date?.toDate?.();
     if (!eventDate) return;
     const minsUntil = (eventDate - now) / 60000;
     if (minsUntil < 0 || minsUntil > 24 * 60) return;
 
     // Fetch the cancelling user's name
-    const userSnap = await db.collection('users').doc(userId).get();
-    const userName = userSnap.exists ? (userSnap.data().name ?? 'Someone') : 'Someone';
+    const userSnap = await db.collection("users").doc(userId).get();
+    const userName = userSnap.exists
+      ? (userSnap.data().name ?? "Someone")
+      : "Someone";
 
     // Fetch team admins
-    const teamSnap = await db.collection('teams').doc(eventData.teamId).get();
+    const teamSnap = await db.collection("teams").doc(eventData.teamId).get();
     if (!teamSnap.exists) return;
     const admins = teamSnap.data().admins ?? [];
 
     // Collect admin FCM tokens (skip the cancelling user if they are an admin)
     const adminTokenPromises = admins
-      .filter(adminUid => adminUid !== userId)
-      .map(adminUid => db.collection('users').doc(adminUid).get().then(s => {
-        const d = s.data();
-        if (!d?.fcmToken) return null;
-        if (d.notificationsEnabled === false) return null;
-        return d.fcmToken;
-      }));
+      .filter((adminUid) => adminUid !== userId)
+      .map((adminUid) =>
+        db
+          .collection("users")
+          .doc(adminUid)
+          .get()
+          .then((s) => {
+            const d = s.data();
+            if (!d?.fcmToken) return null;
+            if (d.notificationsEnabled === false) return null;
+            return d.fcmToken;
+          }),
+      );
     const adminTokens = (await Promise.all(adminTokenPromises)).filter(Boolean);
     if (adminTokens.length === 0) return;
 
-    const label     = eventData.type
+    const label = eventData.type
       ? eventData.type.charAt(0).toUpperCase() + eventData.type.slice(1)
-      : 'Event';
-    const timeZone  = teamSnap.data().timezone || 'America/Toronto';
-    const timeStr   = eventDate.toLocaleTimeString('en-CA', {
-      hour: 'numeric', minute: '2-digit', hour12: true, timeZone,
+      : "Event";
+    const timeZone = teamSnap.data().timezone || "America/Toronto";
+    const timeStr = eventDate.toLocaleTimeString("en-CA", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone,
     });
 
     await getMessaging().sendEachForMulticast({
       tokens: adminTokens,
       notification: {
         title: `${userName} cancelled`,
-        body:  `${userName} can no longer attend the ${label} at ${timeStr}.`,
+        body: `${userName} can no longer attend the ${label} at ${timeStr}.`,
       },
       data: { teamId: eventData.teamId, eventId },
-      android: { priority: 'high' },
-      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: "high" },
+      apns: { payload: { aps: { sound: "default" } } },
     });
-  }
+  },
 );
 
 /**
@@ -969,30 +1138,48 @@ exports.onAvailabilityChanged = onDocumentUpdated(
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
 // security relies on the Firebase Auth uid + admin-role check below instead.
 exports.notifySpares = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: false, secrets: [gmailUser, gmailAppPassword] },
+  {
+    region: "northamerica-northeast1",
+    enforceAppCheck: false,
+    secrets: [gmailUser, gmailAppPassword],
+  },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-    const { eventId, teamId, teamName, eventDate, batchSize = 10 } = request.data;
+    const {
+      eventId,
+      teamId,
+      teamName,
+      eventDate,
+      batchSize = 10,
+    } = request.data;
     if (!eventId || !teamId) {
-      throw new HttpsError('invalid-argument', 'eventId and teamId are required.');
+      throw new HttpsError(
+        "invalid-argument",
+        "eventId and teamId are required.",
+      );
     }
 
     const db = getFirestore();
 
     // Verify the caller is a team admin
-    const teamSnap = await db.collection('teams').doc(teamId).get();
-    if (!teamSnap.exists) throw new HttpsError('not-found', 'Team not found.');
+    const teamSnap = await db.collection("teams").doc(teamId).get();
+    if (!teamSnap.exists) throw new HttpsError("not-found", "Team not found.");
     const admins = teamSnap.data().admins ?? [];
     if (!admins.includes(uid)) {
-      throw new HttpsError('permission-denied', 'Only team admins can notify spares.');
+      throw new HttpsError(
+        "permission-denied",
+        "Only team admins can notify spares.",
+      );
     }
 
     // Get spares, sorted by joinedAt (first-come first)
-    const sparesSnap = await db.collection('teams').doc(teamId)
-      .collection('spares')
-      .orderBy('joinedAt')
+    const sparesSnap = await db
+      .collection("teams")
+      .doc(teamId)
+      .collection("spares")
+      .orderBy("joinedAt")
       .limit(batchSize)
       .get();
 
@@ -1003,18 +1190,22 @@ exports.notifySpares = onCall(
     // Fetch user data for spares (token + email + name for email fallback)
     const spareUsers = [];
     for (const doc of sparesSnap.docs) {
-      const userSnap = await db.collection('users').doc(doc.id).get();
+      const userSnap = await db.collection("users").doc(doc.id).get();
       if (userSnap.exists) spareUsers.push({ uid: doc.id, ...userSnap.data() });
     }
 
-    const tokens = spareUsers.map(u => u.fcmToken).filter(Boolean);
+    const tokens = spareUsers.map((u) => u.fcmToken).filter(Boolean);
 
     const eventDateObj = new Date(eventDate);
-    const dateStr = eventDateObj.toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric'
+    const dateStr = eventDateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
     });
-    const longDateStr = eventDateObj.toLocaleDateString('en-CA', {
-      weekday: 'long', month: 'long', day: 'numeric'
+    const longDateStr = eventDateObj.toLocaleDateString("en-CA", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     });
 
     const title = `Spares Needed - ${teamName}`;
@@ -1029,36 +1220,41 @@ exports.notifySpares = onCall(
         const response = await getMessaging().sendEachForMulticast({
           tokens: batch,
           notification: { title, body },
-          data: { teamId, eventId, type: 'spareNeeded' },
-          android: { priority: 'high' },
-          apns: { payload: { aps: { sound: 'default' } } },
+          data: { teamId, eventId, type: "spareNeeded" },
+          android: { priority: "high" },
+          apns: { payload: { aps: { sound: "default" } } },
         });
         sent += response.successCount;
       }
     }
 
     // Send email to ALL spares (push may not reach everyone)
-    const nodemailer = require('nodemailer');
+    const nodemailer = require("nodemailer");
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
     });
-    await Promise.all(spareUsers.map(u => {
-      if (!u.email) return null;
-      if (u.emailNotificationsEnabled === false) return null;
-      const firstName = (u.name ?? 'there').split(' ')[0];
-      return transporter.sendMail({
-        from:    `"Sports Rostering" <${gmailUser.value()}>`,
-        to:      u.email,
-        subject: `Spares Needed — ${teamName} on ${longDateStr}`,
-        text:    `Hi ${firstName},\n\n${teamName} is looking for spares for an event on ${longDateStr}.\n\nIf you can play, open the app to sign up:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
-        html:    `<p>Hi ${firstName},</p><p><strong>${teamName}</strong> is looking for spares for an event on <strong>${longDateStr}</strong>.</p><p>If you can play, tap the button below to sign up:</p><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Sign Up as Spare</a><p style="color:#aaa;font-size:12px">You received this because you are on the spares list for ${teamName}. To remove yourself, open the app and leave the spares list.</p>`,
-      });
-    }));
+    await Promise.all(
+      spareUsers.map((u) => {
+        if (!u.email) return null;
+        if (u.emailNotificationsEnabled === false) return null;
+        const firstName = (u.name ?? "there").split(" ")[0];
+        return transporter.sendMail({
+          from: `"Sports Rostering" <${gmailUser.value()}>`,
+          to: u.email,
+          subject: `Spares Needed — ${teamName} on ${longDateStr}`,
+          text: `Hi ${firstName},\n\n${teamName} is looking for spares for an event on ${longDateStr}.\n\nIf you can play, open the app to sign up:\nhttps://sports-rostering.web.app\n\n— Sports Rostering`,
+          html: `<p>Hi ${firstName},</p><p><strong>${teamName}</strong> is looking for spares for an event on <strong>${longDateStr}</strong>.</p><p>If you can play, tap the button below to sign up:</p><a href="https://sports-rostering.web.app" style="display:inline-block;padding:10px 20px;background:#2196F3;color:#fff;text-decoration:none;border-radius:6px">Sign Up as Spare</a><p style="color:#aaa;font-size:12px">You received this because you are on the spares list for ${teamName}. To remove yourself, open the app and leave the spares list.</p>`,
+        });
+      }),
+    );
 
     // Persist to notification inbox
-    await db.collection('teamNotifications').doc(teamId)
-      .collection('messages').add({
+    await db
+      .collection("teamNotifications")
+      .doc(teamId)
+      .collection("messages")
+      .add({
         title,
         body,
         senderUid: uid,
@@ -1067,31 +1263,31 @@ exports.notifySpares = onCall(
       });
 
     return { sent };
-  }
+  },
 );
 
 /**
  * resetTestPasswords — bulk reset passwords for test users.
- * 
+ *
  * SECURITY: This function should only be used in development/test environments.
  * It allows resetting passwords without the user's current password.
- * 
+ *
  * Params: { email, newPassword } or { resetAll: true }
  *   email       — specific user email to reset
  *   newPassword — the new password to set
  *   resetAll    — if true, resets all @test.com users to the default password
  */
 exports.resetTestPasswords = onCall(
-  { region: 'northamerica-northeast1', enforceAppCheck: false }, // Disable App Check for testing
+  { region: "northamerica-northeast1", enforceAppCheck: false }, // Disable App Check for testing
   async (request) => {
     const { email, newPassword, resetAll } = request.data;
-    const defaultPassword = newPassword || 'testpass123';
+    const defaultPassword = newPassword || "testpass123";
 
     // Security: Only allow in development (check custom claim or specific auth)
     // For now, allow any authenticated user to perform resets (restrict in production)
     const uid = request.auth?.uid;
     if (!uid) {
-      throw new HttpsError('unauthenticated', 'Must be signed in.');
+      throw new HttpsError("unauthenticated", "Must be signed in.");
     }
 
     const auth = getAuth();
@@ -1100,31 +1296,34 @@ exports.resetTestPasswords = onCall(
       if (resetAll) {
         // Reset all @test.com users
         const users = await auth.listUsers();
-        const testUsers = users.users.filter(u => u.email?.endsWith('@test.com'));
-        
+        const testUsers = users.users.filter((u) =>
+          u.email?.endsWith("@test.com"),
+        );
+
         const results = [];
         for (const user of testUsers) {
           await auth.updateUser(user.uid, { password: defaultPassword });
           results.push({ email: user.email, uid: user.uid });
         }
         return { reset: results.length, users: results };
-      } 
-      else if (email) {
+      } else if (email) {
         // Reset specific user
         const user = await auth.getUserByEmail(email);
         await auth.updateUser(user.uid, { password: defaultPassword });
         return { reset: 1, email, uid: user.uid };
-      } 
-      else {
-        throw new HttpsError('invalid-argument', 'Must provide email or resetAll: true');
+      } else {
+        throw new HttpsError(
+          "invalid-argument",
+          "Must provide email or resetAll: true",
+        );
       }
     } catch (e) {
-      if (e.code === 'auth/user-not-found') {
-        throw new HttpsError('not-found', 'User not found: ' + email);
+      if (e.code === "auth/user-not-found") {
+        throw new HttpsError("not-found", "User not found: " + email);
       }
-      throw new HttpsError('internal', e.message);
+      throw new HttpsError("internal", e.message);
     }
-  }
+  },
 );
 
 /**
@@ -1137,47 +1336,59 @@ exports.resetTestPasswords = onCall(
  */
 exports.weeklyStats = onSchedule(
   {
-    schedule: 'every monday 08:00',
-    timeZone: 'America/Toronto',
-    region: 'northamerica-northeast1',
+    schedule: "every monday 08:00",
+    timeZone: "America/Toronto",
+    region: "northamerica-northeast1",
     secrets: [gmailUser, gmailAppPassword],
   },
   async () => {
-    const db  = getFirestore();
+    const db = getFirestore();
     const now = new Date();
-    const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
+    const ago7 = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    const toDate = (ts) => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+    const toDate = (ts) =>
+      ts?.toDate ? ts.toDate() : ts ? new Date(ts) : null;
 
     // ── Users ──────────────────────────────────────────────────────────────────
-    const usersSnap = await db.collection('users').get();
-    const allUsers  = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const usersSnap = await db.collection("users").get();
+    const allUsers = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-    const realUsers = allUsers.filter(u => {
+    const realUsers = allUsers.filter((u) => {
       if (u.deleted === true) return false;
-      if (u.role === 'systemAdmin') return false;
-      const name  = (u.name  ?? '').toLowerCase();
-      const email = (u.email ?? '').toLowerCase();
-      if (name.includes('test') || email.includes('test')) return false;
+      if (u.role === "systemAdmin") return false;
+      const name = (u.name ?? "").toLowerCase();
+      const email = (u.email ?? "").toLowerCase();
+      if (name.includes("test") || email.includes("test")) return false;
       return true;
     });
 
-    const newThisWeek  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  }).length;
-    const newThisMonth = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; }).length;
+    const newThisWeek = realUsers.filter((u) => {
+      const d = toDate(u.createdAt);
+      return d && d >= ago7;
+    }).length;
+    const newThisMonth = realUsers.filter((u) => {
+      const d = toDate(u.createdAt);
+      return d && d >= ago30;
+    }).length;
 
     // ── Teams ──────────────────────────────────────────────────────────────────
-    const teamsSnap  = await db.collection('teams').get();
+    const teamsSnap = await db.collection("teams").get();
     const totalTeams = teamsSnap.size;
 
     // ── Events (last 30 days) ──────────────────────────────────────────────────
-    const eventsSnap = await db.collection('events')
-      .where('date', '>=', Timestamp.fromDate(ago30))
+    const eventsSnap = await db
+      .collection("events")
+      .where("date", ">=", Timestamp.fromDate(ago30))
       .get();
     const recentEvents = eventsSnap.size;
 
     // ── Build report ───────────────────────────────────────────────────────────
-    const dateStr = now.toLocaleDateString('en-CA', {
-      timeZone: 'America/Toronto', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    const dateStr = now.toLocaleDateString("en-CA", {
+      timeZone: "America/Toronto",
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
 
     const plainText = [
@@ -1188,7 +1399,7 @@ exports.weeklyStats = onSchedule(
       `New this month:    ${newThisMonth}`,
       `Total teams:       ${totalTeams}`,
       `Events (30 days):  ${recentEvents}`,
-    ].join('\n');
+    ].join("\n");
 
     const htmlBody = `
       <h2>Sport Rosters — Weekly Stats</h2>
@@ -1201,24 +1412,24 @@ exports.weeklyStats = onSchedule(
         <tr><td style="padding:6px 16px 6px 0;color:#555">Events (30 days)</td><td style="padding:6px 0;font-weight:bold">${recentEvents}</td></tr>
       </table>`;
 
-    console.log('=== Weekly Stats ===\n' + plainText);
+    console.log("=== Weekly Stats ===\n" + plainText);
 
-    const nodemailer = require('nodemailer');
+    const nodemailer = require("nodemailer");
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: { user: gmailUser.value(), pass: gmailAppPassword.value() },
     });
 
     await transporter.sendMail({
-      from:    `"Sport Rosters" <${gmailUser.value()}>`,
-      to:      'kernkraftconsult@gmail.com',
+      from: `"Sport Rosters" <${gmailUser.value()}>`,
+      to: "kernkraftconsult@gmail.com",
       subject: `Sport Rosters Weekly Stats — ${dateStr}`,
-      text:    plainText,
-      html:    htmlBody,
+      text: plainText,
+      html: htmlBody,
     });
 
-    console.log('Weekly stats email sent.');
-  }
+    console.log("Weekly stats email sent.");
+  },
 );
 
 /**
@@ -1226,82 +1437,90 @@ exports.weeklyStats = onSchedule(
  * Requires systemAdmin role.
  */
 exports.getAppStats = onCall(
-  { region: 'northamerica-northeast1' },
+  { region: "northamerica-northeast1" },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
-    const db       = getFirestore();
-    const userSnap = await db.collection('users').doc(uid).get();
-    if (!userSnap.exists || userSnap.data().role !== 'systemAdmin') {
-      throw new HttpsError('permission-denied', 'System admin only.');
+    const db = getFirestore();
+    const userSnap = await db.collection("users").doc(uid).get();
+    if (!userSnap.exists || userSnap.data().role !== "systemAdmin") {
+      throw new HttpsError("permission-denied", "System admin only.");
     }
 
-    const now   = new Date();
-    const ago7  = new Date(now - 7  * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const ago7 = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const ago30 = new Date(now - 30 * 24 * 60 * 60 * 1000);
-    const toDate = (ts) => ts?.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+    const toDate = (ts) =>
+      ts?.toDate ? ts.toDate() : ts ? new Date(ts) : null;
 
     // ── Users ──────────────────────────────────────────────────────────────────
-    const usersSnap = await db.collection('users').get();
-    const allUsers  = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const usersSnap = await db.collection("users").get();
+    const allUsers = usersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-    const realUsers = allUsers.filter(u => {
+    const realUsers = allUsers.filter((u) => {
       if (u.deleted === true) return false;
-      if (u.role === 'systemAdmin') return false;
-      const name  = (u.name  ?? '').toLowerCase();
-      const email = (u.email ?? '').toLowerCase();
-      if (name.includes('test') || email.includes('test')) return false;
+      if (u.role === "systemAdmin") return false;
+      const name = (u.name ?? "").toLowerCase();
+      const email = (u.email ?? "").toLowerCase();
+      if (name.includes("test") || email.includes("test")) return false;
       return true;
     });
 
     const toUserRow = (u) => ({
-      name:      u.name  ?? '',
-      email:     u.email ?? '',
+      name: u.name ?? "",
+      email: u.email ?? "",
       createdAt: toDate(u.createdAt)?.toISOString() ?? null,
       teamCount: (u.teams ?? []).length,
     });
 
-    const newThisWeekList  = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago7;  });
-    const newThisMonthList = realUsers.filter(u => { const d = toDate(u.createdAt); return d && d >= ago30; });
+    const newThisWeekList = realUsers.filter((u) => {
+      const d = toDate(u.createdAt);
+      return d && d >= ago7;
+    });
+    const newThisMonthList = realUsers.filter((u) => {
+      const d = toDate(u.createdAt);
+      return d && d >= ago30;
+    });
 
     // ── Teams ──────────────────────────────────────────────────────────────────
-    const teamsSnap = await db.collection('teams').get();
-    const teamsData = teamsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const teamMap   = Object.fromEntries(teamsData.map(t => [t.id, t]));
+    const teamsSnap = await db.collection("teams").get();
+    const teamsData = teamsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const teamMap = Object.fromEntries(teamsData.map((t) => [t.id, t]));
 
     // ── Events (last 30 days) ──────────────────────────────────────────────────
-    const eventsSnap = await db.collection('events')
-      .where('date', '>=', Timestamp.fromDate(ago30))
+    const eventsSnap = await db
+      .collection("events")
+      .where("date", ">=", Timestamp.fromDate(ago30))
       .get();
-    const eventsData = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const eventsData = eventsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
     return {
-      totalRealUsers:  realUsers.length,
-      newThisWeek:     newThisWeekList.length,
-      newThisMonth:    newThisMonthList.length,
-      totalTeams:      teamsData.length,
-      recentEvents:    eventsData.length,
+      totalRealUsers: realUsers.length,
+      newThisWeek: newThisWeekList.length,
+      newThisMonth: newThisMonthList.length,
+      totalTeams: teamsData.length,
+      recentEvents: eventsData.length,
 
       realUsersList: realUsers.map(toUserRow),
-      newThisWeekList:  newThisWeekList.map(toUserRow),
+      newThisWeekList: newThisWeekList.map(toUserRow),
       newThisMonthList: newThisMonthList.map(toUserRow),
 
-      teamsList: teamsData.map(t => ({
-        name:        t.name  ?? '',
-        sport:       t.sport ?? '',
+      teamsList: teamsData.map((t) => ({
+        name: t.name ?? "",
+        sport: t.sport ?? "",
         memberCount: (t.admins ?? []).length + (t.players ?? []).length,
-        createdAt:   toDate(t.createdAt)?.toISOString() ?? null,
+        createdAt: toDate(t.createdAt)?.toISOString() ?? null,
       })),
 
-      recentEventsList: eventsData.map(e => ({
-        type:     e.type ?? '',
-        teamName: teamMap[e.teamId]?.name  ?? 'Unknown Team',
-        sport:    teamMap[e.teamId]?.sport ?? '',
-        date:     toDate(e.date)?.toISOString() ?? null,
+      recentEventsList: eventsData.map((e) => ({
+        type: e.type ?? "",
+        teamName: teamMap[e.teamId]?.name ?? "Unknown Team",
+        sport: teamMap[e.teamId]?.sport ?? "",
+        date: toDate(e.date)?.toISOString() ?? null,
       })),
     };
-  }
+  },
 );
 
 /**
@@ -1310,40 +1529,43 @@ exports.getAppStats = onCall(
  * push notification.
  */
 exports.notifyWaitlistPromotion = onDocumentUpdated(
-  { document: 'dropInSessions/{sessionId}', region: 'northamerica-northeast1' },
+  { document: "dropInSessions/{sessionId}", region: "northamerica-northeast1" },
   async (event) => {
     const before = event.data.before.data() ?? {};
-    const after  = event.data.after.data()  ?? {};
+    const after = event.data.after.data() ?? {};
 
     const beforeWaitlist = before.waitlist ?? [];
-    const afterSignups   = after.signups   ?? [];
-    const afterWaitlist  = after.waitlist  ?? [];
+    const afterSignups = after.signups ?? [];
+    const afterWaitlist = after.waitlist ?? [];
 
     // Find UIDs that were on the waitlist and are now in signups
-    const promoted = beforeWaitlist.filter(uid =>
-      afterSignups.includes(uid) && !afterWaitlist.includes(uid)
+    const promoted = beforeWaitlist.filter(
+      (uid) => afterSignups.includes(uid) && !afterWaitlist.includes(uid),
     );
     if (promoted.length === 0) return;
 
-    const db      = getFirestore();
+    const db = getFirestore();
     const eventId = after.eventId;
-    const teamId  = after.teamId ?? '';
+    const teamId = after.teamId ?? "";
 
     // Get event date for notification body
-    let timeStr = '';
+    let timeStr = "";
     if (eventId) {
-      const eventSnap = await db.collection('events').doc(eventId).get();
+      const eventSnap = await db.collection("events").doc(eventId).get();
       if (eventSnap.exists) {
         const d = eventSnap.data().date?.toDate();
         if (d) {
-          timeStr = d.toLocaleTimeString('en-CA',
-            { hour: 'numeric', minute: '2-digit', hour12: true });
+          timeStr = d.toLocaleTimeString("en-CA", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          });
         }
       }
     }
 
     for (const uid of promoted) {
-      const userSnap = await db.collection('users').doc(uid).get();
+      const userSnap = await db.collection("users").doc(uid).get();
       const fcmToken = userSnap.data()?.fcmToken;
       if (!fcmToken) continue;
 
@@ -1356,15 +1578,15 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
               ? `A spot opened up — you've been moved off the waitlist. Session at ${timeStr}.`
               : "A spot opened up — you've been moved off the waitlist.",
           },
-          data: { teamId, eventId: eventId ?? '' },
-          android: { priority: 'high' },
-          apns:    { payload: { aps: { sound: 'default' } } },
+          data: { teamId, eventId: eventId ?? "" },
+          android: { priority: "high" },
+          apns: { payload: { aps: { sound: "default" } } },
         });
       } catch (_) {
         // Stale token — ignore, token cleanup handled by sendTeamNotification
       }
     }
-  }
+  },
 );
 
 // ── Stripe: Create Checkout Session ──────────────────────────────────────────
@@ -1389,26 +1611,27 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
 // security relies on the Firebase Auth uid check below instead.
 exports.createStripeCheckout = onCall(
   {
-    region: 'northamerica-northeast1',
+    region: "northamerica-northeast1",
     enforceAppCheck: false,
     secrets: [stripeSecretKey],
   },
   async (request) => {
     const uid = request.auth?.uid;
-    if (!uid) throw new HttpsError('unauthenticated', 'Must be signed in.');
+    if (!uid) throw new HttpsError("unauthenticated", "Must be signed in.");
 
     const { returnUrl, cancelUrl } = request.data;
-    if (!returnUrl) throw new HttpsError('invalid-argument', 'returnUrl is required.');
+    if (!returnUrl)
+      throw new HttpsError("invalid-argument", "returnUrl is required.");
 
     // TODO: Replace with your actual Stripe price ID from the dashboard.
     // Create a one-time "Remove Ads" product at https://dashboard.stripe.com/products
-    const STRIPE_PRICE_ID = 'price_1TftI8Lc7EXpUmQL7nnnZlIy';
+    const STRIPE_PRICE_ID = "price_1TftI8Lc7EXpUmQL7nnnZlIy";
 
-    const Stripe = require('stripe');
+    const Stripe = require("stripe");
     const stripe = Stripe(stripeSecretKey.value());
 
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
+      mode: "payment",
       line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
       metadata: { userId: uid },
       success_url: returnUrl,
@@ -1416,7 +1639,7 @@ exports.createStripeCheckout = onCall(
     });
 
     return { url: session.url };
-  }
+  },
 );
 
 // ── Stripe: Webhook Handler ───────────────────────────────────────────────────
@@ -1434,43 +1657,51 @@ exports.createStripeCheckout = onCall(
  */
 exports.stripeWebhook = onRequest(
   {
-    region: 'northamerica-northeast1',
+    region: "northamerica-northeast1",
     secrets: [stripeSecretKey, stripeWebhookSecret],
   },
   async (req, res) => {
-    const Stripe = require('stripe');
+    const Stripe = require("stripe");
     const stripe = Stripe(stripeSecretKey.value());
 
-    const sig = req.headers['stripe-signature'];
+    const sig = req.headers["stripe-signature"];
     let event;
 
     try {
       event = stripe.webhooks.constructEvent(
         req.rawBody,
         sig,
-        stripeWebhookSecret.value()
+        stripeWebhookSecret.value(),
       );
     } catch (err) {
-      console.error('Stripe webhook signature verification failed:', err.message);
+      console.error(
+        "Stripe webhook signature verification failed:",
+        err.message,
+      );
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
 
-    if (event.type === 'checkout.session.completed') {
+    if (event.type === "checkout.session.completed") {
       const session = event.data.object;
       const userId = session.metadata?.userId;
 
       if (!userId) {
-        console.error('stripeWebhook: no userId in session metadata', session.id);
-        res.status(400).send('Missing userId in metadata.');
+        console.error(
+          "stripeWebhook: no userId in session metadata",
+          session.id,
+        );
+        res.status(400).send("Missing userId in metadata.");
         return;
       }
 
       const db = getFirestore();
-      await db.collection('users').doc(userId).update({ adFree: true });
-      console.log(`stripeWebhook: adFree granted to uid=${userId} session=${session.id}`);
+      await db.collection("users").doc(userId).update({ adFree: true });
+      console.log(
+        `stripeWebhook: adFree granted to uid=${userId} session=${session.id}`,
+      );
     }
 
-    res.status(200).send('OK');
-  }
+    res.status(200).send("OK");
+  },
 );

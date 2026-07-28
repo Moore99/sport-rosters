@@ -80,7 +80,8 @@ class _EventDetailViewState extends ConsumerState<_EventDetailView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(event.type.label, overflow: TextOverflow.ellipsis, maxLines: 1),
+        title: Text(event.type.label,
+            overflow: TextOverflow.ellipsis, maxLines: 1),
         actions: [
           // Lineup / Boat Seating button
           if (isAdmin)
@@ -193,8 +194,7 @@ class _EventDetailViewState extends ConsumerState<_EventDetailView> {
                     if (scope == null || !context.mounted) return;
                     final repo = ref.read(eventRepositoryProvider);
                     if (scope == 'all') {
-                      await repo.cancelEventSeries(
-                          event.recurrenceGroupId!,
+                      await repo.cancelEventSeries(event.recurrenceGroupId!,
                           cancelled: isCancelling);
                     } else {
                       await repo.cancelEvent(event.eventId,
@@ -220,15 +220,16 @@ class _EventDetailViewState extends ConsumerState<_EventDetailView> {
                                     backgroundColor: Colors.orange)
                                 : null,
                             onPressed: () => Navigator.of(ctx).pop(true),
-                            child: Text(isCancelling ? 'Cancel Event' : 'Restore'),
+                            child:
+                                Text(isCancelling ? 'Cancel Event' : 'Restore'),
                           ),
                         ],
                       ),
                     );
                     if (confirmed == true) {
-                      await ref.read(eventRepositoryProvider).cancelEvent(
-                          event.eventId,
-                          cancelled: isCancelling);
+                      await ref
+                          .read(eventRepositoryProvider)
+                          .cancelEvent(event.eventId, cancelled: isCancelling);
                     }
                   }
                 } else if (v == 'delete') {
@@ -246,13 +247,15 @@ class _EventDetailViewState extends ConsumerState<_EventDetailView> {
                           ),
                           OutlinedButton(
                             style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(ctx).colorScheme.error),
+                                foregroundColor:
+                                    Theme.of(ctx).colorScheme.error),
                             onPressed: () => Navigator.of(ctx).pop(false),
                             child: const Text('This Event'),
                           ),
                           FilledButton(
                             style: FilledButton.styleFrom(
-                                backgroundColor: Theme.of(ctx).colorScheme.error),
+                                backgroundColor:
+                                    Theme.of(ctx).colorScheme.error),
                             onPressed: () => Navigator.of(ctx).pop(true),
                             child: const Text('All in Series'),
                           ),
@@ -261,10 +264,12 @@ class _EventDetailViewState extends ConsumerState<_EventDetailView> {
                     );
                     if (deleteAll == null || !context.mounted) return;
                     if (deleteAll) {
-                      await ref.read(eventRepositoryProvider)
+                      await ref
+                          .read(eventRepositoryProvider)
                           .deleteEventSeries(event.recurrenceGroupId!);
                     } else {
-                      await ref.read(eventRepositoryProvider)
+                      await ref
+                          .read(eventRepositoryProvider)
                           .deleteEvent(event.eventId);
                     }
                     if (context.mounted) context.pop();
@@ -663,13 +668,15 @@ class _HeaderCard extends StatelessWidget {
                   Chip(
                     label: const Text('Cancelled'),
                     backgroundColor: Colors.orange.withValues(alpha: 0.15),
-                    side: BorderSide(color: Colors.orange.withValues(alpha: 0.5)),
+                    side:
+                        BorderSide(color: Colors.orange.withValues(alpha: 0.5)),
                     labelStyle: const TextStyle(color: Colors.orange),
                   )
                 else if (!event.isUpcoming)
                   Chip(
                     label: const Text('Past'),
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
               ],
             ),
@@ -869,8 +876,10 @@ class _GameResultBadge extends StatelessWidget {
           ),
           child: Text(
             result.resultLabel,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color, fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: color, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(width: 12),
@@ -888,14 +897,14 @@ class _GameResultBadge extends StatelessWidget {
 // ── Game result section (body) ─────────────────────────────────────────────────
 
 class _GameResultSection extends ConsumerWidget {
-  final Event  event;
-  final bool   isAdmin;
+  final Event event;
+  final bool isAdmin;
   const _GameResultSection({required this.event, required this.isAdmin});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasResult  = event.gameResult != null;
-    final isPast     = !event.isUpcoming;
+    final hasResult = event.gameResult != null;
+    final isPast = !event.isUpcoming;
 
     // Players only see this section if there's a result to show.
     if (!isAdmin && !hasResult) return const SizedBox.shrink();
@@ -925,10 +934,11 @@ class _GameResultSection extends ConsumerWidget {
   }
 
   Future<void> _showResultDialog(BuildContext context, WidgetRef ref) async {
-    final existing     = event.gameResult;
-    final opponentCtrl = TextEditingController(text: existing?.opponentName ?? '');
-    var ourScore       = existing?.ourScore ?? 0;
-    var theirScore     = existing?.opponentScore ?? 0;
+    final existing = event.gameResult;
+    final opponentCtrl =
+        TextEditingController(text: existing?.opponentName ?? '');
+    var ourScore = existing?.ourScore ?? 0;
+    var theirScore = existing?.opponentScore ?? 0;
 
     await showDialog<void>(
       context: context,
@@ -957,8 +967,7 @@ class _GameResultSection extends ConsumerWidget {
                       value: ourScore,
                       onChanged: (v) => setLocal(() => ourScore = v),
                     ),
-                    Text('–',
-                        style: Theme.of(ctx).textTheme.headlineMedium),
+                    Text('–', style: Theme.of(ctx).textTheme.headlineMedium),
                     _ScoreCounter(
                       label: 'Them',
                       value: theirScore,
@@ -994,8 +1003,8 @@ class _GameResultSection extends ConsumerWidget {
                 await ref.read(eventRepositoryProvider).updateGameResult(
                       event.eventId,
                       GameResult(
-                        opponentName:  name,
-                        ourScore:      ourScore,
+                        opponentName: name,
+                        ourScore: ourScore,
                         opponentScore: theirScore,
                       ),
                     );

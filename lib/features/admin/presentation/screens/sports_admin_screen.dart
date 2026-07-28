@@ -72,9 +72,9 @@ class SportsAdminScreen extends ConsumerWidget {
     for (final name in AppConfig.defaultSports) {
       final id = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_');
       final sport = Sport(
-        sportId:    id,
-        name:       name,
-        positions:  AppConfig.positionsForSport(name),
+        sportId: id,
+        name: name,
+        positions: AppConfig.positionsForSport(name),
         categories: AppConfig.sportPositionCategories[name] ?? {},
       );
       await repo.addSport(sport);
@@ -82,7 +82,8 @@ class SportsAdminScreen extends ConsumerWidget {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Seeded ${AppConfig.defaultSports.length} sports.')),
+        SnackBar(
+            content: Text('Seeded ${AppConfig.defaultSports.length} sports.')),
       );
     }
   }
@@ -104,7 +105,8 @@ class _SportTile extends ConsumerWidget {
     return Card(
       child: ListTile(
         title: Text(sport.name),
-        subtitle: Text('${sport.positions.length} positions · ${sport.categories.length} categories'),
+        subtitle: Text(
+            '${sport.positions.length} positions · ${sport.categories.length} categories'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -199,29 +201,35 @@ class _SportEditDialogState extends ConsumerState<_SportEditDialog> {
       return;
     }
 
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     try {
       final repo = ref.read(sportRepositoryProvider);
       if (widget.existing != null) {
         await repo.updateSport(Sport(
-          sportId:    widget.existing!.sportId,
-          name:       name,
-          positions:  positions,
+          sportId: widget.existing!.sportId,
+          name: name,
+          positions: positions,
           categories: widget.existing!.categories,
         ));
       } else {
-        final id = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')
-            + '_${FirebaseFirestore.instance.collection('sports').doc().id.substring(0, 4)}';
+        final id = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_') +
+            '_${FirebaseFirestore.instance.collection('sports').doc().id.substring(0, 4)}';
         await repo.addSport(Sport(
-          sportId:    id,
-          name:       name,
-          positions:  positions,
+          sportId: id,
+          name: name,
+          positions: positions,
           categories: {},
         ));
       }
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      setState(() { _saving = false; _error = 'Save failed. Try again.'; });
+      setState(() {
+        _saving = false;
+        _error = 'Save failed. Try again.';
+      });
     }
   }
 
@@ -263,7 +271,8 @@ class _SportEditDialogState extends ConsumerState<_SportEditDialog> {
           onPressed: _saving ? null : _save,
           child: _saving
               ? const SizedBox(
-                  height: 18, width: 18,
+                  height: 18,
+                  width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Save'),
         ),

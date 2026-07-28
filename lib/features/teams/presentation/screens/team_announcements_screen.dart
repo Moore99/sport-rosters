@@ -14,10 +14,12 @@ class TeamAnnouncementsScreen extends ConsumerStatefulWidget {
   const TeamAnnouncementsScreen({super.key, required this.teamId});
 
   @override
-  ConsumerState<TeamAnnouncementsScreen> createState() => _TeamAnnouncementsScreenState();
+  ConsumerState<TeamAnnouncementsScreen> createState() =>
+      _TeamAnnouncementsScreenState();
 }
 
-class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScreen> {
+class _TeamAnnouncementsScreenState
+    extends ConsumerState<TeamAnnouncementsScreen> {
   final _scrollController = ScrollController();
 
   @override
@@ -28,10 +30,10 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
 
   @override
   Widget build(BuildContext context) {
-    final teamId   = widget.teamId;
-    final uid      = ref.watch(currentUserProvider)?.uid ?? '';
+    final teamId = widget.teamId;
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final teamAsync = ref.watch(teamProvider(teamId));
-    final isAdmin  = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
+    final isAdmin = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
     final listAsync = ref.watch(teamAnnouncementsProvider(teamId));
 
     return Scaffold(
@@ -39,7 +41,8 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
       floatingActionButton: isAdmin
           ? FloatingActionButton(
               tooltip: 'Post Announcement',
-              onPressed: () => _showEditDialog(context, ref, uid, isAdmin, null),
+              onPressed: () =>
+                  _showEditDialog(context, ref, uid, isAdmin, null),
               child: const Icon(Icons.add),
             )
           : null,
@@ -56,9 +59,9 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
               );
             }
             // Pinned first, then by date descending (already sorted by Firestore)
-            final pinned   = items.where((a) => a.pinned).toList();
+            final pinned = items.where((a) => a.pinned).toList();
             final unpinned = items.where((a) => !a.pinned).toList();
-            final ordered  = [...pinned, ...unpinned];
+            final ordered = [...pinned, ...unpinned];
 
             return ListView.separated(
               controller: _scrollController,
@@ -70,8 +73,7 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
                 isAdmin: isAdmin,
                 onEdit: () =>
                     _showEditDialog(context, ref, uid, isAdmin, ordered[i]),
-                onDelete: () =>
-                    _confirmDelete(context, ref, ordered[i]),
+                onDelete: () => _confirmDelete(context, ref, ordered[i]),
               ),
             );
           },
@@ -89,11 +91,11 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
   ) async {
     if (!isAdmin) return;
 
-    final titleCtrl  = TextEditingController(text: existing?.title ?? '');
-    final bodyCtrl   = TextEditingController(text: existing?.body  ?? '');
-    var   pinned     = existing?.pinned ?? false;
-    var   notifyTeam = false; // only offered for new posts, not edits
-    final formKey    = GlobalKey<FormState>();
+    final titleCtrl = TextEditingController(text: existing?.title ?? '');
+    final bodyCtrl = TextEditingController(text: existing?.body ?? '');
+    var pinned = existing?.pinned ?? false;
+    var notifyTeam = false; // only offered for new posts, not edits
+    final formKey = GlobalKey<FormState>();
     String? authorName;
 
     // Resolve author name once
@@ -104,7 +106,8 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setLocal) => AlertDialog(
-          title: Text(existing != null ? 'Edit Announcement' : 'New Announcement'),
+          title:
+              Text(existing != null ? 'Edit Announcement' : 'New Announcement'),
           content: SingleChildScrollView(
             child: Form(
               key: formKey,
@@ -148,7 +151,8 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
                       contentPadding: EdgeInsets.zero,
                       secondary: const Icon(Icons.notifications_outlined),
                       title: const Text('Notify team'),
-                      subtitle: const Text('Send a push notification to all members'),
+                      subtitle:
+                          const Text('Send a push notification to all members'),
                       value: notifyTeam,
                       onChanged: (v) => setLocal(() => notifyTeam = v),
                     ),
@@ -169,13 +173,13 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
                 final repo = ref.read(announcementRepositoryProvider);
                 if (existing != null) {
                   await repo.updateAnnouncement(existing.copyWith(
-                    title:  titleCtrl.text.trim(),
-                    body:   bodyCtrl.text.trim(),
+                    title: titleCtrl.text.trim(),
+                    body: bodyCtrl.text.trim(),
                     pinned: pinned,
                   ));
                 } else {
                   final title = titleCtrl.text.trim();
-                  final body  = bodyCtrl.text.trim();
+                  final body = bodyCtrl.text.trim();
                   final docId = FirebaseFirestore.instance
                       .collection('teams')
                       .doc(widget.teamId)
@@ -184,18 +188,21 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
                       .id;
                   await repo.createAnnouncement(Announcement(
                     announcementId: docId,
-                    teamId:         widget.teamId,
-                    title:          title,
-                    body:           body,
-                    authorId:       uid,
-                    authorName:     authorName ?? uid,
-                    pinned:         pinned,
-                    createdAt:      DateTime.now(),
+                    teamId: widget.teamId,
+                    title: title,
+                    body: body,
+                    authorId: uid,
+                    authorName: authorName ?? uid,
+                    pinned: pinned,
+                    createdAt: DateTime.now(),
                   ));
                   if (notifyTeam) {
                     try {
-                      await AppFunctions.call('sendTeamNotification',
-                          data: {'teamId': widget.teamId, 'title': title, 'body': body});
+                      await AppFunctions.call('sendTeamNotification', data: {
+                        'teamId': widget.teamId,
+                        'title': title,
+                        'body': body
+                      });
                     } catch (_) {
                       // Notification failure is non-fatal — announcement is saved
                     }
@@ -251,7 +258,7 @@ class _TeamAnnouncementsScreenState extends ConsumerState<TeamAnnouncementsScree
 
 class _AnnouncementCard extends StatelessWidget {
   final Announcement announcement;
-  final bool         isAdmin;
+  final bool isAdmin;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -277,8 +284,7 @@ class _AnnouncementCard extends StatelessWidget {
               children: [
                 if (announcement.pinned) ...[
                   Icon(Icons.push_pin,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.primary),
+                      size: 16, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 4),
                 ],
                 Expanded(
@@ -291,7 +297,7 @@ class _AnnouncementCard extends StatelessWidget {
                   PopupMenuButton<String>(
                     padding: EdgeInsets.zero,
                     onSelected: (v) {
-                      if (v == 'edit')   onEdit();
+                      if (v == 'edit') onEdit();
                       if (v == 'delete') onDelete();
                     },
                     itemBuilder: (_) => [
@@ -310,8 +316,7 @@ class _AnnouncementCard extends StatelessWidget {
                               color: Theme.of(context).colorScheme.error),
                           title: Text('Delete',
                               style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.error)),
+                                  color: Theme.of(context).colorScheme.error)),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),

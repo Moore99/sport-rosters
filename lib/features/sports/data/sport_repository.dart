@@ -37,7 +37,8 @@ class SportRepository {
       final json = prefs.getString(_cacheKey);
       if (json == null) return null;
       final data = jsonDecode(json) as Map<String, dynamic>;
-      if (DateTime.now().millisecondsSinceEpoch - (data['ts'] as int) > _cacheTtlMs) {
+      if (DateTime.now().millisecondsSinceEpoch - (data['ts'] as int) >
+          _cacheTtlMs) {
         return null;
       }
       return (data['sports'] as List)

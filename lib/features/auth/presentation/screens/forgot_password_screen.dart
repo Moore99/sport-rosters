@@ -7,13 +7,14 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  final _formKey   = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
-  bool _sent       = false;
+  bool _sent = false;
 
   @override
   void dispose() {
@@ -23,11 +24,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final ok = await ref.read(authNotifierProvider.notifier)
+    final ok = await ref
+        .read(authNotifierProvider.notifier)
         .sendPasswordReset(_emailCtrl.text);
     if (ok && mounted) setState(() => _sent = true);
     if (!ok && mounted) {
-      final err = ref.read(authNotifierProvider).error?.toString() ?? 'Failed to send email.';
+      final err = ref.read(authNotifierProvider).error?.toString() ??
+          'Failed to send email.';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
   }
@@ -88,7 +91,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             onPressed: isLoading ? null : _submit,
             child: isLoading
                 ? const SizedBox(
-                    height: 20, width: 20,
+                    height: 20,
+                    width: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Send Reset Link'),

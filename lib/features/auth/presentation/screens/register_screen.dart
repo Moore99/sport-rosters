@@ -18,16 +18,16 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final _formKey      = GlobalKey<FormState>();
-  final _nameCtrl     = TextEditingController();
-  final _emailCtrl    = TextEditingController();
-  final _passCtrl     = TextEditingController();
-  final _confirmCtrl  = TextEditingController();
-  final _phoneCtrl    = TextEditingController();
-  bool _obscure       = true;
-  bool _obscureConf   = true;
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _obscureConf = true;
   bool _termsAccepted = false;
-  bool _showPhone     = false; // user chooses to provide phone
+  bool _showPhone = false; // user chooses to provide phone
 
   @override
   void dispose() {
@@ -43,20 +43,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the Terms of Service to continue.')),
+        const SnackBar(
+            content: Text('Please accept the Terms of Service to continue.')),
       );
       return;
     }
 
     final ok = await ref.read(authNotifierProvider.notifier).register(
-      name:     _nameCtrl.text,
-      email:    _emailCtrl.text,
-      password: _passCtrl.text,
-      phone:    _showPhone ? _phoneCtrl.text : null,
-    );
+          name: _nameCtrl.text,
+          email: _emailCtrl.text,
+          password: _passCtrl.text,
+          phone: _showPhone ? _phoneCtrl.text : null,
+        );
 
     if (!ok && mounted) {
-      final err = ref.read(authNotifierProvider).error?.toString() ?? 'Registration failed.';
+      final err = ref.read(authNotifierProvider).error?.toString() ??
+          'Registration failed.';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
     }
     // On success GoRouter redirect takes over.
@@ -91,8 +93,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         prefixIcon: Icon(Icons.person_outlined),
                         border: OutlineInputBorder(),
                       ),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Name is required.' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Name is required.'
+                          : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -109,7 +112,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Email is required.';
+                        if (v == null || v.trim().isEmpty)
+                          return 'Email is required.';
                         if (!v.contains('@')) return 'Enter a valid email.';
                         return null;
                       },
@@ -134,8 +138,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Password is required.';
-                        if (v.length < 6) return 'Password must be at least 6 characters.';
+                        if (v == null || v.isEmpty)
+                          return 'Password is required.';
+                        if (v.length < 6)
+                          return 'Password must be at least 6 characters.';
                         return null;
                       },
                     ),
@@ -155,11 +161,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           icon: Icon(_obscureConf
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined),
-                          onPressed: () => setState(() => _obscureConf = !_obscureConf),
+                          onPressed: () =>
+                              setState(() => _obscureConf = !_obscureConf),
                         ),
                       ),
                       validator: (v) {
-                        if (v != _passCtrl.text) return 'Passwords do not match.';
+                        if (v != _passCtrl.text)
+                          return 'Passwords do not match.';
                         return null;
                       },
                     ),
@@ -176,12 +184,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Row(
                               children: [
                                 const Text('Phone Number',
-                                    style: TextStyle(fontWeight: FontWeight.w600)),
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.w600)),
                                 const Spacer(),
                                 Text('Optional',
                                     style: TextStyle(
                                         fontSize: 12,
-                                        color: Theme.of(context).colorScheme.outline)),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outline)),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -199,7 +210,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               title: const Text('I want to add my phone number',
                                   style: TextStyle(fontSize: 13)),
                               value: _showPhone,
-                              onChanged: (v) => setState(() => _showPhone = v ?? false),
+                              onChanged: (v) =>
+                                  setState(() => _showPhone = v ?? false),
                               controlAffinity: ListTileControlAffinity.leading,
                             ),
                             if (_showPhone) ...[
@@ -227,7 +239,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       value: _termsAccepted,
-                      onChanged: (v) => setState(() => _termsAccepted = v ?? false),
+                      onChanged: (v) =>
+                          setState(() => _termsAccepted = v ?? false),
                       controlAffinity: ListTileControlAffinity.leading,
                       title: Text.rich(
                         TextSpan(
@@ -264,8 +277,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: isLoading
                           ? const SizedBox(
                               height: 20,
-                              width:  20,
-                              child:  CircularProgressIndicator(strokeWidth: 2),
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Create Account'),
                     ),
@@ -287,44 +300,54 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     // ── Google Sign-In (no Windows support — google_sign_in
                     //    has no Windows plugin) ─────────────────────────────
                     if (kIsWeb || Platform.isAndroid || Platform.isIOS)
-                    OutlinedButton.icon(
-                      icon: Image.asset('assets/icons/google_logo.png',
-                          height: 20,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.login)),
-                      label: const Text('Continue with Google'),
-                      onPressed: isLoading ? null : () async {
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .signInWithGoogle();
-                        if (context.mounted) {
-                          final authState = ref.read(authNotifierProvider);
-                          if (authState is AsyncError) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(authState.error.toString())),
-                            );
-                          }
-                        }
-                      },
-                    ),
+                      OutlinedButton.icon(
+                        icon: Image.asset('assets/icons/google_logo.png',
+                            height: 20,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(Icons.login)),
+                        label: const Text('Continue with Google'),
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                await ref
+                                    .read(authNotifierProvider.notifier)
+                                    .signInWithGoogle();
+                                if (context.mounted) {
+                                  final authState =
+                                      ref.read(authNotifierProvider);
+                                  if (authState is AsyncError) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(authState.error.toString())),
+                                    );
+                                  }
+                                }
+                              },
+                      ),
 
                     // ── Apple Sign-In (iOS + Web) ─────────────────────────
                     if (kIsWeb || Platform.isIOS) ...[
                       const SizedBox(height: 12),
                       SignInWithAppleButton(
-                        onPressed: isLoading ? () {} : () async {
-                          await ref
-                              .read(authNotifierProvider.notifier)
-                              .signInWithApple();
-                          if (context.mounted) {
-                            final authState = ref.read(authNotifierProvider);
-                            if (authState is AsyncError) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(authState.error.toString())),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: isLoading
+                            ? () {}
+                            : () async {
+                                await ref
+                                    .read(authNotifierProvider.notifier)
+                                    .signInWithApple();
+                                if (context.mounted) {
+                                  final authState =
+                                      ref.read(authNotifierProvider);
+                                  if (authState is AsyncError) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(authState.error.toString())),
+                                    );
+                                  }
+                                }
+                              },
                       ),
                     ],
                     const SizedBox(height: 24),

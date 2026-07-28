@@ -1,6 +1,7 @@
 # Admin Feature — System Administrator Tools
 
 TODO Phase 1+:
+
 - Sports management (add/edit sports, positions, ranking methods)
 - User management (view all users, deactivate accounts)
 - Broadcast messaging

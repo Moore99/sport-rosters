@@ -19,9 +19,9 @@ class RankingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teamAsync     = ref.watch(teamProvider(teamId));
+    final teamAsync = ref.watch(teamProvider(teamId));
     final rankingsAsync = ref.watch(teamRankingsProvider(teamId));
-    final currentUid    = ref.watch(currentUserProvider)?.uid;
+    final currentUid = ref.watch(currentUserProvider)?.uid;
 
     final team = teamAsync.valueOrNull;
 
@@ -36,54 +36,60 @@ class RankingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SafeArea(top: false, child: teamAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (team) {
-          if (team == null) return const Center(child: Text('Team not found.'));
-
-          // Local admin guard — Firestore rules enforce this server-side too.
-          if (currentUid == null || !team.admins.contains(currentUid)) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.lock_outline, size: 48),
-                  SizedBox(height: 16),
-                  Text('Rankings are visible to coaches only.'),
-                ],
-              ),
-            );
-          }
-
-          final allMembers = [...team.players]; // admins not typically ranked
-          if (allMembers.isEmpty) {
-            return const Center(child: Text('No players on this team yet.'));
-          }
-
-          return rankingsAsync.when(
+      body: SafeArea(
+          top: false,
+          child: teamAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error:   (e, _) => Center(child: Text('Error: $e')),
-            data:    (rankings) {
-              final rankMap = {for (final r in rankings) r.userId: r};
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                itemCount: allMembers.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (_, i) {
-                  final uid     = allMembers[i];
-                  final ranking = rankMap[uid];
-                  return _PlayerRankingTile(
-                    userId:  uid,
-                    teamId:  teamId,
-                    ranking: ranking,
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (team) {
+              if (team == null)
+                return const Center(child: Text('Team not found.'));
+
+              // Local admin guard — Firestore rules enforce this server-side too.
+              if (currentUid == null || !team.admins.contains(currentUid)) {
+                return const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_outline, size: 48),
+                      SizedBox(height: 16),
+                      Text('Rankings are visible to coaches only.'),
+                    ],
+                  ),
+                );
+              }
+
+              final allMembers = [
+                ...team.players
+              ]; // admins not typically ranked
+              if (allMembers.isEmpty) {
+                return const Center(
+                    child: Text('No players on this team yet.'));
+              }
+
+              return rankingsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+                data: (rankings) {
+                  final rankMap = {for (final r in rankings) r.userId: r};
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    itemCount: allMembers.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) {
+                      final uid = allMembers[i];
+                      final ranking = rankMap[uid];
+                      return _PlayerRankingTile(
+                        userId: uid,
+                        teamId: teamId,
+                        ranking: ranking,
+                      );
+                    },
                   );
                 },
               );
             },
-          );
-        },
-      )),
+          )),
     );
   }
 
@@ -108,7 +114,7 @@ class RankingsScreen extends ConsumerWidget {
 }
 
 class _PlayerRankingTile extends ConsumerWidget {
-  final String  userId, teamId;
+  final String userId, teamId;
   final Ranking? ranking;
   const _PlayerRankingTile({
     required this.userId,
@@ -119,28 +125,30 @@ class _PlayerRankingTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nameAsync = ref.watch(_userNameProvider(userId));
-    final name      = nameAsync.valueOrNull ?? userId;
-    final score     = ranking?.score ?? 0.0;
+    final name = nameAsync.valueOrNull ?? userId;
+    final score = ranking?.score ?? 0.0;
 
     return ListTile(
       leading: Semantics(
         label: ranking != null ? 'Rating ${ranking!.scoreLabel}' : 'Unrated',
         child: ExcludeSemantics(
           child: CircleAvatar(
-            radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+            radius: 20 *
+                MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
             backgroundColor: _scoreColor(score, context),
             child: Text(
               ranking?.scoreLabel ?? '—',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
                   color: Colors.white),
             ),
           ),
         ),
       ),
-      title:    Text(name),
-      subtitle: Text(ranking?.notes?.isNotEmpty == true
-          ? ranking!.notes!
-          : 'No notes'),
+      title: Text(name),
+      subtitle: Text(
+          ranking?.notes?.isNotEmpty == true ? ranking!.notes! : 'No notes'),
       trailing: IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () => _showEditDialog(context, ref, name),
@@ -151,13 +159,13 @@ class _PlayerRankingTile extends ConsumerWidget {
   Color _scoreColor(double score, BuildContext context) {
     if (score >= 7) return Colors.green.shade600;
     if (score >= 4) return Colors.orange.shade600;
-    if (score > 0)  return Colors.red.shade400;
+    if (score > 0) return Colors.red.shade400;
     return Theme.of(context).colorScheme.outline;
   }
 
   void _showEditDialog(BuildContext context, WidgetRef ref, String playerName) {
     double editScore = ranking?.score ?? 5.0;
-    final notesCtrl  = TextEditingController(text: ranking?.notes ?? '');
+    final notesCtrl = TextEditingController(text: ranking?.notes ?? '');
 
     showDialog(
       context: context,
@@ -172,11 +180,11 @@ class _PlayerRankingTile extends ConsumerWidget {
               Semantics(
                 label: 'Player rating',
                 child: Slider(
-                  value:    editScore,
-                  min:      0,
-                  max:      10,
+                  value: editScore,
+                  min: 0,
+                  max: 10,
                   divisions: 20,
-                  label:    editScore.toStringAsFixed(1),
+                  label: editScore.toStringAsFixed(1),
                   semanticFormatterCallback: (v) =>
                       'Rating ${v.toStringAsFixed(1)} out of 10',
                   onChanged: (v) => setState(() => editScore = v),
@@ -184,9 +192,9 @@ class _PlayerRankingTile extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               TextField(
-                controller:  notesCtrl,
-                maxLines:    3,
-                decoration:  const InputDecoration(
+                controller: notesCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
                   labelText: 'Private notes (optional)',
                   border: OutlineInputBorder(),
                   hintText: 'Visible to coaches only',
@@ -202,12 +210,14 @@ class _PlayerRankingTile extends ConsumerWidget {
             FilledButton(
               onPressed: () async {
                 await ref.read(rankingRepositoryProvider).setRanking(Ranking(
-                  userId:    userId,
-                  teamId:    teamId,
-                  score:     editScore,
-                  notes:     notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
-                  updatedAt: DateTime.now(),
-                ));
+                      userId: userId,
+                      teamId: teamId,
+                      score: editScore,
+                      notes: notesCtrl.text.trim().isEmpty
+                          ? null
+                          : notesCtrl.text.trim(),
+                      updatedAt: DateTime.now(),
+                    ));
                 notesCtrl.dispose();
                 if (ctx.mounted) Navigator.of(ctx).pop();
               },
@@ -220,7 +230,8 @@ class _PlayerRankingTile extends ConsumerWidget {
   }
 }
 
-final _userNameProvider = FutureProvider.family<String, String>((ref, uid) async {
+final _userNameProvider =
+    FutureProvider.family<String, String>((ref, uid) async {
   final user = await ref.read(userRepositoryProvider).getUser(uid);
   return user?.name.isNotEmpty == true ? user!.name : uid;
 });

@@ -14,33 +14,43 @@ class EmailVerifyScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailVerifyScreenState extends ConsumerState<EmailVerifyScreen> {
-  bool _resending  = false;
-  bool _checking   = false;
+  bool _resending = false;
+  bool _checking = false;
   bool _resentOnce = false;
   String? _message;
 
   Future<void> _resend() async {
-    setState(() { _resending = true; _message = null; });
-    final ok = await ref.read(authNotifierProvider.notifier).sendEmailVerification();
+    setState(() {
+      _resending = true;
+      _message = null;
+    });
+    final ok =
+        await ref.read(authNotifierProvider.notifier).sendEmailVerification();
     if (mounted) {
       setState(() {
-        _resending  = false;
+        _resending = false;
         _resentOnce = ok;
-        _message    = ok ? 'Email resent. Check your inbox (and spam folder).' : null;
+        _message =
+            ok ? 'Email resent. Check your inbox (and spam folder).' : null;
       });
     }
   }
 
   Future<void> _checkVerified() async {
-    setState(() { _checking = true; _message = null; });
-    final verified = await ref.read(authNotifierProvider.notifier).reloadAndCheckVerified();
+    setState(() {
+      _checking = true;
+      _message = null;
+    });
+    final verified =
+        await ref.read(authNotifierProvider.notifier).reloadAndCheckVerified();
     if (!mounted) return;
     if (verified) {
       context.go(AppRoutes.teams);
     } else {
       setState(() {
         _checking = false;
-        _message  = 'Email not verified yet. Check your inbox and click the link.';
+        _message =
+            'Email not verified yet. Check your inbox and click the link.';
       });
     }
   }
@@ -77,19 +87,22 @@ class _EmailVerifyScreenState extends ConsumerState<EmailVerifyScreen> {
                   ),
                   const SizedBox(height: 32),
                   FilledButton.icon(
-                    icon:  _checking
+                    icon: _checking
                         ? const SizedBox(
-                            width: 18, height: 18,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.check_circle_outline),
                     label: const Text("I've Verified"),
-                    onPressed: (_checking || _resending) ? null : _checkVerified,
+                    onPressed:
+                        (_checking || _resending) ? null : _checkVerified,
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
-                    icon:  _resending
+                    icon: _resending
                         ? const SizedBox(
-                            width: 18, height: 18,
+                            width: 18,
+                            height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.send_outlined),
                     label: Text(_resentOnce ? 'Resend Again' : 'Resend Email'),

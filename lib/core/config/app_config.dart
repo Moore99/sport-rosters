@@ -48,7 +48,7 @@ class AppConfig {
   // ── AdSense (Web) ──────────────────────────────────────────────────────────
   // TODO: Replace with actual publisher and ad unit IDs from AdSense console.
   // Apply at https://www.google.com/adsense if you don't have an account.
-  static const String adsensePublisherId    = 'ca-pub-5119215558360251';
+  static const String adsensePublisherId = 'ca-pub-5119215558360251';
   static const String adsenseBannerAdUnitWeb = '8822412340';
 
   // ── Sports (MVP hardcoded — move to Firestore 'sports' collection Phase 2+) ─
@@ -816,59 +816,60 @@ class AppConfig {
   static Color sportColor(String sport) {
     const _colors = <String, Color>{
       'Australian Rules Football': Color(0xFFE65100), // deep orange
-      'Baseball':                  Color(0xFFC62828), // dark red
-      'Basketball':                Color(0xFFBF360C), // burnt orange
-      'Box Lacrosse':              Color(0xFF37474F), // dark blue-grey
-      'Cricket':                   Color(0xFF6D4C41), // brown (willow)
-      'Curling':                   Color(0xFF0D47A1), // dark blue (ice)
-      'Dragon Boating':            Color(0xFF00695C), // teal
-      'Field Hockey':              Color(0xFF2E7D32), // dark green
-      'Floorball':                 Color(0xFFC62828), // red
-      'Football (American)':       Color(0xFF4E342E), // brown (pigskin)
-      'Football (Canadian)':       Color(0xFF6A1B9A), // purple (CFL)
-      'Football/Soccer':           Color(0xFF1B5E20), // dark green (pitch)
-      'Futsal':                    Color(0xFF1565C0), // blue
-      'Gaelic Football':           Color(0xFF004D40), // dark teal
-      'Ice Hockey':                Color(0xFF0D47A1), // dark blue (ice)
-      'Lacrosse':                  Color(0xFFBF360C), // deep orange
-      'Quidditch':                 Color(0xFF4A148C), // deep purple
-      'Rugby':                     Color(0xFF33691E), // olive green
-      'Rugby 7s':                  Color(0xFF558B2F), // medium green
-      'Softball':                  Color(0xFFAD1457), // deep pink
-      'Ultimate Frisbee':          Color(0xFF006064), // dark cyan
-      'Volleyball':                Color(0xFF283593), // dark blue
-      'Water Polo':                Color(0xFF01579B), // ocean blue
-      'Other':                     Color(0xFF546E7A), // blue-grey
+      'Baseball': Color(0xFFC62828), // dark red
+      'Basketball': Color(0xFFBF360C), // burnt orange
+      'Box Lacrosse': Color(0xFF37474F), // dark blue-grey
+      'Cricket': Color(0xFF6D4C41), // brown (willow)
+      'Curling': Color(0xFF0D47A1), // dark blue (ice)
+      'Dragon Boating': Color(0xFF00695C), // teal
+      'Field Hockey': Color(0xFF2E7D32), // dark green
+      'Floorball': Color(0xFFC62828), // red
+      'Football (American)': Color(0xFF4E342E), // brown (pigskin)
+      'Football (Canadian)': Color(0xFF6A1B9A), // purple (CFL)
+      'Football/Soccer': Color(0xFF1B5E20), // dark green (pitch)
+      'Futsal': Color(0xFF1565C0), // blue
+      'Gaelic Football': Color(0xFF004D40), // dark teal
+      'Ice Hockey': Color(0xFF0D47A1), // dark blue (ice)
+      'Lacrosse': Color(0xFFBF360C), // deep orange
+      'Quidditch': Color(0xFF4A148C), // deep purple
+      'Rugby': Color(0xFF33691E), // olive green
+      'Rugby 7s': Color(0xFF558B2F), // medium green
+      'Softball': Color(0xFFAD1457), // deep pink
+      'Ultimate Frisbee': Color(0xFF006064), // dark cyan
+      'Volleyball': Color(0xFF283593), // dark blue
+      'Water Polo': Color(0xFF01579B), // ocean blue
+      'Other': Color(0xFF546E7A), // blue-grey
     };
     return _colors[sport] ?? const Color(0xFF546E7A);
   }
 
   static String sportIconAsset(String sport) {
     const _icons = <String, String>{
-      'Australian Rules Football': 'assets/sport_icons/australian_rules_football.svg',
-      'Baseball':                  'assets/sport_icons/baseball.svg',
-      'Basketball':                'assets/sport_icons/basketball.svg',
-      'Box Lacrosse':              'assets/sport_icons/lacrosse.svg',
-      'Cricket':                   'assets/sport_icons/cricket.svg',
-      'Curling':                   'assets/sport_icons/curling.svg',
-      'Dragon Boating':            'assets/sport_icons/dragon_boating.svg',
-      'Field Hockey':              'assets/sport_icons/field_hockey.svg',
-      'Floorball':                 'assets/sport_icons/floorball.svg',
-      'Football (American)':        'assets/sport_icons/american_football.svg',
-      'Football (Canadian)':        'assets/sport_icons/american_football.svg',
-      'Football/Soccer':           'assets/sport_icons/soccer.svg',
-      'Futsal':                    'assets/sport_icons/futsal.svg',
-      'Gaelic Football':           'assets/sport_icons/gaelic_football.svg',
-      'Ice Hockey':                'assets/sport_icons/ice_hockey.svg',
-      'Lacrosse':                  'assets/sport_icons/lacrosse.svg',
-      'Quidditch':                 'assets/sport_icons/quidditch.svg',
-      'Rugby':                     'assets/sport_icons/rugby.svg',
-      'Rugby 7s':                  'assets/sport_icons/rugby.svg',
-      'Softball':                  'assets/sport_icons/softball.svg',
-      'Ultimate Frisbee':          'assets/sport_icons/ultimate_frisbee.svg',
-      'Volleyball':                'assets/sport_icons/volleyball.svg',
-      'Water Polo':                'assets/sport_icons/water_polo.svg',
-      'Other':                     'assets/sport_icons/other.svg',
+      'Australian Rules Football':
+          'assets/sport_icons/australian_rules_football.svg',
+      'Baseball': 'assets/sport_icons/baseball.svg',
+      'Basketball': 'assets/sport_icons/basketball.svg',
+      'Box Lacrosse': 'assets/sport_icons/lacrosse.svg',
+      'Cricket': 'assets/sport_icons/cricket.svg',
+      'Curling': 'assets/sport_icons/curling.svg',
+      'Dragon Boating': 'assets/sport_icons/dragon_boating.svg',
+      'Field Hockey': 'assets/sport_icons/field_hockey.svg',
+      'Floorball': 'assets/sport_icons/floorball.svg',
+      'Football (American)': 'assets/sport_icons/american_football.svg',
+      'Football (Canadian)': 'assets/sport_icons/american_football.svg',
+      'Football/Soccer': 'assets/sport_icons/soccer.svg',
+      'Futsal': 'assets/sport_icons/futsal.svg',
+      'Gaelic Football': 'assets/sport_icons/gaelic_football.svg',
+      'Ice Hockey': 'assets/sport_icons/ice_hockey.svg',
+      'Lacrosse': 'assets/sport_icons/lacrosse.svg',
+      'Quidditch': 'assets/sport_icons/quidditch.svg',
+      'Rugby': 'assets/sport_icons/rugby.svg',
+      'Rugby 7s': 'assets/sport_icons/rugby.svg',
+      'Softball': 'assets/sport_icons/softball.svg',
+      'Ultimate Frisbee': 'assets/sport_icons/ultimate_frisbee.svg',
+      'Volleyball': 'assets/sport_icons/volleyball.svg',
+      'Water Polo': 'assets/sport_icons/water_polo.svg',
+      'Other': 'assets/sport_icons/other.svg',
     };
     return _icons[sport] ?? 'assets/sport_icons/other.svg';
   }

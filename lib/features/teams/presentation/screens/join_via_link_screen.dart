@@ -22,7 +22,7 @@ class JoinViaLinkScreen extends ConsumerStatefulWidget {
 class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
   Team? _team;
   bool _loadingTeam = true;
-  bool _submitting  = false;
+  bool _submitting = false;
   String? _error;
   bool _done = false;
 
@@ -34,7 +34,11 @@ class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
 
   Future<void> _loadTeam() async {
     final team = await ref.read(teamRepositoryProvider).getTeam(widget.teamId);
-    if (mounted) setState(() { _team = team; _loadingTeam = false; });
+    if (mounted)
+      setState(() {
+        _team = team;
+        _loadingTeam = false;
+      });
   }
 
   Future<void> _sendRequest() async {
@@ -44,7 +48,10 @@ class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
       return;
     }
 
-    setState(() { _submitting = true; _error = null; });
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
 
     try {
       final team = _team!;
@@ -55,16 +62,24 @@ class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
 
       final profile = await ref.read(userRepositoryProvider).getUser(user.uid);
       await ref.read(teamRepositoryProvider).requestToJoin(
-        team.teamId,
-        user.uid,
-        profile?.name ?? user.email ?? '',
-        user.email ?? '',
-      );
+            team.teamId,
+            user.uid,
+            profile?.name ?? user.email ?? '',
+            user.email ?? '',
+          );
       unawaited(ref.read(analyticsServiceProvider).logTeamJoined(team.sport));
 
-      if (mounted) setState(() { _done = true; _submitting = false; });
+      if (mounted)
+        setState(() {
+          _done = true;
+          _submitting = false;
+        });
     } catch (e) {
-      if (mounted) setState(() { _error = 'Failed to send request. Please try again.'; _submitting = false; });
+      if (mounted)
+        setState(() {
+          _error = 'Failed to send request. Please try again.';
+          _submitting = false;
+        });
     }
   }
 
@@ -82,7 +97,9 @@ class _JoinViaLinkScreenState extends ConsumerState<JoinViaLinkScreen> {
               : _team == null
                   ? _NotFound(onGoHome: () => context.go(AppRoutes.teams))
                   : _done
-                      ? _Success(team: _team!, onGoHome: () => context.go(AppRoutes.teams))
+                      ? _Success(
+                          team: _team!,
+                          onGoHome: () => context.go(AppRoutes.teams))
                       : _JoinPrompt(
                           team: _team!,
                           isLoggedIn: user != null,
@@ -126,7 +143,8 @@ class _JoinPrompt extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 40,
-          backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
+          backgroundImage:
+              team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
           child: team.logoUrl == null
               ? Text(team.sport.substring(0, 1),
                   style: const TextStyle(fontSize: 28))
@@ -138,13 +156,17 @@ class _JoinPrompt extends StatelessWidget {
             textAlign: TextAlign.center),
         const SizedBox(height: 8),
         Text(team.name,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center),
         const SizedBox(height: 4),
         Text(team.sport,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline)),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.outline)),
         const SizedBox(height: 32),
         if (!isLoggedIn) ...[
           const Text(
@@ -172,8 +194,11 @@ class _JoinPrompt extends StatelessWidget {
           ],
           FilledButton.icon(
             icon: submitting
-                ? const SizedBox(width: 16, height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.group_add),
             label: const Text('Send Join Request'),
             onPressed: submitting ? null : onJoin,
@@ -197,8 +222,10 @@ class _Success extends StatelessWidget {
         const Icon(Icons.check_circle_outline, size: 72, color: Colors.green),
         const SizedBox(height: 24),
         Text('Request sent!',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold)),
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Text('Your request to join ${team.name} has been sent to the coach.',
             textAlign: TextAlign.center),

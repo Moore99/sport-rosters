@@ -26,7 +26,11 @@ final _allUserTeamsProvider = FutureProvider<List<Team>>((ref) async {
   final repo = ref.read(teamRepositoryProvider);
   final results = await Future.wait(
     profile.teams.map((id) async {
-      try { return await repo.getTeam(id); } catch (_) { return null; }
+      try {
+        return await repo.getTeam(id);
+      } catch (_) {
+        return null;
+      }
     }),
   );
   return results.whereType<Team>().toList();
@@ -34,17 +38,17 @@ final _allUserTeamsProvider = FutureProvider<List<Team>>((ref) async {
 
 // Active teams — not hidden and not archived.
 final userTeamsProvider = FutureProvider<List<Team>>((ref) async {
-  final all     = await ref.watch(_allUserTeamsProvider.future);
+  final all = await ref.watch(_allUserTeamsProvider.future);
   final profile = await ref.watch(currentUserProfileProvider.future);
-  final hidden  = profile?.hiddenTeams.toSet() ?? {};
+  final hidden = profile?.hiddenTeams.toSet() ?? {};
   return all.where((t) => !t.archived && !hidden.contains(t.teamId)).toList();
 });
 
 // Teams the user has manually hidden (but not archived).
 final userHiddenTeamsProvider = FutureProvider<List<Team>>((ref) async {
-  final all     = await ref.watch(_allUserTeamsProvider.future);
+  final all = await ref.watch(_allUserTeamsProvider.future);
   final profile = await ref.watch(currentUserProfileProvider.future);
-  final hidden  = profile?.hiddenTeams.toSet() ?? {};
+  final hidden = profile?.hiddenTeams.toSet() ?? {};
   return all.where((t) => !t.archived && hidden.contains(t.teamId)).toList();
 });
 
@@ -77,7 +81,8 @@ final pendingRequestsProvider =
 // Maps adminUid → AdminParticipation. Missing entries default to player.
 
 final adminRolesProvider =
-    StreamProvider.family<Map<String, AdminParticipation>, String>((ref, teamId) {
+    StreamProvider.family<Map<String, AdminParticipation>, String>(
+        (ref, teamId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value({});
   return ref.read(teamRepositoryProvider).watchAdminRoles(teamId);

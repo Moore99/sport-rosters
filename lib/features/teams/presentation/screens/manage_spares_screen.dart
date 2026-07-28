@@ -20,9 +20,9 @@ class ManageSparesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sparesAsync    = ref.watch(teamSparesProvider(teamId));
-    final requestsAsync  = ref.watch(spareRequestsProvider(teamId));
-    final pendingCount   = requestsAsync.valueOrNull?.length ?? 0;
+    final sparesAsync = ref.watch(teamSparesProvider(teamId));
+    final requestsAsync = ref.watch(spareRequestsProvider(teamId));
+    final pendingCount = requestsAsync.valueOrNull?.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,8 +60,8 @@ class ManageSparesScreen extends ConsumerWidget {
           // ── Active spares ─────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text('Spares',
-                style: Theme.of(context).textTheme.titleMedium),
+            child:
+                Text('Spares', style: Theme.of(context).textTheme.titleMedium),
           ),
           sparesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),

@@ -16,201 +16,204 @@ class DropInScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final uid          = ref.watch(currentUserProvider)?.uid ?? '';
-    final teamAsync    = ref.watch(teamProvider(teamId));
-    final eventAsync   = ref.watch(eventProvider(eventId));
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
+    final teamAsync = ref.watch(teamProvider(teamId));
+    final eventAsync = ref.watch(eventProvider(eventId));
     final sessionAsync = ref.watch(dropInSessionProvider(eventId));
 
-    final isAdmin      = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
-    final event        = eventAsync.valueOrNull;
-    final session      = sessionAsync.valueOrNull;
-    final signups      = session?.signups ?? [];
-    final waitlist     = session?.waitlist ?? [];
-    final isSignedUp   = signups.contains(uid);
+    final isAdmin = teamAsync.valueOrNull?.isAdmin(uid) ?? false;
+    final event = eventAsync.valueOrNull;
+    final session = sessionAsync.valueOrNull;
+    final signups = session?.signups ?? [];
+    final waitlist = session?.waitlist ?? [];
+    final isSignedUp = signups.contains(uid);
     final isWaitlisted = waitlist.contains(uid);
-    final generated    = session?.generatedTeams ?? [];
-    final maxPlayers   = event?.maxPlayers;
-    final isFull       = maxPlayers != null && signups.length >= maxPlayers;
+    final generated = session?.generatedTeams ?? [];
+    final maxPlayers = event?.maxPlayers;
+    final isFull = maxPlayers != null && signups.length >= maxPlayers;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Drop-in')),
-      body: SafeArea(top: false, child: sessionAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (_) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-
-            // ── Summary card ─────────────────────────────────────────────
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Signed up: ${signups.length}'
-                      '${event != null ? ' / ${event.maxPlayers} max' : ''}',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (event != null && signups.length < event.minPlayers)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Need ${event.minPlayers - signups.length} more to reach minimum',
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontSize: 13),
+      body: SafeArea(
+          top: false,
+          child: sessionAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (_) => ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ── Summary card ─────────────────────────────────────────────
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Signed up: ${signups.length}'
+                          '${event != null ? ' / ${event.maxPlayers} max' : ''}',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
+                        if (event != null && signups.length < event.minPlayers)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Need ${event.minPlayers - signups.length} more to reach minimum',
+                              style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                  fontSize: 13),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // ── RSVP button ───────────────────────────────────────────────
+                if (event?.allowSignups == true)
+                  if (isSignedUp)
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.close),
+                      label: const Text('Withdraw'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.error,
                       ),
-                  ],
-                ),
-              ),
+                      onPressed: () => ref
+                          .read(dropInRepositoryProvider)
+                          .withdraw(eventId, uid),
+                    )
+                  else if (isWaitlisted)
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.hourglass_top_outlined),
+                      label: Text(
+                          'Waitlisted (#${session!.waitlistPosition(uid)}) — Leave'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                      onPressed: () => ref
+                          .read(dropInRepositoryProvider)
+                          .withdraw(eventId, uid),
+                    )
+                  else if (isFull)
+                    FilledButton.icon(
+                      icon: const Icon(Icons.hourglass_empty),
+                      label: const Text('Join Waitlist'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondaryContainer,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onSecondaryContainer,
+                      ),
+                      onPressed: () {
+                        unawaited(ref.read(dropInRepositoryProvider).signUp(
+                            eventId, teamId, uid,
+                            maxPlayers: maxPlayers));
+                        unawaited(ref
+                            .read(analyticsServiceProvider)
+                            .logDropInSignup());
+                      },
+                    )
+                  else
+                    FilledButton.icon(
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text("I'm In"),
+                      onPressed: () {
+                        unawaited(ref.read(dropInRepositoryProvider).signUp(
+                            eventId, teamId, uid,
+                            maxPlayers: maxPlayers));
+                        unawaited(ref
+                            .read(analyticsServiceProvider)
+                            .logDropInSignup());
+                      },
+                    ),
+                const SizedBox(height: 24),
+
+                // ── Admin: generate teams ─────────────────────────────────────
+                if (isAdmin) ...[
+                  FilledButton.icon(
+                    icon: const Icon(Icons.auto_awesome),
+                    label: Text(generated.isEmpty
+                        ? 'Generate Balanced Teams'
+                        : 'Regenerate Teams'),
+                    onPressed: signups.length < 2
+                        ? null
+                        : () =>
+                            _showGenerateDialog(context, ref, signups, teamId),
+                  ),
+                  if (signups.length < 2)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Need at least 2 players to generate teams.',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).colorScheme.outline),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                ],
+
+                // ── Generated teams ───────────────────────────────────────────
+                if (generated.isNotEmpty) ...[
+                  Text('Teams', style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  ...generated.asMap().entries.map((entry) => _TeamCard(
+                        index: entry.key,
+                        members: entry.value,
+                        uid: uid,
+                      )),
+                  const SizedBox(height: 16),
+                ],
+
+                // ── Signup list ───────────────────────────────────────────────
+                Text(
+                    'Players (${signups.length}${maxPlayers != null ? ' / $maxPlayers' : ''})',
+                    style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                if (signups.isEmpty)
+                  Text('No players signed up yet.',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline))
+                else
+                  ...signups.map((id) => _PlayerTile(
+                        userId: id,
+                        isSelf: id == uid,
+                        isAdmin: isAdmin,
+                        onRemove: isAdmin && id != uid
+                            ? () => ref
+                                .read(dropInRepositoryProvider)
+                                .withdraw(eventId, id)
+                            : null,
+                      )),
+
+                // ── Waitlist ──────────────────────────────────────────────────
+                if (waitlist.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Text('Waitlist (${waitlist.length})',
+                      style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 8),
+                  ...waitlist.asMap().entries.map((e) => _PlayerTile(
+                        userId: e.value,
+                        isSelf: e.value == uid,
+                        isAdmin: isAdmin,
+                        label: '#${e.key + 1}',
+                        onRemove: isAdmin && e.value != uid
+                            ? () => ref
+                                .read(dropInRepositoryProvider)
+                                .withdraw(eventId, e.value)
+                            : null,
+                      )),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-
-            // ── RSVP button ───────────────────────────────────────────────
-            if (event?.allowSignups == true)
-              if (isSignedUp)
-                OutlinedButton.icon(
-                  icon:  const Icon(Icons.close),
-                  label: const Text('Withdraw'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: () => ref
-                      .read(dropInRepositoryProvider)
-                      .withdraw(eventId, uid),
-                )
-              else if (isWaitlisted)
-                OutlinedButton.icon(
-                  icon:  const Icon(Icons.hourglass_top_outlined),
-                  label: Text('Waitlisted (#${session!.waitlistPosition(uid)}) — Leave'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.secondary,
-                  ),
-                  onPressed: () => ref
-                      .read(dropInRepositoryProvider)
-                      .withdraw(eventId, uid),
-                )
-              else if (isFull)
-                FilledButton.icon(
-                  icon:  const Icon(Icons.hourglass_empty),
-                  label: const Text('Join Waitlist'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onSecondaryContainer,
-                  ),
-                  onPressed: () {
-                    unawaited(ref
-                        .read(dropInRepositoryProvider)
-                        .signUp(eventId, teamId, uid, maxPlayers: maxPlayers));
-                    unawaited(ref
-                        .read(analyticsServiceProvider)
-                        .logDropInSignup());
-                  },
-                )
-              else
-                FilledButton.icon(
-                  icon:  const Icon(Icons.add_circle_outline),
-                  label: const Text("I'm In"),
-                  onPressed: () {
-                    unawaited(ref
-                        .read(dropInRepositoryProvider)
-                        .signUp(eventId, teamId, uid, maxPlayers: maxPlayers));
-                    unawaited(ref
-                        .read(analyticsServiceProvider)
-                        .logDropInSignup());
-                  },
-                ),
-            const SizedBox(height: 24),
-
-            // ── Admin: generate teams ─────────────────────────────────────
-            if (isAdmin) ...[
-              FilledButton.icon(
-                icon:  const Icon(Icons.auto_awesome),
-                label: Text(generated.isEmpty
-                    ? 'Generate Balanced Teams'
-                    : 'Regenerate Teams'),
-                onPressed: signups.length < 2
-                    ? null
-                    : () => _showGenerateDialog(context, ref, signups, teamId),
-              ),
-              if (signups.length < 2)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    'Need at least 2 players to generate teams.',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.outline),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              const SizedBox(height: 24),
-            ],
-
-            // ── Generated teams ───────────────────────────────────────────
-            if (generated.isNotEmpty) ...[
-              Text('Teams', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              ...generated.asMap().entries.map((entry) =>
-                  _TeamCard(
-                    index:   entry.key,
-                    members: entry.value,
-                    uid:     uid,
-                  )),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Signup list ───────────────────────────────────────────────
-            Text('Players (${signups.length}${maxPlayers != null ? ' / $maxPlayers' : ''})',
-                style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            if (signups.isEmpty)
-              Text('No players signed up yet.',
-                  style:
-                      TextStyle(color: Theme.of(context).colorScheme.outline))
-            else
-              ...signups.map((id) => _PlayerTile(
-                    userId:   id,
-                    isSelf:   id == uid,
-                    isAdmin:  isAdmin,
-                    onRemove: isAdmin && id != uid
-                        ? () => ref
-                            .read(dropInRepositoryProvider)
-                            .withdraw(eventId, id)
-                        : null,
-                  )),
-
-            // ── Waitlist ──────────────────────────────────────────────────
-            if (waitlist.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text('Waitlist (${waitlist.length})',
-                  style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              ...waitlist.asMap().entries.map((e) => _PlayerTile(
-                    userId:  e.value,
-                    isSelf:  e.value == uid,
-                    isAdmin: isAdmin,
-                    label:   '#${e.key + 1}',
-                    onRemove: isAdmin && e.value != uid
-                        ? () => ref
-                            .read(dropInRepositoryProvider)
-                            .withdraw(eventId, e.value)
-                        : null,
-                  )),
-            ],
-          ],
-        ),
-      )),
+          )),
     );
   }
 
-  void _showGenerateDialog(
-      BuildContext context, WidgetRef ref,
+  void _showGenerateDialog(BuildContext context, WidgetRef ref,
       List<String> signups, String teamId) {
     int numTeams = signups.length >= 6 ? 3 : 2;
 
@@ -239,8 +242,7 @@ class DropInScreen extends ConsumerWidget {
               Text(
                 '~${(signups.length / numTeams).ceil()} players per team',
                 style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(ctx).colorScheme.outline),
+                    fontSize: 13, color: Theme.of(ctx).colorScheme.outline),
               ),
             ],
           ),
@@ -268,7 +270,7 @@ class DropInScreen extends ConsumerWidget {
       List<String> signups, String teamId, int numTeams) async {
     // Load rankings (admin-visible scores)
     final rankings = ref.read(teamRankingsProvider(teamId)).valueOrNull ?? [];
-    final scores   = {for (final r in rankings) r.userId: r.score};
+    final scores = {for (final r in rankings) r.userId: r.score};
 
     // Sort by score descending (unranked = 0, go last)
     final sorted = List<String>.from(signups)
@@ -277,8 +279,8 @@ class DropInScreen extends ConsumerWidget {
     // Snake draft into teams
     final teams = List.generate(numTeams, (_) => <String>[]);
     for (int i = 0; i < sorted.length; i++) {
-      final round     = i ~/ numTeams;
-      final pos       = i % numTeams;
+      final round = i ~/ numTeams;
+      final pos = i % numTeams;
       final teamIndex = round.isEven ? pos : (numTeams - 1 - pos);
       teams[teamIndex].add(sorted[i]);
     }
@@ -302,10 +304,11 @@ class DropInScreen extends ConsumerWidget {
 // ── Generated team card ────────────────────────────────────────────────────────
 
 class _TeamCard extends ConsumerWidget {
-  final int          index;
+  final int index;
   final List<String> members;
-  final String       uid;
-  const _TeamCard({required this.index, required this.members, required this.uid});
+  final String uid;
+  const _TeamCard(
+      {required this.index, required this.members, required this.uid});
 
   static const _teamColors = [
     Colors.blue,
@@ -335,8 +338,8 @@ class _TeamCard extends ConsumerWidget {
                 Icon(Icons.group, color: color, size: 18),
                 const SizedBox(width: 8),
                 Text('Team ${index + 1}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: color)),
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, color: color)),
                 const Spacer(),
                 Text('${members.length} players',
                     style: TextStyle(
@@ -354,7 +357,7 @@ class _TeamCard extends ConsumerWidget {
 
 class _TeamMemberRow extends ConsumerWidget {
   final String userId;
-  final bool   isSelf;
+  final bool isSelf;
   const _TeamMemberRow({required this.userId, required this.isSelf});
 
   @override
@@ -363,7 +366,8 @@ class _TeamMemberRow extends ConsumerWidget {
     return ListTile(
       dense: true,
       leading: CircleAvatar(
-        radius: 14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+        radius:
+            14 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
         child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
             style: const TextStyle(fontSize: 12)),
       ),
@@ -375,13 +379,16 @@ class _TeamMemberRow extends ConsumerWidget {
 // ── Signup player tile ─────────────────────────────────────────────────────────
 
 class _PlayerTile extends ConsumerWidget {
-  final String  userId;
-  final bool    isSelf, isAdmin;
+  final String userId;
+  final bool isSelf, isAdmin;
   final String? label;
   final VoidCallback? onRemove;
   const _PlayerTile({
-    required this.userId, required this.isSelf,
-    required this.isAdmin, this.label, required this.onRemove,
+    required this.userId,
+    required this.isSelf,
+    required this.isAdmin,
+    this.label,
+    required this.onRemove,
   });
 
   @override
@@ -390,17 +397,19 @@ class _PlayerTile extends ConsumerWidget {
     return ListTile(
       leading: label != null
           ? CircleAvatar(
-              radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+              radius: 20 *
+                  MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
               child: Text(label!, style: const TextStyle(fontSize: 12)))
           : CircleAvatar(
-              radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+              radius: 20 *
+                  MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
               child: const Icon(Icons.person)),
-      title:   Text(isSelf ? '$name (you)' : name),
+      title: Text(isSelf ? '$name (you)' : name),
       trailing: onRemove != null
           ? IconButton(
-              icon:      Icon(Icons.remove_circle_outline,
+              icon: Icon(Icons.remove_circle_outline,
                   color: Theme.of(context).colorScheme.error),
-              tooltip:   'Remove from session',
+              tooltip: 'Remove from session',
               onPressed: onRemove,
             )
           : null,
@@ -408,7 +417,8 @@ class _PlayerTile extends ConsumerWidget {
   }
 }
 
-final _userNameProvider = FutureProvider.family<String, String>((ref, uid) async {
+final _userNameProvider =
+    FutureProvider.family<String, String>((ref, uid) async {
   final user = await ref.read(userRepositoryProvider).getUser(uid);
   return user?.name.isNotEmpty == true ? user!.name : uid;
 });

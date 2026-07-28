@@ -28,8 +28,10 @@ final sportNamesProvider = Provider<List<String>>((ref) {
 
 /// Position list for a given sport name.
 /// Falls back to AppConfig while Firestore is loading.
-final positionsForSportProvider = Provider.family<List<String>, String>((ref, sportName) {
-  final sport = _findByName(ref.watch(sportsProvider).valueOrNull ?? [], sportName);
+final positionsForSportProvider =
+    Provider.family<List<String>, String>((ref, sportName) {
+  final sport =
+      _findByName(ref.watch(sportsProvider).valueOrNull ?? [], sportName);
   return sport?.positions ?? AppConfig.positionsForSport(sportName);
 });
 
@@ -37,6 +39,9 @@ final positionsForSportProvider = Provider.family<List<String>, String>((ref, sp
 /// Falls back to AppConfig while Firestore is loading.
 final categoriesForSportProvider =
     Provider.family<Map<String, List<String>>, String>((ref, sportName) {
-  final sport = _findByName(ref.watch(sportsProvider).valueOrNull ?? [], sportName);
-  return sport?.categories ?? AppConfig.sportPositionCategories[sportName] ?? {};
+  final sport =
+      _findByName(ref.watch(sportsProvider).valueOrNull ?? [], sportName);
+  return sport?.categories ??
+      AppConfig.sportPositionCategories[sportName] ??
+      {};
 });

@@ -6,7 +6,7 @@ class AppTheme {
   AppTheme._();
 
   // Icon's vivid blue + sporty green accent
-  static const Color _seedColor   = Color(0xFF2196F3);
+  static const Color _seedColor = Color(0xFF2196F3);
   static const Color _accentGreen = Color(0xFF43A047);
 
   static ThemeData light() {
@@ -32,17 +32,17 @@ class AppTheme {
       // ── Typography ───────────────────────────────────────────────────
       textTheme: GoogleFonts.nunitoTextTheme(base.textTheme).copyWith(
         // Slightly bolder headings for a sporty feel
-        headlineLarge:  GoogleFonts.nunito(
+        headlineLarge: GoogleFonts.nunito(
             fontWeight: FontWeight.w800, color: cs.onSurface),
         headlineMedium: GoogleFonts.nunito(
             fontWeight: FontWeight.w800, color: cs.onSurface),
-        headlineSmall:  GoogleFonts.nunito(
+        headlineSmall: GoogleFonts.nunito(
             fontWeight: FontWeight.w700, color: cs.onSurface),
-        titleLarge:     GoogleFonts.nunito(
+        titleLarge: GoogleFonts.nunito(
             fontWeight: FontWeight.w700, color: cs.onSurface),
-        titleMedium:    GoogleFonts.nunito(
+        titleMedium: GoogleFonts.nunito(
             fontWeight: FontWeight.w600, color: cs.onSurface),
-        titleSmall:     GoogleFonts.nunito(
+        titleSmall: GoogleFonts.nunito(
             fontWeight: FontWeight.w600, color: cs.onSurface),
       ),
 
@@ -88,8 +88,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.nunito(
-              fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle:
+              GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
 
@@ -99,8 +99,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.nunito(
-              fontSize: 15, fontWeight: FontWeight.w600),
+          textStyle:
+              GoogleFonts.nunito(fontSize: 15, fontWeight: FontWeight.w600),
         ),
       ),
 
@@ -132,10 +132,10 @@ class AppTheme {
         labelColor: cs.onPrimary,
         unselectedLabelColor: cs.onPrimary.withOpacity(0.6),
         indicatorColor: cs.onPrimary,
-        labelStyle: GoogleFonts.nunito(
-            fontSize: 13, fontWeight: FontWeight.w700),
-        unselectedLabelStyle: GoogleFonts.nunito(
-            fontSize: 13, fontWeight: FontWeight.w500),
+        labelStyle:
+            GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle:
+            GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w500),
       ),
 
       // ── Divider ──────────────────────────────────────────────────────

@@ -65,7 +65,7 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
     final isAdmin = team.isAdmin(uid);
     final userProfile = ref.watch(currentUserProfileProvider).valueOrNull;
-    final isMuted  = userProfile?.mutedTeams.contains(team.teamId) ?? false;
+    final isMuted = userProfile?.mutedTeams.contains(team.teamId) ?? false;
     final isHidden = userProfile?.hiddenTeams.contains(team.teamId) ?? false;
     final requestsAsync =
         isAdmin ? ref.watch(pendingRequestsProvider(team.teamId)) : null;
@@ -132,7 +132,9 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
                         await repo.muteTeam(uid, team.teamId);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Notifications muted for this team.')),
+                            const SnackBar(
+                                content:
+                                    Text('Notifications muted for this team.')),
                           );
                         }
                       }
@@ -143,8 +145,9 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
                         await repo.hideTeam(uid, team.teamId);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(
-                                '${team.name} hidden. Find it under "hidden teams" on the teams screen.')),
+                            SnackBar(
+                                content: Text(
+                                    '${team.name} hidden. Find it under "hidden teams" on the teams screen.')),
                           );
                         }
                       }
@@ -190,11 +193,16 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
                   PopupMenuItem(
                     value: 'mute',
                     child: ListTile(
-                      leading: Icon(isMuted
-                          ? Icons.notifications_active_outlined
-                          : Icons.notifications_off_outlined,
-                          color: isMuted ? null : Theme.of(context).colorScheme.error),
-                      title: Text(isMuted ? 'Unmute notifications' : 'Mute notifications'),
+                      leading: Icon(
+                          isMuted
+                              ? Icons.notifications_active_outlined
+                              : Icons.notifications_off_outlined,
+                          color: isMuted
+                              ? null
+                              : Theme.of(context).colorScheme.error),
+                      title: Text(isMuted
+                          ? 'Unmute notifications'
+                          : 'Mute notifications'),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ),
@@ -287,9 +295,11 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
               // ── Archived banner ──────────────────────────────────────────
               if (team.archived) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -584,7 +594,9 @@ class _TeamDetailViewState extends ConsumerState<_TeamDetailView> {
             onPressed: () async {
               Navigator.of(context).pop();
               try {
-                await ref.read(teamRepositoryProvider).deleteTeam(widget.team.teamId);
+                await ref
+                    .read(teamRepositoryProvider)
+                    .deleteTeam(widget.team.teamId);
                 if (context.mounted) context.go('/teams');
               } catch (e) {
                 if (context.mounted) {
@@ -953,9 +965,9 @@ class _LeaveSpareButtonState extends ConsumerState<_LeaveSpareButton> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Leave Spares List?'),
-        content: const Text(
-            'You will no longer be called as a spare for this team. '
-            'You can request to rejoin at any time.'),
+        content:
+            const Text('You will no longer be called as a spare for this team. '
+                'You can request to rejoin at any time.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),

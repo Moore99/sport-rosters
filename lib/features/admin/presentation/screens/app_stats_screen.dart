@@ -4,7 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/services/app_functions.dart';
 
-final _appStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final _appStatsProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final result = await AppFunctions.call('getAppStats');
   return Map<String, dynamic>.from(result as Map);
 });
@@ -48,11 +49,11 @@ class AppStatsScreen extends ConsumerWidget {
           ),
         ),
         data: (stats) {
-          final realUsersList   = _toList(stats['realUsersList']);
+          final realUsersList = _toList(stats['realUsersList']);
           final newThisWeekList = _toList(stats['newThisWeekList']);
-          final newThisMonthList= _toList(stats['newThisMonthList']);
-          final teamsList       = _toList(stats['teamsList']);
-          final recentEventsList= _toList(stats['recentEventsList']);
+          final newThisMonthList = _toList(stats['newThisMonthList']);
+          final teamsList = _toList(stats['teamsList']);
+          final recentEventsList = _toList(stats['recentEventsList']);
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -64,7 +65,8 @@ class AppStatsScreen extends ConsumerWidget {
                 label: 'Real Users',
                 value: '${stats['totalRealUsers']}',
                 subtitle: 'Excludes test accounts & admins',
-                onTap: () => _showUserSheet(context, 'Real Users', realUsersList),
+                onTap: () =>
+                    _showUserSheet(context, 'Real Users', realUsersList),
               ),
               _StatCard(
                 icon: Icons.person_add,
@@ -73,7 +75,8 @@ class AppStatsScreen extends ConsumerWidget {
                 value: '${stats['newThisWeek']}',
                 onTap: newThisWeekList.isEmpty
                     ? null
-                    : () => _showUserSheet(context, 'New This Week', newThisWeekList),
+                    : () => _showUserSheet(
+                        context, 'New This Week', newThisWeekList),
               ),
               _StatCard(
                 icon: Icons.trending_up,
@@ -82,7 +85,8 @@ class AppStatsScreen extends ConsumerWidget {
                 value: '${stats['newThisMonth']}',
                 onTap: newThisMonthList.isEmpty
                     ? null
-                    : () => _showUserSheet(context, 'New This Month', newThisMonthList),
+                    : () => _showUserSheet(
+                        context, 'New This Month', newThisMonthList),
               ),
               const SizedBox(height: 8),
               _SectionHeader('Activity'),
@@ -111,7 +115,9 @@ class AppStatsScreen extends ConsumerWidget {
 
   List<Map<String, dynamic>> _toList(dynamic raw) {
     if (raw == null) return [];
-    return (raw as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (raw as List)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
   }
 
   void _showUserSheet(
@@ -123,10 +129,10 @@ class AppStatsScreen extends ConsumerWidget {
         title: title,
         children: users.map((u) {
           final joined = _fmtDate(u['createdAt'] as String?);
-          final teams  = u['teamCount'] as int? ?? 0;
+          final teams = u['teamCount'] as int? ?? 0;
           return ListTile(
             leading: const CircleAvatar(child: Icon(Icons.person, size: 18)),
-            title:    Text(u['name'] as String? ?? '—'),
+            title: Text(u['name'] as String? ?? '—'),
             subtitle: Text(u['email'] as String? ?? ''),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -164,7 +170,7 @@ class AppStatsScreen extends ConsumerWidget {
                 style: const TextStyle(color: Colors.orange),
               ),
             ),
-            title:    Text(t['name'] as String? ?? '—'),
+            title: Text(t['name'] as String? ?? '—'),
             subtitle: Text(t['sport'] as String? ?? ''),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -183,9 +189,9 @@ class AppStatsScreen extends ConsumerWidget {
     );
   }
 
-  void _showEventSheet(BuildContext context, List<Map<String, dynamic>> events) {
-    final sorted = [...events]
-      ..sort((a, b) {
+  void _showEventSheet(
+      BuildContext context, List<Map<String, dynamic>> events) {
+    final sorted = [...events]..sort((a, b) {
         final da = a['date'] as String? ?? '';
         final db = b['date'] as String? ?? '';
         return db.compareTo(da); // newest first
@@ -196,20 +202,21 @@ class AppStatsScreen extends ConsumerWidget {
       builder: (_) => _DetailSheet(
         title: 'Events — Last 30 Days',
         children: sorted.map((e) {
-          final type     = _eventTypeLabel(e['type'] as String? ?? '');
+          final type = _eventTypeLabel(e['type'] as String? ?? '');
           final teamName = e['teamName'] as String? ?? '—';
-          final sport    = e['sport']    as String? ?? '';
-          final date     = _fmtDate(e['date'] as String?);
+          final sport = e['sport'] as String? ?? '';
+          final date = _fmtDate(e['date'] as String?);
           return ListTile(
             leading: CircleAvatar(
               backgroundColor: Colors.purple.withValues(alpha: 0.15),
               child: Text(_eventTypeIcon(e['type'] as String? ?? ''),
                   style: const TextStyle(fontSize: 16)),
             ),
-            title:    Text('$type — $teamName'),
+            title: Text('$type — $teamName'),
             subtitle: Text(sport),
             trailing: date != null
-                ? Text(date, style: const TextStyle(fontSize: 11, color: Colors.grey))
+                ? Text(date,
+                    style: const TextStyle(fontSize: 11, color: Colors.grey))
                 : null,
           );
         }).toList(),
@@ -227,18 +234,18 @@ class AppStatsScreen extends ConsumerWidget {
   }
 
   String _eventTypeLabel(String type) => switch (type) {
-    'game'     => 'Game',
-    'practice' => 'Practice',
-    'dropIn'   => 'Drop-in',
-    _          => type,
-  };
+        'game' => 'Game',
+        'practice' => 'Practice',
+        'dropIn' => 'Drop-in',
+        _ => type,
+      };
 
   String _eventTypeIcon(String type) => switch (type) {
-    'game'     => '🏆',
-    'practice' => '🏋️',
-    'dropIn'   => '🔓',
-    _          => '📅',
-  };
+        'game' => '🏆',
+        'practice' => '🏋️',
+        'dropIn' => '🔓',
+        _ => '📅',
+      };
 }
 
 // ── Detail bottom sheet ────────────────────────────────────────────────────────
@@ -272,8 +279,10 @@ class _DetailSheet extends StatelessWidget {
             child: Row(
               children: [
                 Text(title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold)),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
                 const Spacer(),
                 Text('${children.length}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -318,10 +327,10 @@ class _SectionHeader extends StatelessWidget {
 
 class _StatCard extends StatelessWidget {
   final IconData icon;
-  final Color    color;
-  final String   label;
-  final String   value;
-  final String?  subtitle;
+  final Color color;
+  final String label;
+  final String value;
+  final String? subtitle;
   final VoidCallback? onTap;
 
   const _StatCard({
@@ -344,7 +353,7 @@ class _StatCard extends StatelessWidget {
           backgroundColor: color.withValues(alpha: 0.15),
           child: Icon(icon, color: color),
         ),
-        title:    Text(label),
+        title: Text(label),
         subtitle: subtitle != null
             ? Text(subtitle!, style: Theme.of(context).textTheme.bodySmall)
             : null,

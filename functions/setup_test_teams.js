@@ -16,15 +16,19 @@
  * Requires service-account-key.json at repo root, or GOOGLE_APPLICATION_CREDENTIALS.
  */
 
-const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
-const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
-const path = require('path');
-const fs = require('fs');
+const { initializeApp, cert, getApps } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const {
+  getFirestore,
+  Timestamp,
+  FieldValue,
+} = require("firebase-admin/firestore");
+const path = require("path");
+const fs = require("fs");
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-const keyPath = path.join(__dirname, '..', 'service-account-key.json');
+const keyPath = path.join(__dirname, "..", "service-account-key.json");
 
 if (!getApps().length) {
   if (fs.existsSync(keyPath)) {
@@ -37,21 +41,21 @@ if (!getApps().length) {
 const auth = getAuth();
 const db = getFirestore();
 
-const SOURCE_TEAM_ID = 'test-team-hockey';
-const NEW_TEAM_ID    = 'dragon-boat-test';
-const NEW_TEAM_NAME  = 'Dragon Boat Test';
-const NEW_TEAM_SPORT = 'Dragon Boating';
-const COACH_EMAIL    = 'alice.coach@test.com';
+const SOURCE_TEAM_ID = "test-team-hockey";
+const NEW_TEAM_ID = "dragon-boat-test";
+const NEW_TEAM_NAME = "Dragon Boat Test";
+const NEW_TEAM_SPORT = "Dragon Boating";
+const COACH_EMAIL = "alice.coach@test.com";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function markEmailVerified(uid, email) {
   try {
     await auth.updateUser(uid, { emailVerified: true });
-    await db.collection('users').doc(uid).set(
-      { emailVerified: true },
-      { merge: true }
-    );
+    await db
+      .collection("users")
+      .doc(uid)
+      .set({ emailVerified: true }, { merge: true });
     console.log(`  ✓  Verified email for ${email} (${uid})`);
   } catch (err) {
     console.error(`  ✗  Failed to verify ${email}: ${err.message}`);
@@ -63,14 +67,14 @@ async function markEmailVerified(uid, email) {
 async function main() {
   // ── 1. Load source team ───────────────────────────────────────────────────
 
-  const sourceDoc = await db.collection('teams').doc(SOURCE_TEAM_ID).get();
+  const sourceDoc = await db.collection("teams").doc(SOURCE_TEAM_ID).get();
   if (!sourceDoc.exists) {
     console.error(`Team "${SOURCE_TEAM_ID}" not found. Aborting.`);
     process.exit(1);
   }
 
   const sourceData = sourceDoc.data();
-  const sourceAdmins  = Array.from(sourceData.admins  ?? []);
+  const sourceAdmins = Array.from(sourceData.admins ?? []);
   const sourcePlayers = Array.from(sourceData.players ?? []);
   const allSourceMembers = [...new Set([...sourceAdmins, ...sourcePlayers])];
 
@@ -80,16 +84,19 @@ async function main() {
 
   // ── 2. Accept all pending join requests ───────────────────────────────────
 
-  console.log('\n─── Accepting pending join requests ─────────────────────────');
+  console.log(
+    "\n─── Accepting pending join requests ─────────────────────────",
+  );
 
   const pendingSnap = await db
-    .collection('teams').doc(SOURCE_TEAM_ID)
-    .collection('joinRequests')
-    .where('status', '==', 'pending')
+    .collection("teams")
+    .doc(SOURCE_TEAM_ID)
+    .collection("joinRequests")
+    .where("status", "==", "pending")
     .get();
 
   if (pendingSnap.empty) {
-    console.log('  (no pending requests)');
+    console.log("  (no pending requests)");
   }
 
   for (const reqDoc of pendingSnap.docs) {
@@ -97,15 +104,19 @@ async function main() {
     const userId = req.userId || reqDoc.id;
 
     const batch = db.batch();
-    batch.update(db.collection('teams').doc(SOURCE_TEAM_ID), {
+    batch.update(db.collection("teams").doc(SOURCE_TEAM_ID), {
       players: FieldValue.arrayUnion(userId),
     });
-    batch.update(db.collection('users').doc(userId), {
+    batch.update(db.collection("users").doc(userId), {
       teams: FieldValue.arrayUnion(SOURCE_TEAM_ID),
     });
     batch.update(
-      db.collection('teams').doc(SOURCE_TEAM_ID).collection('joinRequests').doc(reqDoc.id),
-      { status: 'approved' }
+      db
+        .collection("teams")
+        .doc(SOURCE_TEAM_ID)
+        .collection("joinRequests")
+        .doc(reqDoc.id),
+      { status: "approved" },
     );
     await batch.commit();
 
@@ -120,14 +131,21 @@ async function main() {
 
   // ── 3. Mark all source-team members as email-verified ─────────────────────
 
-  console.log('\n─── Marking source team member emails verified ───────────────');
+  console.log(
+    "\n─── Marking source team member emails verified ───────────────",
+  );
 
   const memberProfiles = [];
 
   for (const uid of allSourceMembers) {
-    const userDoc = await db.collection('users').doc(uid).get();
+    const userDoc = await db.collection("users").doc(uid).get();
     const userData = userDoc.exists ? userDoc.data() : {};
-    memberProfiles.push({ uid, email: userData.email ?? '(unknown)', name: userData.name ?? uid, data: userData });
+    memberProfiles.push({
+      uid,
+      email: userData.email ?? "(unknown)",
+      name: userData.name ?? uid,
+      data: userData,
+    });
     await markEmailVerified(uid, userData.email ?? uid);
   }
 
@@ -139,30 +157,40 @@ async function main() {
     coachUid = coachRecord.uid;
     console.log(`\nCoach ${COACH_EMAIL} → uid: ${coachUid}`);
   } catch (err) {
-    console.error(`\nCould not find ${COACH_EMAIL} in Firebase Auth: ${err.message}`);
+    console.error(
+      `\nCould not find ${COACH_EMAIL} in Firebase Auth: ${err.message}`,
+    );
     process.exit(1);
   }
 
   // ── 5. Build new team member lists ───────────────────────────────────────
 
   // Coach is admin; everyone else is a player (excluding coach from players list)
-  const newAdmins  = [coachUid];
-  const newPlayers = allSourceMembers.filter(uid => uid !== coachUid);
+  const newAdmins = [coachUid];
+  const newPlayers = allSourceMembers.filter((uid) => uid !== coachUid);
 
   // ── 6. Upsert the Dragon Boat Test team ──────────────────────────────────
 
-  console.log(`\n─── Creating/updating team "${NEW_TEAM_NAME}" (${NEW_TEAM_ID}) ────`);
+  console.log(
+    `\n─── Creating/updating team "${NEW_TEAM_NAME}" (${NEW_TEAM_ID}) ────`,
+  );
 
-  await db.collection('teams').doc(NEW_TEAM_ID).set({
-    name:          NEW_TEAM_NAME,
-    sport:         NEW_TEAM_SPORT,
-    admins:        newAdmins,
-    players:       newPlayers,
-    minPlayers:    sourceData.minPlayers  ?? 1,
-    maxPlayers:    sourceData.maxPlayers  ?? 20,
-    dropInEnabled: sourceData.dropInEnabled ?? false,
-    createdAt:     Timestamp.now(),
-  }, { merge: false });
+  await db
+    .collection("teams")
+    .doc(NEW_TEAM_ID)
+    .set(
+      {
+        name: NEW_TEAM_NAME,
+        sport: NEW_TEAM_SPORT,
+        admins: newAdmins,
+        players: newPlayers,
+        minPlayers: sourceData.minPlayers ?? 1,
+        maxPlayers: sourceData.maxPlayers ?? 20,
+        dropInEnabled: sourceData.dropInEnabled ?? false,
+        createdAt: Timestamp.now(),
+      },
+      { merge: false },
+    );
 
   console.log(`  ✓  Team doc written`);
   console.log(`       Admin:   ${COACH_EMAIL} (${coachUid})`);
@@ -171,33 +199,48 @@ async function main() {
   // Add NEW_TEAM_ID to every member's teams array
   const allNewMembers = [...new Set([...newAdmins, ...newPlayers])];
   for (const uid of allNewMembers) {
-    await db.collection('users').doc(uid).update({
-      teams: FieldValue.arrayUnion(NEW_TEAM_ID),
-    });
+    await db
+      .collection("users")
+      .doc(uid)
+      .update({
+        teams: FieldValue.arrayUnion(NEW_TEAM_ID),
+      });
   }
   console.log(`  ✓  Updated users.teams for ${allNewMembers.length} members`);
 
   // ── 7. Mark new team members as email-verified ────────────────────────────
 
-  console.log('\n─── Marking new team member emails verified ──────────────────');
+  console.log(
+    "\n─── Marking new team member emails verified ──────────────────",
+  );
 
   for (const uid of allNewMembers) {
-    const existing = memberProfiles.find(p => p.uid === uid);
+    const existing = memberProfiles.find((p) => p.uid === uid);
     const email = existing?.email ?? uid;
     await markEmailVerified(uid, email);
   }
 
   // ── 8. Summary ────────────────────────────────────────────────────────────
 
-  console.log('\n══════════════════════════════════════════════════════════════');
-  console.log('Done.');
-  console.log(`  Source team "${sourceData.name}" — ${pendingSnap.size} request(s) approved.`);
-  console.log(`  New team "${NEW_TEAM_NAME}" created with ${allNewMembers.length} members.`);
-  console.log(`  All ${allSourceMembers.length} source members + new team members → email verified.`);
-  console.log('══════════════════════════════════════════════════════════════\n');
+  console.log(
+    "\n══════════════════════════════════════════════════════════════",
+  );
+  console.log("Done.");
+  console.log(
+    `  Source team "${sourceData.name}" — ${pendingSnap.size} request(s) approved.`,
+  );
+  console.log(
+    `  New team "${NEW_TEAM_NAME}" created with ${allNewMembers.length} members.`,
+  );
+  console.log(
+    `  All ${allSourceMembers.length} source members + new team members → email verified.`,
+  );
+  console.log(
+    "══════════════════════════════════════════════════════════════\n",
+  );
 }
 
-main().catch(err => {
-  console.error('Fatal error:', err);
+main().catch((err) => {
+  console.error("Fatal error:", err);
   process.exit(1);
 });

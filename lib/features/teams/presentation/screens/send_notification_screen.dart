@@ -22,10 +22,10 @@ class SendNotificationScreen extends ConsumerStatefulWidget {
 
 class _SendNotificationScreenState
     extends ConsumerState<SendNotificationScreen> {
-  final _formKey   = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _titleCtrl = TextEditingController();
-  final _bodyCtrl  = TextEditingController();
-  bool _sending    = false;
+  final _bodyCtrl = TextEditingController();
+  bool _sending = false;
 
   @override
   void dispose() {
@@ -41,15 +41,17 @@ class _SendNotificationScreenState
     try {
       final result = await AppFunctions.call('sendTeamNotification', data: {
         'teamId': widget.teamId,
-        'title':  _titleCtrl.text.trim(),
-        'body':   _bodyCtrl.text.trim(),
+        'title': _titleCtrl.text.trim(),
+        'body': _bodyCtrl.text.trim(),
         if (widget.eventId != null) 'eventId': widget.eventId,
       });
 
       final sent = (result as Map)['sent'] ?? 0;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Notification sent to $sent member${sent == 1 ? '' : 's'}.')),
+          SnackBar(
+              content: Text(
+                  'Notification sent to $sent member${sent == 1 ? '' : 's'}.')),
         );
         Navigator.of(context).pop();
       }
@@ -67,7 +69,7 @@ class _SendNotificationScreenState
   @override
   Widget build(BuildContext context) {
     final teamAsync = ref.watch(teamProvider(widget.teamId));
-    final teamName  = teamAsync.valueOrNull?.name ?? 'Team';
+    final teamName = teamAsync.valueOrNull?.name ?? 'Team';
 
     return Scaffold(
       appBar: AppBar(title: Text('Notify $teamName')),
@@ -88,8 +90,8 @@ class _SendNotificationScreenState
               controller: _titleCtrl,
               decoration: const InputDecoration(
                 labelText: 'Title',
-                hintText:  'e.g. Practice cancelled',
-                border:    OutlineInputBorder(),
+                hintText: 'e.g. Practice cancelled',
+                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.title),
               ),
               maxLength: 100,
@@ -103,15 +105,16 @@ class _SendNotificationScreenState
               controller: _bodyCtrl,
               decoration: const InputDecoration(
                 labelText: 'Message',
-                hintText:  'e.g. Field is closed — see you next week!',
-                border:    OutlineInputBorder(),
+                hintText: 'e.g. Field is closed — see you next week!',
+                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.message_outlined),
                 alignLabelWithHint: true,
               ),
-              maxLines:  4,
+              maxLines: 4,
               maxLength: 300,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Message is required.' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Message is required.'
+                  : null,
             ),
             const SizedBox(height: 80),
           ],
@@ -124,7 +127,8 @@ class _SendNotificationScreenState
             onPressed: _sending ? null : _send,
             icon: _sending
                 ? const SizedBox(
-                    width: 18, height: 18,
+                    width: 18,
+                    height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.send),
             label: const Text('Send Notification'),

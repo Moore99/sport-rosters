@@ -6,19 +6,21 @@ class AppUser {
   final String userId;
   final String name;
   final String email;
-  final String? phone;       // optional — collected with explicit consent
-  final String? photoUrl;    // optional — collected with explicit consent
-  final String? fcmToken;    // FCM push token — updated on login
-  final double? weightKg;    // optional — used for dragon boat balance; player-editable
+  final String? phone; // optional — collected with explicit consent
+  final String? photoUrl; // optional — collected with explicit consent
+  final String? fcmToken; // FCM push token — updated on login
+  final double?
+      weightKg; // optional — used for dragon boat balance; player-editable
   final List<String> teams;
   final bool adFree;
-  final String role;         // 'player' | 'teamAdmin' | 'systemAdmin'
-  final bool deleted;        // soft-delete flag (GDPR right to erasure pending cascade)
+  final String role; // 'player' | 'teamAdmin' | 'systemAdmin'
+  final bool
+      deleted; // soft-delete flag (GDPR right to erasure pending cascade)
   final DateTime createdAt;
-  final bool notificationsEnabled;      // user-level push notification opt-out
+  final bool notificationsEnabled; // user-level push notification opt-out
   final bool emailNotificationsEnabled; // user-level email notification opt-out
-  final List<String> mutedTeams;        // team IDs where notifications are muted
-  final List<String> hiddenTeams;  // team IDs hidden from main list
+  final List<String> mutedTeams; // team IDs where notifications are muted
+  final List<String> hiddenTeams; // team IDs hidden from main list
   /// Per-event-type reminder prefs. Keys: 'game', 'practice', 'dropIn'.
   /// Absent key = enabled (default true).
   final Map<String, bool> eventTypePrefs;
@@ -46,20 +48,21 @@ class AppUser {
   factory AppUser.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return AppUser(
-      userId:    doc.id,
-      name:      data['name']     as String? ?? '',
-      email:     data['email']    as String? ?? '',
-      phone:     data['phone']    as String?,
-      photoUrl:  data['photoUrl'] as String?,
-      fcmToken:  data['fcmToken'] as String?,
-      weightKg:  (data['weightKg'] as num?)?.toDouble(),
-      teams:     List<String>.from(data['teams'] as List? ?? []),
-      adFree:    data['adFree']   as bool? ?? false,
-      role:      data['role']     as String? ?? 'player',
-      deleted:   data['deleted']  as bool? ?? false,
+      userId: doc.id,
+      name: data['name'] as String? ?? '',
+      email: data['email'] as String? ?? '',
+      phone: data['phone'] as String?,
+      photoUrl: data['photoUrl'] as String?,
+      fcmToken: data['fcmToken'] as String?,
+      weightKg: (data['weightKg'] as num?)?.toDouble(),
+      teams: List<String>.from(data['teams'] as List? ?? []),
+      adFree: data['adFree'] as bool? ?? false,
+      role: data['role'] as String? ?? 'player',
+      deleted: data['deleted'] as bool? ?? false,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      notificationsEnabled:      data['notificationsEnabled']      as bool? ?? true,
-      emailNotificationsEnabled: data['emailNotificationsEnabled'] as bool? ?? true,
+      notificationsEnabled: data['notificationsEnabled'] as bool? ?? true,
+      emailNotificationsEnabled:
+          data['emailNotificationsEnabled'] as bool? ?? true,
       mutedTeams: List<String>.from(data['mutedTeams'] as List? ?? []),
       hiddenTeams: List<String>.from(data['hiddenTeams'] as List? ?? []),
       eventTypePrefs: Map<String, bool>.from(
@@ -71,19 +74,19 @@ class AppUser {
   }
 
   Map<String, dynamic> toFirestore() => {
-    'name':      name,
-    'email':     email,
-    if (phone != null)     'phone':    phone,
-    if (photoUrl != null)  'photoUrl': photoUrl,
-    if (fcmToken != null)  'fcmToken': fcmToken,
-    if (weightKg != null)  'weightKg': weightKg,
-    'teams':     teams,
-    'adFree':    adFree,
-    'role':      role,
-    'deleted':   deleted,
-    'createdAt': Timestamp.fromDate(createdAt),
-  };
+        'name': name,
+        'email': email,
+        if (phone != null) 'phone': phone,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        if (fcmToken != null) 'fcmToken': fcmToken,
+        if (weightKg != null) 'weightKg': weightKg,
+        'teams': teams,
+        'adFree': adFree,
+        'role': role,
+        'deleted': deleted,
+        'createdAt': Timestamp.fromDate(createdAt),
+      };
 
   bool get isSystemAdmin => role == 'systemAdmin';
-  bool get isPlayer      => role == 'player';
+  bool get isPlayer => role == 'player';
 }

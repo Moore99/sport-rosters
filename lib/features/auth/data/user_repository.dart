@@ -10,7 +10,8 @@ class UserRepository {
   final FirebaseFirestore _db;
   UserRepository(this._db);
 
-  CollectionReference<Map<String, dynamic>> get _users => _db.collection('users');
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _db.collection('users');
 
   /// Creates the Firestore profile on first registration.
   Future<void> createUser(AppUser user) =>
@@ -26,14 +27,14 @@ class UserRepository {
   /// Live stream for the current user's profile.
   Stream<AppUser?> watchUser(String userId) =>
       _users.doc(userId).snapshots().map(
-        (doc) => doc.exists ? AppUser.fromFirestore(doc) : null,
-      );
+            (doc) => doc.exists ? AppUser.fromFirestore(doc) : null,
+          );
 
   /// Updates editable profile fields. Only provided fields are written.
   Future<void> updateProfile(String userId,
       {String? name, double? weightKg, String? photoUrl}) {
     final updates = <String, dynamic>{};
-    if (name != null)     updates['name']     = name;
+    if (name != null) updates['name'] = name;
     if (weightKg != null) updates['weightKg'] = weightKg;
     if (photoUrl != null) updates['photoUrl'] = photoUrl;
     return _users.doc(userId).update(updates);
@@ -66,23 +67,32 @@ class UserRepository {
 
   /// Mutes notifications from a specific team for this user.
   Future<void> muteTeam(String userId, String teamId) =>
-      _users.doc(userId).update({'mutedTeams': FieldValue.arrayUnion([teamId])});
+      _users.doc(userId).update({
+        'mutedTeams': FieldValue.arrayUnion([teamId])
+      });
 
   /// Re-enables notifications from a specific team for this user.
   Future<void> unmuteTeam(String userId, String teamId) =>
-      _users.doc(userId).update({'mutedTeams': FieldValue.arrayRemove([teamId])});
+      _users.doc(userId).update({
+        'mutedTeams': FieldValue.arrayRemove([teamId])
+      });
 
   /// Hides a team from the user's main teams list.
   Future<void> hideTeam(String userId, String teamId) =>
-      _users.doc(userId).update({'hiddenTeams': FieldValue.arrayUnion([teamId])});
+      _users.doc(userId).update({
+        'hiddenTeams': FieldValue.arrayUnion([teamId])
+      });
 
   /// Restores a hidden team to the user's main teams list.
   Future<void> unhideTeam(String userId, String teamId) =>
-      _users.doc(userId).update({'hiddenTeams': FieldValue.arrayRemove([teamId])});
+      _users.doc(userId).update({
+        'hiddenTeams': FieldValue.arrayRemove([teamId])
+      });
 
   /// Sets a per-event-type notification preference.
   /// [eventType]: 'game' | 'practice' | 'dropIn'
-  Future<void> updateEventTypePref(String userId, String eventType, bool enabled) =>
+  Future<void> updateEventTypePref(
+          String userId, String eventType, bool enabled) =>
       _users.doc(userId).update({'eventTypePrefs.$eventType': enabled});
 
   /// Soft-delete: sets deleted=true. Hard cascade handled by Cloud Function.

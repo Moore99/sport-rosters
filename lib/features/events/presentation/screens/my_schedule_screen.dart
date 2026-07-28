@@ -72,14 +72,14 @@ class _ScheduleEventTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final event = entry.event;
-    final team  = entry.team;
-    final uid   = ref.watch(currentUserProvider)?.uid ?? '';
+    final team = entry.team;
+    final uid = ref.watch(currentUserProvider)?.uid ?? '';
 
     final dateFmt = DateFormat('EEE, MMM d');
     final timeFmt = DateFormat('h:mm a');
 
     final myAvailAsync = ref.watch(myAvailabilityProvider(event.eventId));
-    final myResponse   = myAvailAsync.valueOrNull?.response;
+    final myResponse = myAvailAsync.valueOrNull?.response;
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -97,8 +97,7 @@ class _ScheduleEventTile extends ConsumerWidget {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          if (myResponse != null)
-            _RsvpChip(response: myResponse),
+          if (myResponse != null) _RsvpChip(response: myResponse),
         ],
       ),
       subtitle: Column(
@@ -114,7 +113,8 @@ class _ScheduleEventTile extends ConsumerWidget {
         ],
       ),
       trailing: event.allowSignups && event.rsvpOpen
-          ? _QuickRsvpButton(event: event, uid: uid, current: myResponse, ref: ref)
+          ? _QuickRsvpButton(
+              event: event, uid: uid, current: myResponse, ref: ref)
           : const Icon(Icons.chevron_right),
       onTap: () => context.push(
         '/teams/${team.teamId}/events/${event.eventId}',
@@ -176,14 +176,14 @@ class _QuickRsvpButton extends StatelessWidget {
       icon: Text(r.emoji, style: const TextStyle(fontSize: 20)),
       onPressed: () {
         unawaited(ref.read(eventRepositoryProvider).setAvailability(
-          Availability(
-            userId:    uid,
-            eventId:   event.eventId,
-            teamId:    event.teamId,
-            response:  r,
-            updatedAt: DateTime.now(),
-          ),
-        ));
+              Availability(
+                userId: uid,
+                eventId: event.eventId,
+                teamId: event.teamId,
+                response: r,
+                updatedAt: DateTime.now(),
+              ),
+            ));
       },
     );
   }

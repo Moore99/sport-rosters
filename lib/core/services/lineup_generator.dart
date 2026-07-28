@@ -19,11 +19,11 @@ class LineupGenerator {
   /// Returns a position → userId map.
   /// Positions that couldn't be filled are mapped to ''.
   static Map<String, String> generate({
-    required List<String>                       positions,
-    required List<String>                       availableUids,
-    required Map<String, Ranking>               rankings,
-    required Map<String, PlayerPreference>      preferences,
-    required Map<String, List<String>>          sportCategories,
+    required List<String> positions,
+    required List<String> availableUids,
+    required Map<String, Ranking> rankings,
+    required Map<String, PlayerPreference> preferences,
+    required Map<String, List<String>> sportCategories,
     // sport param retained for call-site compatibility but no longer used
     String sport = '',
   }) {
@@ -33,15 +33,17 @@ class LineupGenerator {
     for (final pos in positions) {
       eligibility[pos] = [];
       for (final uid in availableUids) {
-        final pref  = preferences[uid];
+        final pref = preferences[uid];
         final score = rankings[uid]?.score ?? 5.0;
 
         int priority;
         if (pref == null || !pref.hasPreferences) {
           priority = 3; // no preferences — can play anywhere, lowest priority
         } else {
-          priority = _matchPriority(pos, pref.preferredPositions, sportCategories);
-          if (priority < 0) continue; // player not willing to play this position
+          priority =
+              _matchPriority(pos, pref.preferredPositions, sportCategories);
+          if (priority < 0)
+            continue; // player not willing to play this position
         }
         eligibility[pos]!.add(_Candidate(uid, priority, score));
       }
@@ -53,13 +55,13 @@ class LineupGenerator {
     }
 
     // Fill most-constrained positions first
-    final sortedPositions = [...positions]
-      ..sort((a, b) =>
-          eligibility[a]!.length.compareTo(eligibility[b]!.length));
+    final sortedPositions = [
+      ...positions
+    ]..sort((a, b) => eligibility[a]!.length.compareTo(eligibility[b]!.length));
 
     // Greedy assignment
     final assignments = <String, String>{};
-    final used        = <String>{};
+    final used = <String>{};
 
     for (final pos in sortedPositions) {
       String assigned = '';
@@ -84,20 +86,24 @@ class LineupGenerator {
   ///
   /// Returns a list of [numSubTeams] position→userId maps.
   static List<Map<String, String>> generateSubTeams({
-    required int                                numSubTeams,
-    required List<String>                       positions,
-    required List<String>                       availableUids,
-    required Map<String, Ranking>               rankings,
-    required Map<String, PlayerPreference>      preferences,
-    required Map<String, List<String>>          sportCategories,
+    required int numSubTeams,
+    required List<String> positions,
+    required List<String> availableUids,
+    required Map<String, Ranking> rankings,
+    required Map<String, PlayerPreference> preferences,
+    required Map<String, List<String>> sportCategories,
     String sport = '',
   }) {
     if (numSubTeams <= 1) {
-      return [generate(
-        positions: positions, availableUids: availableUids,
-        rankings: rankings, preferences: preferences,
-        sportCategories: sportCategories,
-      )];
+      return [
+        generate(
+          positions: positions,
+          availableUids: availableUids,
+          rankings: rankings,
+          preferences: preferences,
+          sportCategories: sportCategories,
+        )
+      ];
     }
 
     final rng = Random();
@@ -110,7 +116,8 @@ class LineupGenerator {
       (grouped[s] ??= []).add(uid);
     }
     final pool = <String>[];
-    for (final score in (grouped.keys.toList()..sort((a, b) => b.compareTo(a)))) {
+    for (final score in (grouped.keys.toList()
+      ..sort((a, b) => b.compareTo(a)))) {
       pool.addAll(grouped[score]!..shuffle(rng));
     }
 
@@ -126,7 +133,8 @@ class LineupGenerator {
     if (goaliePos != null) {
       for (int t = 0; t < numSubTeams; t++) {
         for (int i = 0; i < pool.length; i++) {
-          if (_willingToPlayGoalie(pool[i], goaliePos, preferences, sportCategories)) {
+          if (_willingToPlayGoalie(
+              pool[i], goaliePos, preferences, sportCategories)) {
             goalies[t] = pool.removeAt(i);
             break;
           }
@@ -153,12 +161,12 @@ class LineupGenerator {
     return List.generate(numSubTeams, (t) {
       final teamUids = [...rosters[t], if (goalies[t] != null) goalies[t]!];
       return generate(
-        positions:      positions,
-        availableUids:  teamUids,
-        rankings:       rankings,
-        preferences:    preferences,
+        positions: positions,
+        availableUids: teamUids,
+        rankings: rankings,
+        preferences: preferences,
         sportCategories: sportCategories,
-        sport:          sport,
+        sport: sport,
       );
     });
   }
@@ -171,7 +179,9 @@ class LineupGenerator {
     return null;
   }
 
-  static bool _willingToPlayGoalie(String uid, String goaliePos,
+  static bool _willingToPlayGoalie(
+      String uid,
+      String goaliePos,
       Map<String, PlayerPreference> preferences,
       Map<String, List<String>> sportCategories) {
     final pref = preferences[uid];
@@ -183,8 +193,7 @@ class LineupGenerator {
   }
 
   /// Returns match priority (0=exact, 1=category, 2=Any) or -1 if no match.
-  static int _matchPriority(
-      String position, List<String> prefs,
+  static int _matchPriority(String position, List<String> prefs,
       Map<String, List<String>> sportCategories) {
     var best = -1;
     for (final pref in prefs) {
@@ -205,7 +214,7 @@ class LineupGenerator {
 
 class _Candidate {
   final String uid;
-  final int    priority;
+  final int priority;
   final double score;
   _Candidate(this.uid, this.priority, this.score);
 }

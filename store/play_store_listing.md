@@ -4,13 +4,13 @@
 
 ## App Details
 
-| Field | Value |
-|-------|-------|
-| App name | Sports Rostering |
-| Package name | com.sportsrostering.app |
-| Developer | Kernkraft Consulting Inc. |
-| Category | Sports |
-| Content rating | Everyone |
+| Field              | Value                                                                        |
+| ------------------ | ---------------------------------------------------------------------------- |
+| App name           | Sports Rostering                                                             |
+| Package name       | com.sportsrostering.app                                                      |
+| Developer          | Kernkraft Consulting Inc.                                                    |
+| Category           | Sports                                                                       |
+| Content rating     | Everyone                                                                     |
 | Privacy policy URL | https://nuclear-motd.com/privacy (or host a dedicated page — see note below) |
 
 ---
@@ -117,6 +117,7 @@ Screenshot size: 1080 × 1920 px (portrait) or as captured by device.
 ## Feature Graphic (1024 × 500 px)
 
 Suggested layout (create in Canva or similar):
+
 - Background: dark navy or team-sport green gradient
 - Left side: app icon (large, centred vertically)
 - Right side: app name "Sports Rostering" in bold white, tagline "Manage your team. Build your lineup." in lighter weight below
@@ -147,11 +148,11 @@ Expected rating: **Everyone**
 
 Provide reviewers with an account that has access to a pre-populated team:
 
-| Field | Value |
-|-------|-------|
-| Email | (create a dedicated test account e.g. review@sportsrostering.app or use a Gmail) |
-| Password | (set a simple password for reviewers) |
-| Notes | Account is pre-added to a team as a player. To see admin features, also provide an admin account. |
+| Field    | Value                                                                                             |
+| -------- | ------------------------------------------------------------------------------------------------- |
+| Email    | (create a dedicated test account e.g. review@sportsrostering.app or use a Gmail)                  |
+| Password | (set a simple password for reviewers)                                                             |
+| Notes    | Account is pre-added to a team as a player. To see admin features, also provide an admin account. |
 
 Pre-populate a test team in Firebase with a few events and availability responses so reviewers can see all features without setup.
 

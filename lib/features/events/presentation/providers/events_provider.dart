@@ -16,8 +16,7 @@ final teamEventsProvider =
 });
 
 /// Single event stream.
-final eventProvider =
-    StreamProvider.family<Event?, String>((ref, eventId) {
+final eventProvider = StreamProvider.family<Event?, String>((ref, eventId) {
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value(null);
   return ref.read(eventRepositoryProvider).watchEvent(eventId);
@@ -61,5 +60,7 @@ final eventAvailabilityProvider =
   final (eventId, teamId) = args;
   final uid = ref.watch(currentUserProvider)?.uid;
   if (uid == null) return Stream.value([]);
-  return ref.read(eventRepositoryProvider).watchEventAvailability(eventId, teamId);
+  return ref
+      .read(eventRepositoryProvider)
+      .watchEventAvailability(eventId, teamId);
 });

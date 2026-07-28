@@ -39,25 +39,27 @@ class TeamsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SafeArea(top: false, child: teamsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (teams) {
-          final hiddenAsync   = ref.watch(userHiddenTeamsProvider);
-          final archivedAsync = ref.watch(userArchivedTeamsProvider);
-          final hidden        = hiddenAsync.valueOrNull ?? [];
-          final archived      = archivedAsync.valueOrNull ?? [];
+      body: SafeArea(
+          top: false,
+          child: teamsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Error: $e')),
+            data: (teams) {
+              final hiddenAsync = ref.watch(userHiddenTeamsProvider);
+              final archivedAsync = ref.watch(userArchivedTeamsProvider);
+              final hidden = hiddenAsync.valueOrNull ?? [];
+              final archived = archivedAsync.valueOrNull ?? [];
 
-          if (teams.isEmpty && hidden.isEmpty && archived.isEmpty) {
-            return _EmptyState(onJoin: () => _showJoinDialog(context, ref));
-          }
-          return _TeamsListView(
-            teams:    teams,
-            hidden:   hidden,
-            archived: archived,
-          );
-        },
-      )),
+              if (teams.isEmpty && hidden.isEmpty && archived.isEmpty) {
+                return _EmptyState(onJoin: () => _showJoinDialog(context, ref));
+              }
+              return _TeamsListView(
+                teams: teams,
+                hidden: hidden,
+                archived: archived,
+              );
+            },
+          )),
       bottomNavigationBar: const BannerAdWidget(),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
@@ -105,7 +107,7 @@ class _TeamsListView extends StatefulWidget {
 }
 
 class _TeamsListViewState extends State<_TeamsListView> {
-  bool _showHidden   = false;
+  bool _showHidden = false;
   bool _showArchived = false;
 
   @override
@@ -114,10 +116,9 @@ class _TeamsListViewState extends State<_TeamsListView> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
       children: [
         ...widget.teams.map((t) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _TeamCard(team: t),
-        )),
-
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _TeamCard(team: t),
+            )),
         if (widget.hidden.isNotEmpty) ...[
           const SizedBox(height: 8),
           InkWell(
@@ -127,14 +128,13 @@ class _TeamsListViewState extends State<_TeamsListView> {
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Row(
                 children: [
-                  Icon(_showHidden
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                  Icon(_showHidden ? Icons.expand_less : Icons.expand_more,
                       color: Theme.of(context).colorScheme.outline),
                   const SizedBox(width: 8),
                   Text(
                     '${widget.hidden.length} hidden team${widget.hidden.length == 1 ? '' : 's'}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.outline),
                   ),
                 ],
               ),
@@ -142,11 +142,10 @@ class _TeamsListViewState extends State<_TeamsListView> {
           ),
           if (_showHidden)
             ...widget.hidden.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 8, top: 4),
-              child: Opacity(opacity: 0.6, child: _TeamCard(team: t)),
-            )),
+                  padding: const EdgeInsets.only(bottom: 8, top: 4),
+                  child: Opacity(opacity: 0.6, child: _TeamCard(team: t)),
+                )),
         ],
-
         if (widget.archived.isNotEmpty) ...[
           const SizedBox(height: 8),
           InkWell(
@@ -156,14 +155,13 @@ class _TeamsListViewState extends State<_TeamsListView> {
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Row(
                 children: [
-                  Icon(_showArchived
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                  Icon(_showArchived ? Icons.expand_less : Icons.expand_more,
                       color: Theme.of(context).colorScheme.outline),
                   const SizedBox(width: 8),
                   Text(
                     '${widget.archived.length} archived team${widget.archived.length == 1 ? '' : 's'}',
-                    style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.outline),
                   ),
                 ],
               ),
@@ -171,9 +169,9 @@ class _TeamsListViewState extends State<_TeamsListView> {
           ),
           if (_showArchived)
             ...widget.archived.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 8, top: 4),
-              child: Opacity(opacity: 0.5, child: _TeamCard(team: t)),
-            )),
+                  padding: const EdgeInsets.only(bottom: 8, top: 4),
+                  child: Opacity(opacity: 0.5, child: _TeamCard(team: t)),
+                )),
         ],
       ],
     );
@@ -200,9 +198,13 @@ class _TeamCard extends ConsumerWidget {
               child: ListTile(
                 contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 leading: CircleAvatar(
-                  radius: 20 * MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5),
+                  radius: 20 *
+                      MediaQuery.textScalerOf(context)
+                          .scale(1.0)
+                          .clamp(1.0, 1.5),
                   backgroundColor: team.logoUrl == null ? sportColor : null,
-                  backgroundImage: team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
+                  backgroundImage:
+                      team.logoUrl != null ? NetworkImage(team.logoUrl!) : null,
                   child: team.logoUrl == null
                       ? Padding(
                           padding: const EdgeInsets.all(6),
@@ -216,7 +218,7 @@ class _TeamCard extends ConsumerWidget {
                         )
                       : null,
                 ),
-                title:   Text(team.name),
+                title: Text(team.name),
                 subtitle: Text(
                   '${team.sport} · ${team.totalMembers} member${team.totalMembers == 1 ? '' : 's'}'
                   '${team.isAdmin(uid) ? ' · Admin' : ''}',
@@ -257,8 +259,8 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              icon:    const Icon(Icons.group_add),
-              label:   const Text('Join a Team'),
+              icon: const Icon(Icons.group_add),
+              label: const Text('Join a Team'),
               onPressed: onJoin,
             ),
           ],
@@ -279,13 +281,16 @@ class _JoinTeamDialog extends ConsumerStatefulWidget {
 }
 
 class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
-  final _ctrl      = TextEditingController();
-  bool  _loading   = false;
+  final _ctrl = TextEditingController();
+  bool _loading = false;
   String? _error;
-  bool _scanning   = false;
+  bool _scanning = false;
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   String? _parseTeamId(String raw) {
     if (raw.startsWith('sportsrostering://join/')) {
@@ -301,32 +306,41 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
     final id = (teamId ?? _ctrl.text.trim());
     if (id.isEmpty || _loading) return;
 
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     try {
       final team = await ref.read(teamRepositoryProvider).getTeam(id);
       if (!mounted) return;
 
       if (team == null) {
-        setState(() { _loading = false; _error = 'Team not found. Check the ID and try again.'; });
+        setState(() {
+          _loading = false;
+          _error = 'Team not found. Check the ID and try again.';
+        });
         return;
       }
 
-      final user    = ref.read(currentUserProvider)!;
+      final user = ref.read(currentUserProvider)!;
       final profile = await ref.read(userRepositoryProvider).getUser(user.uid);
       if (!mounted) return;
 
       if (team.isMember(user.uid)) {
-        setState(() { _loading = false; _error = 'You are already a member of this team.'; });
+        setState(() {
+          _loading = false;
+          _error = 'You are already a member of this team.';
+        });
         return;
       }
 
       await ref.read(teamRepositoryProvider).requestToJoin(
-        id,
-        user.uid,
-        profile?.name ?? user.email ?? '',
-        user.email ?? '',
-      );
+            id,
+            user.uid,
+            profile?.name ?? user.email ?? '',
+            user.email ?? '',
+          );
       unawaited(ref.read(analyticsServiceProvider).logTeamJoined(team.sport));
 
       if (mounted) {
@@ -336,7 +350,11 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
         );
       }
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _error = 'Something went wrong. Please try again.'; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = 'Something went wrong. Please try again.';
+        });
     }
   }
 
@@ -356,7 +374,9 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
               if (raw == null) return;
               final teamId = _parseTeamId(raw);
               if (teamId != null) {
-                setState(() { _scanning = false; });
+                setState(() {
+                  _scanning = false;
+                });
                 _submit(teamId: teamId);
               }
             },
@@ -364,7 +384,9 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: () => setState(() { _scanning = false; }),
+            onPressed: () => setState(() {
+              _scanning = false;
+            }),
             child: const Text('Cancel'),
           ),
         ],
@@ -377,36 +399,46 @@ class _JoinTeamDialogState extends ConsumerState<_JoinTeamDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Scan the team QR code or ask your coach for the Team ID.'),
+          const Text(
+              'Scan the team QR code or ask your coach for the Team ID.'),
           const SizedBox(height: 16),
           OutlinedButton.icon(
-            onPressed: () => setState(() { _scanning = true; }),
+            onPressed: () => setState(() {
+              _scanning = true;
+            }),
             icon: const Icon(Icons.qr_code_scanner, size: 18),
             label: const Text('Scan QR Code'),
           ),
           const SizedBox(height: 16),
           TextField(
-            controller:    _ctrl,
-            autocorrect:   false,
+            controller: _ctrl,
+            autocorrect: false,
             textInputAction: TextInputAction.done,
-            onSubmitted:   (_) => _submit(),
-            decoration:    const InputDecoration(
+            onSubmitted: (_) => _submit(),
+            decoration: const InputDecoration(
               labelText: 'Team ID',
               border: OutlineInputBorder(),
             ),
           ),
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 13)),
+            Text(_error!,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.error, fontSize: 13)),
           ],
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel')),
         FilledButton(
           onPressed: _loading ? null : () => _submit(),
           child: _loading
-              ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Send Request'),
         ),
       ],

@@ -71,7 +71,7 @@ class SparesRepository {
   Future<void> approveSpareRequest(String teamId, String userId) async {
     final batch = _db.batch();
     batch.set(_spares(teamId).doc(userId), {
-      'teamId':   teamId,
+      'teamId': teamId,
       'joinedAt': Timestamp.fromDate(DateTime.now()),
     });
     batch.delete(_requests(teamId).doc(userId));

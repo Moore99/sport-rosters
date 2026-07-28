@@ -39,8 +39,8 @@ class OnboardingScreen extends StatelessWidget {
                   Text(
                     'Schedule games, build lineups, and keep your team in sync. '
                     'Start by creating a new team or joining one.',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),

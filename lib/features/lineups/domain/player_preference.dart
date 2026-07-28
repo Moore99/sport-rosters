@@ -10,10 +10,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 ///
 /// Empty list = no preference set (treated as "Any" by the lineup generator).
 class PlayerPreference {
-  final String       userId;
-  final String       teamId;
+  final String userId;
+  final String teamId;
   final List<String> preferredPositions;
-  final DateTime     updatedAt;
+  final DateTime updatedAt;
 
   const PlayerPreference({
     required this.userId,
@@ -25,17 +25,18 @@ class PlayerPreference {
   factory PlayerPreference.fromFirestore(DocumentSnapshot doc, String teamId) {
     final d = doc.data() as Map<String, dynamic>;
     return PlayerPreference(
-      userId:             doc.id,
-      teamId:             teamId,
-      preferredPositions: List<String>.from(d['preferredPositions'] as List? ?? []),
-      updatedAt:          (d['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      userId: doc.id,
+      teamId: teamId,
+      preferredPositions:
+          List<String>.from(d['preferredPositions'] as List? ?? []),
+      updatedAt: (d['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-    'preferredPositions': preferredPositions,
-    'updatedAt':          Timestamp.fromDate(updatedAt),
-  };
+        'preferredPositions': preferredPositions,
+        'updatedAt': Timestamp.fromDate(updatedAt),
+      };
 
   bool get hasPreferences => preferredPositions.isNotEmpty;
 }

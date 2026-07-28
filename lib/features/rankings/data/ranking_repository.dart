@@ -11,13 +11,10 @@ class RankingRepository {
       _db.collection('teams').doc(teamId).collection('rankings');
 
   /// All rankings for a team — admin use only.
-  Stream<List<Ranking>> watchTeamRankings(String teamId) =>
-      _rankings(teamId)
-          .orderBy('score', descending: true)
-          .snapshots()
-          .map((s) => s.docs
-              .map((d) => Ranking.fromFirestore(d, teamId))
-              .toList());
+  Stream<List<Ranking>> watchTeamRankings(String teamId) => _rankings(teamId)
+      .orderBy('score', descending: true)
+      .snapshots()
+      .map((s) => s.docs.map((d) => Ranking.fromFirestore(d, teamId)).toList());
 
   /// One player's ranking — admin use only.
   Future<Ranking?> getRanking(String teamId, String userId) async {

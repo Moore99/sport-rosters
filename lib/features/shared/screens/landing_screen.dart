@@ -7,8 +7,7 @@ import '../../../core/router/app_router.dart';
 // Store URLs — update with actual listing IDs once confirmed.
 const _playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.sportsrostering.app';
-const _appStoreUrl =
-    'https://apps.apple.com/app/id6761060200';
+const _appStoreUrl = 'https://apps.apple.com/app/id6761060200';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});

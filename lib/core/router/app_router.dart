@@ -191,7 +191,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // After login/register, honour ?from= param (e.g. redirected from join page).
-      if (isLoggedIn && (currentPath == AppRoutes.login || currentPath == AppRoutes.register)) {
+      if (isLoggedIn &&
+          (currentPath == AppRoutes.login ||
+              currentPath == AppRoutes.register)) {
         return state.uri.queryParameters['from'] ?? AppRoutes.teams;
       }
 
@@ -199,8 +201,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final teamsEmpty = userProfile is AsyncData &&
           (userProfile as AsyncData).value?.teams.isEmpty == true;
       final isEmailPending = (authState.valueOrNull?.providerData
-              .any((p) => p.providerId == 'password') ??
-          false) &&
+                  .any((p) => p.providerId == 'password') ??
+              false) &&
           authState.valueOrNull?.emailVerified == false;
       if (isLoggedIn &&
           !bioLocked &&
@@ -216,8 +218,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(
-          path: AppRoutes.landing,
-          builder: (_, __) => const LandingScreen()),
+          path: AppRoutes.landing, builder: (_, __) => const LandingScreen()),
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
       GoRoute(
           path: AppRoutes.biometricLock,
@@ -365,12 +366,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: AppRoutes.sportsAdmin,
           builder: (_, __) => const SportsAdminScreen()),
       GoRoute(
-          path: AppRoutes.appStats,
-          builder: (_, __) => const AppStatsScreen()),
+          path: AppRoutes.appStats, builder: (_, __) => const AppStatsScreen()),
       GoRoute(
           path: AppRoutes.joinViaLink,
-          builder: (_, state) => JoinViaLinkScreen(
-              teamId: state.pathParameters['teamId']!)),
+          builder: (_, state) =>
+              JoinViaLinkScreen(teamId: state.pathParameters['teamId']!)),
       GoRoute(
           path: AppRoutes.onboarding,
           builder: (_, __) => const OnboardingScreen()),

@@ -30,71 +30,62 @@ class AccessibilityScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-
             _buildSection(
               context,
               'Our Commitment',
               'Kernkraft Consulting Inc. is committed to making Sport Rosters accessible to everyone, '
-              'including people with disabilities. We aim to meet or exceed platform accessibility '
-              'guidelines on both iOS and Android.',
+                  'including people with disabilities. We aim to meet or exceed platform accessibility '
+                  'guidelines on both iOS and Android.',
             ),
-
             _buildSection(
               context,
               'Screen Readers',
               'Sport Rosters is compatible with VoiceOver (iOS) and TalkBack (Android). '
-              'Interactive elements include semantic labels so screen readers can describe '
-              'them accurately.',
+                  'Interactive elements include semantic labels so screen readers can describe '
+                  'them accurately.',
             ),
-
             _buildSection(
               context,
               'Dynamic Text Sizing',
               'The app respects your device\'s system font size setting. Increasing the text '
-              'size in Accessibility settings will scale text throughout the app. Avatars and '
-              'touch targets scale proportionally to remain usable at larger text sizes.',
+                  'size in Accessibility settings will scale text throughout the app. Avatars and '
+                  'touch targets scale proportionally to remain usable at larger text sizes.',
             ),
-
             _buildSection(
               context,
               'Dark Mode',
               'Sport Rosters follows your device\'s system appearance setting. Switching to '
-              'Dark Mode reduces eye strain and improves readability for many users.',
+                  'Dark Mode reduces eye strain and improves readability for many users.',
             ),
-
             _buildSection(
               context,
               'Colour Contrast',
               'UI elements are designed to meet WCAG AA contrast ratios. Meaning is never '
-              'conveyed by colour alone — icons and labels are always present.',
+                  'conveyed by colour alone — icons and labels are always present.',
             ),
-
             _buildSection(
               context,
               'Biometric Authentication',
               'Face ID, Touch ID, and fingerprint unlock are supported as an alternative to '
-              'password entry, which can be easier for users with motor or cognitive '
-              'accessibility needs.',
+                  'password entry, which can be easier for users with motor or cognitive '
+                  'accessibility needs.',
             ),
-
             _buildSection(
               context,
               'Known Limitations',
               'We are continuously improving accessibility. Current known limitations:\n\n'
-              '• Drag-and-drop in the lineup builder does not have a full switch-access '
-              'alternative. Tap-based reordering is planned.\n\n'
-              '• Complex data grids (boat seating, availability) may have reduced screen '
-              'reader context on older devices.',
+                  '• Drag-and-drop in the lineup builder does not have a full switch-access '
+                  'alternative. Tap-based reordering is planned.\n\n'
+                  '• Complex data grids (boat seating, availability) may have reduced screen '
+                  'reader context on older devices.',
             ),
-
             _buildSection(
               context,
               'Feedback',
               'If you encounter an accessibility barrier or have a suggestion, please contact '
-              'us at admin@nuclear-motd.com. We take all accessibility feedback seriously '
-              'and aim to respond within 5 business days.',
+                  'us at admin@nuclear-motd.com. We take all accessibility feedback seriously '
+                  'and aim to respond within 5 business days.',
             ),
-
             const SizedBox(height: 16),
           ],
         ),

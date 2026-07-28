@@ -11,7 +11,7 @@ import '../../domain/event.dart';
 final _attendanceProvider = FutureProvider.autoDispose
     .family<_AttendanceData, ({String teamId, String userId})>(
   (ref, args) async {
-    final repo   = ref.read(eventRepositoryProvider);
+    final repo = ref.read(eventRepositoryProvider);
     final events = await repo.fetchPastTeamEvents(args.teamId);
     final avails = await repo.fetchPlayerAvailabilityForEvents(
         events.map((e) => e.eventId).toList(), args.userId);
@@ -41,7 +41,8 @@ class PlayerAttendanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nameAsync = ref.watch(_playerNameProvider(userId));
-    final dataAsync = ref.watch(_attendanceProvider((teamId: teamId, userId: userId)));
+    final dataAsync =
+        ref.watch(_attendanceProvider((teamId: teamId, userId: userId)));
 
     final name = nameAsync.valueOrNull ?? '...';
 
@@ -49,8 +50,8 @@ class PlayerAttendanceScreen extends ConsumerWidget {
       appBar: AppBar(title: Text('$name — Attendance')),
       body: dataAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error:   (e, _) => Center(child: Text('Error: $e')),
-        data:    (data) => _AttendanceBody(data: data),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (data) => _AttendanceBody(data: data),
       ),
     );
   }
@@ -62,17 +63,23 @@ class _AttendanceBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final events  = data.events;
+    final events = data.events;
     final byEvent = data.byEvent;
 
     if (events.isEmpty) {
       return const Center(child: Text('No past events for this team.'));
     }
 
-    final yes   = events.where((e) => byEvent[e.eventId] == AvailabilityResponse.yes).length;
-    final no    = events.where((e) => byEvent[e.eventId] == AvailabilityResponse.no).length;
-    final maybe = events.where((e) => byEvent[e.eventId] == AvailabilityResponse.maybe).length;
-    final none  = events.length - yes - no - maybe;
+    final yes = events
+        .where((e) => byEvent[e.eventId] == AvailabilityResponse.yes)
+        .length;
+    final no = events
+        .where((e) => byEvent[e.eventId] == AvailabilityResponse.no)
+        .length;
+    final maybe = events
+        .where((e) => byEvent[e.eventId] == AvailabilityResponse.maybe)
+        .length;
+    final none = events.length - yes - no - maybe;
 
     // Streak: consecutive yes responses from most-recent event
     int streak = 0;
@@ -101,16 +108,19 @@ class _AttendanceBody extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _StatChip(label: 'Yes',     value: yes,   color: Colors.green),
-                    _StatChip(label: 'No',      value: no,    color: Colors.red),
-                    _StatChip(label: 'Maybe',   value: maybe, color: Colors.orange),
-                    _StatChip(label: 'No reply',value: none,  color: Colors.grey),
+                    _StatChip(label: 'Yes', value: yes, color: Colors.green),
+                    _StatChip(label: 'No', value: no, color: Colors.red),
+                    _StatChip(
+                        label: 'Maybe', value: maybe, color: Colors.orange),
+                    _StatChip(
+                        label: 'No reply', value: none, color: Colors.grey),
                   ],
                 ),
                 const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: events.isEmpty ? 0 : yes / events.length,
-                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
                   color: Colors.green,
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(3),
@@ -132,18 +142,18 @@ class _AttendanceBody extends StatelessWidget {
                       ...recentForm.map((e) {
                         final r = byEvent[e.eventId];
                         final color = switch (r) {
-                          AvailabilityResponse.yes   => Colors.green,
-                          AvailabilityResponse.no    => Colors.red,
+                          AvailabilityResponse.yes => Colors.green,
+                          AvailabilityResponse.no => Colors.red,
                           AvailabilityResponse.maybe => Colors.orange,
-                          null                       => Colors.grey,
+                          null => Colors.grey,
                         };
                         return Padding(
                           padding: const EdgeInsets.only(left: 6),
                           child: Tooltip(
                             message:
                                 '${DateFormat('MMM d').format(e.date)}: ${r?.label ?? 'No response'}',
-                            child: CircleAvatar(
-                                radius: 8, backgroundColor: color),
+                            child:
+                                CircleAvatar(radius: 8, backgroundColor: color),
                           ),
                         );
                       }),
@@ -158,13 +168,11 @@ class _AttendanceBody extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '$streak-event yes streak',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Colors.deepOrange,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.deepOrange,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                       ],
                     ),
@@ -184,7 +192,8 @@ class _AttendanceBody extends StatelessWidget {
           return ListTile(
             contentPadding: EdgeInsets.zero,
             leading: CircleAvatar(
-              backgroundColor: _responseColor(response)?.withValues(alpha: 0.15),
+              backgroundColor:
+                  _responseColor(response)?.withValues(alpha: 0.15),
               child: Text(
                 response?.emoji ?? '—',
                 style: const TextStyle(fontSize: 16),
@@ -208,18 +217,19 @@ class _AttendanceBody extends StatelessWidget {
   }
 
   Color? _responseColor(AvailabilityResponse? r) => switch (r) {
-    AvailabilityResponse.yes   => Colors.green,
-    AvailabilityResponse.no    => Colors.red,
-    AvailabilityResponse.maybe => Colors.orange,
-    null                       => null,
-  };
+        AvailabilityResponse.yes => Colors.green,
+        AvailabilityResponse.no => Colors.red,
+        AvailabilityResponse.maybe => Colors.orange,
+        null => null,
+      };
 }
 
 class _StatChip extends StatelessWidget {
   final String label;
-  final int    value;
-  final Color  color;
-  const _StatChip({required this.label, required this.value, required this.color});
+  final int value;
+  final Color color;
+  const _StatChip(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -227,13 +237,10 @@ class _StatChip extends StatelessWidget {
       children: [
         Text('$value',
             style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: color)),
+                fontSize: 22, fontWeight: FontWeight.bold, color: color)),
         Text(label,
             style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.outline)),
+                fontSize: 12, color: Theme.of(context).colorScheme.outline)),
       ],
     );
   }

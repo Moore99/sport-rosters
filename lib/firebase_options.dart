@@ -29,7 +29,8 @@ class DefaultFirebaseOptions {
       case TargetPlatform.windows:
         return windows;
       default:
-        throw UnsupportedError('DefaultFirebaseOptions not configured for this platform.');
+        throw UnsupportedError(
+            'DefaultFirebaseOptions not configured for this platform.');
     }
   }
 
@@ -74,5 +75,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'sports-rostering.firebasestorage.app',
     measurementId: 'G-BZH57BJE33',
   );
-
 }

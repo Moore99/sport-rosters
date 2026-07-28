@@ -24,7 +24,7 @@ enum IapState { idle, loading, purchasing, success, error }
 
 class IapStatus {
   final IapState state;
-  final String?  message;
+  final String? message;
   const IapStatus(this.state, [this.message]);
 }
 
@@ -52,7 +52,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
         final isRestore = purchase.status == PurchaseStatus.restored;
-        final validated = await _validateWithServer(purchase, isRestore: isRestore);
+        final validated =
+            await _validateWithServer(purchase, isRestore: isRestore);
         if (validated) {
           state = const IapStatus(IapState.success);
           if (!isRestore) {
@@ -65,7 +66,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
         }
       } else if (purchase.status == PurchaseStatus.error) {
         // Do NOT grant adFree on error — only on confirmed purchase/restore
-        state = IapStatus(IapState.error, purchase.error?.message ?? 'Purchase failed.');
+        state = IapStatus(
+            IapState.error, purchase.error?.message ?? 'Purchase failed.');
       }
 
       await InAppPurchase.instance.completePurchase(purchase);
@@ -80,15 +82,15 @@ class IapNotifier extends StateNotifier<IapStatus> {
     required bool isRestore,
   }) async {
     try {
-      final callable = FirebaseFunctions
-          .instanceFor(region: 'northamerica-northeast1')
-          .httpsCallable('validateIap');
+      final callable =
+          FirebaseFunctions.instanceFor(region: 'northamerica-northeast1')
+              .httpsCallable('validateIap');
 
       await callable.call(<String, dynamic>{
         'platform': (!kIsWeb && Platform.isIOS) ? 'ios' : 'android',
         'receiptData': purchase.verificationData.serverVerificationData,
-        'productId':   purchase.productID,
-        'isRestore':   isRestore,
+        'productId': purchase.productID,
+        'isRestore': isRestore,
       });
 
       return true;
@@ -118,7 +120,8 @@ class IapNotifier extends StateNotifier<IapStatus> {
         .queryProductDetails({AppConfig.removeAdsSku});
 
     if (response.notFoundIDs.isNotEmpty || response.productDetails.isEmpty) {
-      state = const IapStatus(IapState.error, 'Product not found. Try again later.');
+      state = const IapStatus(
+          IapState.error, 'Product not found. Try again later.');
       return;
     }
 

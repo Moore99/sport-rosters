@@ -12,7 +12,7 @@ class BiometricService {
   /// Whether the device has biometric hardware and enrolled credentials.
   Future<bool> isAvailable() async {
     try {
-      final canCheck   = await _auth.canCheckBiometrics;
+      final canCheck = await _auth.canCheckBiometrics;
       final isSupported = await _auth.isDeviceSupported();
       return canCheck && isSupported;
     } catch (_) {
@@ -37,7 +37,7 @@ class BiometricService {
       return await _auth.authenticate(
         localizedReason: 'Authenticate to access Sport Rosters',
         options: const AuthenticationOptions(
-          stickyAuth:    true,
+          stickyAuth: true,
           biometricOnly: false, // allow PIN/pattern fallback
         ),
       );
@@ -47,7 +47,8 @@ class BiometricService {
   }
 }
 
-final biometricServiceProvider = Provider<BiometricService>((_) => BiometricService());
+final biometricServiceProvider =
+    Provider<BiometricService>((_) => BiometricService());
 
 // ── Biometric lock state ───────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ class BiometricLockNotifier extends StateNotifier<bool> {
   }
 
   void unlock() => state = false;
-  void lock()   => state = true;
+  void lock() => state = true;
 }
 
 final biometricLockProvider =

@@ -20,86 +20,95 @@ class EditEventArgs {
 class EditEventScreen extends ConsumerStatefulWidget {
   final Event event;
   final bool editSeries;
-  const EditEventScreen({super.key, required this.event, this.editSeries = false});
+  const EditEventScreen(
+      {super.key, required this.event, this.editSeries = false});
 
   @override
   ConsumerState<EditEventScreen> createState() => _EditEventScreenState();
 }
 
 class _EditEventScreenState extends ConsumerState<EditEventScreen> {
-  final _formKey      = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _locationCtrl = TextEditingController();
-  final _notesCtrl    = TextEditingController();
+  final _notesCtrl = TextEditingController();
 
   late EventType _type;
-  late DateTime  _date;
+  late DateTime _date;
   late TimeOfDay _time;
-  late int       _minPlayers;
-  late int       _maxPlayers;
-  late bool      _allowSignups;
-  DateTime?      _rsvpDeadline;
-  bool           _loading = false;
+  late int _minPlayers;
+  late int _maxPlayers;
+  late bool _allowSignups;
+  DateTime? _rsvpDeadline;
+  bool _loading = false;
 
   // Sub-teams
   late int _numSubTeams;
 
   // Dragon Boating
-  late int  _numBoats;
-  late int  _seatsPerBoat;
+  late int _numBoats;
+  late int _seatsPerBoat;
   late bool _hasDrummer;
 
   @override
   void initState() {
     super.initState();
     final e = widget.event;
-    _type         = e.type;
-    _date         = e.date;
-    _time         = TimeOfDay.fromDateTime(e.date);
-    _minPlayers   = e.minPlayers;
-    _maxPlayers   = e.maxPlayers;
+    _type = e.type;
+    _date = e.date;
+    _time = TimeOfDay.fromDateTime(e.date);
+    _minPlayers = e.minPlayers;
+    _maxPlayers = e.maxPlayers;
     _allowSignups = e.allowSignups;
     _rsvpDeadline = e.rsvpDeadline;
     _locationCtrl.text = e.location;
-    _notesCtrl.text    = e.notes ?? '';
+    _notesCtrl.text = e.notes ?? '';
 
-    _numSubTeams  = e.numSubTeams;
+    _numSubTeams = e.numSubTeams;
 
-    final cfg     = e.boatConfig ?? BoatConfig.defaults;
-    _numBoats     = cfg.numBoats;
+    final cfg = e.boatConfig ?? BoatConfig.defaults;
+    _numBoats = cfg.numBoats;
     _seatsPerBoat = cfg.seatsPerBoat;
-    _hasDrummer   = cfg.hasDrummer;
+    _hasDrummer = cfg.hasDrummer;
   }
 
   @override
-  void dispose() { _locationCtrl.dispose(); _notesCtrl.dispose(); super.dispose(); }
+  void dispose() {
+    _locationCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
 
   DateTime get _eventDateTime => DateTime(
-    _date.year, _date.month, _date.day, _time.hour, _time.minute,
-  );
+        _date.year,
+        _date.month,
+        _date.day,
+        _time.hour,
+        _time.minute,
+      );
 
   Widget _pickerMediaQuery(BuildContext context, Widget? child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0)),
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: const TextScaler.linear(1.0)),
         child: child!,
       );
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
-      context:          context,
-      initialDate:      _date,
-      firstDate:        DateTime(2020),
-      lastDate:         DateTime.now().add(const Duration(days: 365 * 2)),
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       initialEntryMode: DatePickerEntryMode.input,
-      builder:          _pickerMediaQuery,
+      builder: _pickerMediaQuery,
     );
     if (picked != null) setState(() => _date = picked);
   }
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
-      context:     context,
+      context: context,
       initialTime: _time,
-      builder:     _pickerMediaQuery,
+      builder: _pickerMediaQuery,
     );
     if (picked != null) setState(() => _time = picked);
   }
@@ -114,28 +123,29 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
-    final sport = ref.read(teamProvider(widget.event.teamId)).valueOrNull?.sport ?? '';
+    final sport =
+        ref.read(teamProvider(widget.event.teamId)).valueOrNull?.sport ?? '';
     final updated = Event(
-      eventId:      widget.event.eventId,
-      teamId:       widget.event.teamId,
-      type:         _type,
-      date:         _eventDateTime,
-      location:     _locationCtrl.text.trim(),
-      minPlayers:   _minPlayers,
-      maxPlayers:   _maxPlayers,
+      eventId: widget.event.eventId,
+      teamId: widget.event.teamId,
+      type: _type,
+      date: _eventDateTime,
+      location: _locationCtrl.text.trim(),
+      minPlayers: _minPlayers,
+      maxPlayers: _maxPlayers,
       allowSignups: _allowSignups,
       rsvpDeadline: _rsvpDeadline,
-      boatConfig:   sport == 'Dragon Boating'
+      boatConfig: sport == 'Dragon Boating'
           ? BoatConfig(
-              numBoats:     _numBoats,
+              numBoats: _numBoats,
               seatsPerBoat: _seatsPerBoat,
-              hasDrummer:   _hasDrummer)
+              hasDrummer: _hasDrummer)
           : null,
-      numSubTeams:       sport == 'Dragon Boating' ? 1 : _numSubTeams,
-      notes:             _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      numSubTeams: sport == 'Dragon Boating' ? 1 : _numSubTeams,
+      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
       recurrenceGroupId: widget.event.recurrenceGroupId,
-      gameResult:        widget.event.gameResult,
-      createdAt:         widget.event.createdAt,
+      gameResult: widget.event.gameResult,
+      createdAt: widget.event.createdAt,
     );
 
     try {
@@ -146,16 +156,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
         // Shift all event dates by the same delta when the date/time changed.
         final delta = _eventDateTime.difference(widget.event.date);
         if (delta != Duration.zero) {
-          await repo.shiftEventSeriesDates(
-              updated.recurrenceGroupId!, delta);
+          await repo.shiftEventSeriesDates(updated.recurrenceGroupId!, delta);
         }
 
         // Propagate non-date fields to all siblings.
         final seriesFields = <String, dynamic>{
-          'type':         updated.type.name,
-          'location':     updated.location,
-          'minPlayers':   updated.minPlayers,
-          'maxPlayers':   updated.maxPlayers,
+          'type': updated.type.name,
+          'location': updated.location,
+          'minPlayers': updated.minPlayers,
+          'maxPlayers': updated.maxPlayers,
           'allowSignups': updated.allowSignups,
           if (updated.rsvpDeadline != null)
             'rsvpDeadline': Timestamp.fromDate(updated.rsvpDeadline!)
@@ -165,10 +174,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
             'boatConfig': updated.boatConfig!.toMap()
           else
             'boatConfig': FieldValue.delete(),
-          if (updated.numSubTeams != 1) 'numSubTeams': updated.numSubTeams
-          else 'numSubTeams': FieldValue.delete(),
-          if (updated.notes?.isNotEmpty == true) 'notes': updated.notes
-          else 'notes': FieldValue.delete(),
+          if (updated.numSubTeams != 1)
+            'numSubTeams': updated.numSubTeams
+          else
+            'numSubTeams': FieldValue.delete(),
+          if (updated.notes?.isNotEmpty == true)
+            'notes': updated.notes
+          else
+            'notes': FieldValue.delete(),
         };
         await repo.updateEventSeriesFields(
             updated.recurrenceGroupId!, seriesFields);
@@ -186,13 +199,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFmt   = DateFormat('EEE, MMM d, yyyy');
-    final timeFmt   = DateFormat('h:mm a');
+    final dateFmt = DateFormat('EEE, MMM d, yyyy');
+    final timeFmt = DateFormat('h:mm a');
     final teamAsync = ref.watch(teamProvider(widget.event.teamId));
-    final sport     = teamAsync.valueOrNull?.sport ?? '';
+    final sport = teamAsync.valueOrNull?.sport ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.editSeries ? 'Edit All in Series' : 'Edit Event')),
+      appBar: AppBar(
+          title: Text(widget.editSeries ? 'Edit All in Series' : 'Edit Event')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -204,14 +218,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-
                     // ── Event type ────────────────────────────────────────
                     Text('Event Type',
                         style: Theme.of(context).textTheme.titleSmall),
                     const SizedBox(height: 8),
                     SegmentedButton<EventType>(
-                      segments: EventType.values.map((t) =>
-                        ButtonSegment(value: t, label: Text(t.label))).toList(),
+                      segments: EventType.values
+                          .map((t) =>
+                              ButtonSegment(value: t, label: Text(t.label)))
+                          .toList(),
                       selected: {_type},
                       showSelectedIcon: false,
                       onSelectionChanged: (s) =>
@@ -227,14 +242,14 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            icon:  const Icon(Icons.calendar_today),
+                            icon: const Icon(Icons.calendar_today),
                             label: Text(dateFmt.format(_date)),
                             onPressed: _pickDate,
                           ),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
-                          icon:  const Icon(Icons.access_time),
+                          icon: const Icon(Icons.access_time),
                           label: Text(timeFmt.format(
                               DateTime(0, 0, 0, _time.hour, _time.minute))),
                           onPressed: _pickTime,
@@ -256,9 +271,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .outline,
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
                                   ),
                             ),
                           ),
@@ -295,18 +309,22 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(child: _CounterField(
-                          label: 'Min', value: _minPlayers,
-                          min: 1, max: _maxPlayers,
-                          onChanged: (v) =>
-                              setState(() => _minPlayers = v),
+                        Expanded(
+                            child: _CounterField(
+                          label: 'Min',
+                          value: _minPlayers,
+                          min: 1,
+                          max: _maxPlayers,
+                          onChanged: (v) => setState(() => _minPlayers = v),
                         )),
                         const SizedBox(width: 16),
-                        Expanded(child: _CounterField(
-                          label: 'Max', value: _maxPlayers,
-                          min: _minPlayers, max: 200,
-                          onChanged: (v) =>
-                              setState(() => _maxPlayers = v),
+                        Expanded(
+                            child: _CounterField(
+                          label: 'Max',
+                          value: _maxPlayers,
+                          min: _minPlayers,
+                          max: 200,
+                          onChanged: (v) => setState(() => _maxPlayers = v),
                         )),
                       ],
                     ),
@@ -342,18 +360,18 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                             : null,
                         onTap: () async {
                           final d = await showDatePicker(
-                            context:          context,
-                            initialDate:      _date,
-                            firstDate:        DateTime.now(),
-                            lastDate:         _date,
+                            context: context,
+                            initialDate: _date,
+                            firstDate: DateTime.now(),
+                            lastDate: _date,
                             initialEntryMode: DatePickerEntryMode.input,
-                            builder:          _pickerMediaQuery,
+                            builder: _pickerMediaQuery,
                           );
                           if (d == null || !context.mounted) return;
                           final t = await showTimePicker(
-                            context:     context,
+                            context: context,
                             initialTime: TimeOfDay.fromDateTime(_date),
-                            builder:     _pickerMediaQuery,
+                            builder: _pickerMediaQuery,
                           );
                           if (t == null) return;
                           setState(() => _rsvpDeadline = DateTime(
@@ -370,17 +388,23 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Expanded(child: _CounterField(
-                            label: 'Boats', value: _numBoats, min: 1, max: 4,
-                            onChanged: (v) =>
-                                setState(() => _numBoats = v),
+                          Expanded(
+                              child: _CounterField(
+                            label: 'Boats',
+                            value: _numBoats,
+                            min: 1,
+                            max: 4,
+                            onChanged: (v) => setState(() => _numBoats = v),
                           )),
                           const SizedBox(width: 16),
-                          Expanded(child: _CounterField(
-                            label: 'Seats/boat', value: _seatsPerBoat,
-                            min: 8, max: 22, step: 2,
-                            onChanged: (v) =>
-                                setState(() => _seatsPerBoat = v),
+                          Expanded(
+                              child: _CounterField(
+                            label: 'Seats/boat',
+                            value: _seatsPerBoat,
+                            min: 8,
+                            max: 22,
+                            step: 2,
+                            onChanged: (v) => setState(() => _seatsPerBoat = v),
                           )),
                         ],
                       ),
@@ -390,15 +414,15 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                         subtitle:
                             const Text('Each boat has a drummer at the front.'),
                         value: _hasDrummer,
-                        onChanged: (v) =>
-                            setState(() => _hasDrummer = v),
+                        onChanged: (v) => setState(() => _hasDrummer = v),
                       ),
                       const SizedBox(height: 16),
                     ],
 
                     // ── Sub-teams (non-Dragon Boating sports) ────────────
                     if (sport != 'Dragon Boating') ...[
-                      Text('Sub-teams', style: Theme.of(context).textTheme.titleSmall),
+                      Text('Sub-teams',
+                          style: Theme.of(context).textTheme.titleSmall),
                       const SizedBox(height: 4),
                       Text(
                         'Split available players into balanced teams '
@@ -407,7 +431,10 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       ),
                       const SizedBox(height: 8),
                       _CounterField(
-                        label: 'Teams', value: _numSubTeams, min: 1, max: 6,
+                        label: 'Teams',
+                        value: _numSubTeams,
+                        min: 1,
+                        max: 6,
                         onChanged: (v) => setState(() => _numSubTeams = v),
                       ),
                       const SizedBox(height: 16),
@@ -417,15 +444,16 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
 
                     // ── Notes / description ───────────────────────────────
                     TextFormField(
-                      controller:  _notesCtrl,
-                      maxLines:    4,
-                      minLines:    2,
+                      controller: _notesCtrl,
+                      maxLines: 4,
+                      minLines: 2,
                       textInputAction: TextInputAction.newline,
-                      decoration:  const InputDecoration(
-                        labelText:   'Notes (optional)',
-                        hintText:    'Any details for players — location tips, what to bring, etc.',
-                        prefixIcon:  Icon(Icons.notes_outlined),
-                        border:      OutlineInputBorder(),
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (optional)',
+                        hintText:
+                            'Any details for players — location tips, what to bring, etc.',
+                        prefixIcon: Icon(Icons.notes_outlined),
+                        border: OutlineInputBorder(),
                         alignLabelWithHint: true,
                       ),
                     ),
@@ -435,7 +463,8 @@ class _EditEventScreenState extends ConsumerState<EditEventScreen> {
                       onPressed: _loading ? null : _submit,
                       child: _loading
                           ? const SizedBox(
-                              height: 20, width: 20,
+                              height: 20,
+                              width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2))
                           : const Text('Save Changes'),
                     ),
@@ -458,8 +487,10 @@ class _CounterField extends StatelessWidget {
   final int step;
   final ValueChanged<int> onChanged;
   const _CounterField({
-    required this.label, required this.value,
-    required this.min,   required this.max,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
     this.step = 1,
     required this.onChanged,
   });
@@ -470,7 +501,7 @@ class _CounterField extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon:    const Icon(Icons.remove_circle_outline),
+          icon: const Icon(Icons.remove_circle_outline),
           tooltip: 'Decrease $label',
           onPressed: value > min ? () => onChanged(value - step) : null,
         ),
@@ -481,7 +512,7 @@ class _CounterField extends StatelessWidget {
           ],
         ),
         IconButton(
-          icon:    const Icon(Icons.add_circle_outline),
+          icon: const Icon(Icons.add_circle_outline),
           tooltip: 'Increase $label',
           onPressed: value < max ? () => onChanged(value + step) : null,
         ),

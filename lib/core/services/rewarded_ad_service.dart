@@ -88,7 +88,8 @@ class RewardedAdService {
       // On Windows there is no browser "page" to return to after checkout —
       // fall back to the web app's own URL as a safe landing page. The
       // Stripe webhook (not this redirect) is what actually sets adFree.
-      final redirectUrl = kIsWeb ? Uri.base.toString() : 'https://sports-rostering.web.app';
+      final redirectUrl =
+          kIsWeb ? Uri.base.toString() : 'https://sports-rostering.web.app';
       final result = await AppFunctions.call('createStripeCheckout', data: {
         'userId': uid,
         'returnUrl': redirectUrl,
