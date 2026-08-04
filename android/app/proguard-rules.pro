@@ -23,3 +23,11 @@
 # Image picker / cropper
 -keep class com.yalantis.ucrop.** { *; }
 -dontwarn com.yalantis.ucrop.**
+
+# WorkManager / Room (WorkDatabase is instantiated via reflection at runtime —
+# R8 was stripping it, causing a startup crash: "Failed to create an instance
+# of androidx.work.impl.WorkDatabase")
+-keep class androidx.work.** { *; }
+-dontwarn androidx.work.**
+-keep class androidx.room.** { *; }
+-dontwarn androidx.room.**
