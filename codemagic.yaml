@@ -36,8 +36,15 @@ workflows:
             --export-options-plist=/Users/builder/export_options.plist
       - name: Upload dSYMs to Crashlytics
         script: |
+          UPLOAD_SYMBOLS=$(find ios/Pods/FirebaseCrashlytics/upload-symbols \
+            ~/Library/Developer/Xcode/DerivedData/*/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols \
+            -type f 2>/dev/null | head -1)
+          if [ -z "$UPLOAD_SYMBOLS" ]; then
+            echo "upload-symbols not found under Pods/ or SPM DerivedData checkouts -- Crashlytics dependency resolution may have changed again, update this path."
+            exit 1
+          fi
           find build/ios/archive/Runner.xcarchive/dSYMs -name "*.dSYM" | \
-          xargs -I {} ios/Pods/FirebaseCrashlytics/upload-symbols \
+          xargs -I {} "$UPLOAD_SYMBOLS" \
             -gsp ios/Runner/GoogleService-Info.plist -p ios {}
     artifacts:
       - build/ios/ipa/*.ipa
