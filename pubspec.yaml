@@ -1,7 +1,7 @@
 name: sports_rostering
 description: Multi-sport team roster, scheduling, and drop-in session management
 publish_to: "none"
-version: 1.3.2+54
+version: 1.3.3+55
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
@@ -144,7 +144,7 @@ msix_config:
   publisher_display_name: Kernkraft Consulting Inc.
   identity_name: KernkraftConsultingInc.SportsRostering
   publisher: CN=BCB6FFA0-B60B-41E1-BFD5-DA72A34681B1
-  msix_version: 1.3.2.0
+  msix_version: 1.3.3.0
   logo_path: assets/icons/app_icon.png
   start_menu_icon_path: assets/icons/app_icon.png
   tile_icon_path: assets/icons/app_icon.png
