@@ -36,8 +36,24 @@ workflows:
             --export-options-plist=/Users/builder/export_options.plist
       - name: Upload dSYMs to Crashlytics
         script: |
+          # Don't assume a fixed location -- flutter build ipa manages its own
+          # derived-data path rather than the default ~/Library/Developer/Xcode/DerivedData,
+          # and whether Crashlytics resolves via CocoaPods or SPM affects where
+          # upload-symbols ends up. Search broadly under $HOME first (covers any
+          # DerivedData location), then fall back to the project directory
+          # (covers ios/Pods and any project-local SPM checkout dir).
+          UPLOAD_SYMBOLS=$(find "$HOME" -type f -name "upload-symbols" -path "*firebase-ios-sdk*" 2>/dev/null | head -1)
+          if [ -z "$UPLOAD_SYMBOLS" ]; then
+            UPLOAD_SYMBOLS=$(find "$PWD" -type f -name "upload-symbols" 2>/dev/null | head -1)
+          fi
+          if [ -z "$UPLOAD_SYMBOLS" ]; then
+            echo "upload-symbols not found anywhere under \$HOME or the project directory -- searched paths:"
+            find "$HOME" -maxdepth 6 -iname "*firebase-ios-sdk*" 2>/dev/null
+            exit 1
+          fi
+          echo "Using upload-symbols at: $UPLOAD_SYMBOLS"
           find build/ios/archive/Runner.xcarchive/dSYMs -name "*.dSYM" | \
-          xargs -I {} ios/Pods/FirebaseCrashlytics/upload-symbols \
+          xargs -I {} "$UPLOAD_SYMBOLS" \
             -gsp ios/Runner/GoogleService-Info.plist -p ios {}
     artifacts:
       - build/ios/ipa/*.ipa
