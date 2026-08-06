@@ -41,3 +41,6 @@ firestore-debug.log
 
 # Unclear origin, not source (Windows/OneDrive-adjacent artifact) — seen recurring
 _ul
+
+# Local scratch files (may contain exported user data — never commit)
+scratchpad/
