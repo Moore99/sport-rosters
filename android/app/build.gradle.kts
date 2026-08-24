@@ -45,7 +45,10 @@ android {
     defaultConfig {
         applicationId = "com.sportsrostering.app"
         minSdk = maxOf(flutter.minSdkVersion, 23)  // 23 required by local_auth (biometrics)
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35  // Pinned below Flutter's current default (36) — Samsung Galaxy Store's device
+                        // compatibility catalog rejected target SDK 36 binaries ("no device for which
+                        // the registered binary can be sold") as of Aug 2026. Revisit once Samsung's
+                        // catalog catches up.
         versionCode = System.getenv("BUILD_NUMBER")?.toIntOrNull() ?: flutter.versionCode
         versionName = rootProject.file("../version.txt").readText().trim()
     }
