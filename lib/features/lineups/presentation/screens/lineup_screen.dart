@@ -12,6 +12,7 @@ import '../../../../features/rankings/data/ranking_repository.dart';
 import '../../../../features/rankings/domain/ranking.dart';
 import '../../../../features/teams/domain/admin_role.dart';
 import '../../../../features/teams/domain/team.dart';
+import '../../application/lineup_input_resolver.dart';
 import '../../data/lineup_repository.dart';
 import '../../domain/lineup.dart';
 import '../providers/lineup_provider.dart';
@@ -187,19 +188,14 @@ class _LineupScreenState extends ConsumerState<LineupScreen> {
     final adminRoles =
         ref.read(adminRolesProvider(widget.teamId)).valueOrNull ?? {};
 
-    // Admins with coachOnly participation are excluded from lineups
-    final coachOnlyUids = {
-      for (final e in adminRoles.entries)
-        if (e.value == AdminParticipation.coachOnly) e.key,
-    };
-
-    // Only include players who said yes or maybe (excluding coach-only admins)
-    final availableUids = availList
-        .where((a) => a.response.name == 'yes' || a.response.name == 'maybe')
-        .map((a) => a.userId)
-        .where((uid) => !coachOnlyUids.contains(uid))
-        .where((uid) => team.players.contains(uid) || team.admins.contains(uid))
-        .toList();
+    // Coach-only exclusion + RSVP + team-membership rules (see
+    // LineupInputResolver for the domain rules and their tests).
+    final availableUids = LineupInputResolver.eligiblePlayerUids(
+      availability: availList,
+      adminRoles: adminRoles,
+      teamPlayerUids: team.players.toSet(),
+      teamAdminUids: team.admins.toSet(),
+    );
 
     if (availableUids.isEmpty) {
       if (context.mounted) {

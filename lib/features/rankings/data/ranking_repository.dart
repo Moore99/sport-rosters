@@ -3,33 +3,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/ranking.dart';
 
-class RankingRepository {
+/// Persistence for coach-private player rankings — admin use only.
+abstract class RankingRepository {
+  /// All rankings for a team — admin use only.
+  Stream<List<Ranking>> watchTeamRankings(String teamId);
+
+  /// One player's ranking — admin use only.
+  Future<Ranking?> getRanking(String teamId, String userId);
+
+  /// Create or overwrite a player's ranking.
+  Future<void> setRanking(Ranking ranking);
+
+  Future<void> deleteRanking(String teamId, String userId);
+}
+
+class FirestoreRankingRepository implements RankingRepository {
   final FirebaseFirestore _db;
-  RankingRepository(this._db);
+  FirestoreRankingRepository(this._db);
 
   CollectionReference<Map<String, dynamic>> _rankings(String teamId) =>
       _db.collection('teams').doc(teamId).collection('rankings');
 
-  /// All rankings for a team — admin use only.
+  @override
   Stream<List<Ranking>> watchTeamRankings(String teamId) => _rankings(teamId)
       .orderBy('score', descending: true)
       .snapshots()
       .map((s) => s.docs.map((d) => Ranking.fromFirestore(d, teamId)).toList());
 
-  /// One player's ranking — admin use only.
+  @override
   Future<Ranking?> getRanking(String teamId, String userId) async {
     final doc = await _rankings(teamId).doc(userId).get();
     return doc.exists ? Ranking.fromFirestore(doc, teamId) : null;
   }
 
-  /// Create or overwrite a player's ranking.
+  @override
   Future<void> setRanking(Ranking ranking) =>
       _rankings(ranking.teamId).doc(ranking.userId).set(ranking.toFirestore());
 
+  @override
   Future<void> deleteRanking(String teamId, String userId) =>
       _rankings(teamId).doc(userId).delete();
 }
 
 final rankingRepositoryProvider = Provider<RankingRepository>(
-  (ref) => RankingRepository(FirebaseFirestore.instance),
+  (ref) => FirestoreRankingRepository(FirebaseFirestore.instance),
 );

@@ -154,10 +154,18 @@ Each feature follows the pattern:
 features/<name>/
   data/          # Firestore repository
   domain/        # Models
+  application/   # Pure logic, no Riverpod/Firebase (only where a testable seam is needed — currently just lineups/)
   presentation/
     screens/
     providers/
 ```
+
+**Repository interfaces**: most `data/` repositories are concrete classes constructed
+directly in their `*RepositoryProvider`. The three that feed `LineupGenerator` —
+`LineupRepository`, `PlayerPreferenceRepository`, `RankingRepository` — additionally
+expose an `abstract class <Name>Repository` (impl is `Firestore<Name>Repository`) so unit
+tests can inject in-memory fakes via provider overrides. Add an interface to another
+repository only when a test actually needs the seam.
 
 ---
 
