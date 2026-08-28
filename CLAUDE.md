@@ -415,103 +415,104 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 ## Phase Status
 
-| Phase | Feature                                                                                                 | Status  |
-| ----- | ------------------------------------------------------------------------------------------------------- | ------- |
-| 0     | Project scaffold, pubspec, Firebase wiring                                                              | ✅ Done |
-| 1     | Auth (Firebase email/password)                                                                          | ✅ Done |
-| 1     | Teams CRUD                                                                                              | ✅ Done |
-| 1     | Events / Availability                                                                                   | ✅ Done |
-| 1     | Rankings (admin-only)                                                                                   | ✅ Done |
-| 1     | Manual lineup builder                                                                                   | ✅ Done |
-| 1     | Drop-in sign-ups                                                                                        | ✅ Done |
-| 1     | AdMob + Remove Ads IAP                                                                                  | ✅ Done |
-| 2     | firebase_messaging + Crashlytics                                                                        | ✅ Done |
-| 2     | Push notifications (FCM token → Firestore, permission request)                                          | ✅ Done |
-| 2     | Auto-balanced drop-in teams                                                                             | ✅ Done |
-| 2     | Rewarded ads (gates auto-generate lineup + auto-balance boat seating)                                   | ✅ Done |
-| 3     | Player position preferences (per-team, flexible categories)                                             | ✅ Done |
-| 3     | Advanced lineup generator (ranking + preference matching)                                               | ✅ Done |
-| 3     | PDF/CSV export (lineup PDF, boat seating PDF, availability CSV)                                         | ✅ Done |
-| 4     | Multi-admin (co-coach) support                                                                          | ✅ Done |
-| 4     | Dragon Boating + boat balance seating screen                                                            | ✅ Done |
-| 4     | Player weight field + kg/lbs toggle                                                                     | ✅ Done |
-| 4     | Team logo upload (Firebase Storage)                                                                     | ✅ Done |
-| 4     | Admin push notifications to team (Cloud Function)                                                       | ✅ Done |
-| 4     | Foreground FCM display via flutter_local_notifications                                                  | ✅ Done |
-| 4     | App icon (whistle), splash screen, app name "Sport Rosters"                                             | ✅ Done |
-| 4     | 21-sport roster with positions + preference categories                                                  | ✅ Done |
-| 5     | Sub-teams (snake draft, goalie pre-assign, tab UI in lineup screen)                                     | ✅ Done |
-| 6     | Server-side IAP validation — iOS + Android enforced via Cloud Function                                  | ✅ Done |
-| 6     | Sign in with Apple (App Store requirement when Google Sign-In offered)                                  | ✅ Done |
-| 6     | Team logo upload secured via Cloud Function proxy (admin-verified)                                      | ✅ Done |
-| 6     | CircleAvatar radii scale with system text size (accessibility)                                          | ✅ Done |
-| 6     | Biometric authentication (Face ID / Touch ID / Fingerprint)                                             | ✅ Done |
-| 6     | Cloud Functions runtime upgraded to Node.js 22                                                          | ✅ Done |
-| 7     | Spares list (team-level standby players, admin notifies when roster short)                              | ✅ Done |
-| 8     | Email verification gate (email/password accounts only)                                                  | ✅ Done |
-| 8     | Firebase Analytics + GoRouter screen tracking                                                           | ✅ Done |
-| 8     | Firebase App Check (Cloud Functions enforcement)                                                        | ✅ Done |
-| 8     | Player attendance history screen                                                                        | ✅ Done |
-| 8     | Change password (email/password accounts, Profile screen)                                               | ✅ Done |
-| 8     | Accessibility screen (in-app + website)                                                                 | ✅ Done |
-| 9     | GDPR/PIPEDA data export (`exportUserData` Cloud Function + Profile screen UI)                           | ✅ Done |
-| 9     | Recurring events (weekly/biweekly, batch-created with shared recurrenceGroupId)                         | ✅ Done |
-| 9     | Game results (admin logs score + opponent after a game; shown on event detail)                          | ✅ Done |
-| 9     | Team announcements feed (coach posts, all members read, pin support)                                    | ✅ Done |
-| 10    | Event cancellation UX (soft-cancel with orange banner; single or whole series)                          | ✅ Done |
-| 10    | Announce + notify in one step (optional push toggle when posting)                                       | ✅ Done |
-| 10    | Recurring series date shift (delta applied to all events; reminder flags cleared)                       | ✅ Done |
-| 10    | Spare self-removal (player leaves spares pool from team detail screen)                                  | ✅ Done |
-| 11    | Player lineup position card on event detail screen                                                      | ✅ Done |
-| 11    | Notification preferences per event type (game/practice/drop-in) in Profile                              | ✅ Done |
-| 11    | Event capacity hard-cap (maxPlayers enforced; EventFullException shown to player)                       | ✅ Done |
-| 11    | Team hide/unhide (eye toggle in AppBar; hidden teams collapsed in Teams list)                           | ✅ Done |
-| 11    | Team archive/restore (admin ⋮ menu; archived teams hidden but not deleted)                              | ✅ Done |
-| 11    | Sports in Firestore (Sport model, SportRepository, sportsProvider with AppConfig fallback)              | ✅ Done |
-| 11    | Sports admin screen (/admin/sports) for system admins                                                   | ✅ Done |
-| 11    | LineupGenerator decoupled from AppConfig (sportCategories passed as parameter)                          | ✅ Done |
-| 11    | QR code team join via MobileScanner in Join Team dialog                                                 | ✅ Done |
-| 11    | AppBar consolidated (team detail: 10+ icons → Events + QR + ⋮ overflow)                                 | ✅ Done |
-| 11    | R8 minification enabled (isMinifyEnabled + isShrinkResources + proguard-rules.pro)                      | ✅ Done |
-| 11    | dSYM upload to Crashlytics in Codemagic post-build step                                                 | ✅ Done |
-| 11    | Help screen fully updated to reflect all current features                                               | ✅ Done |
-| 12    | Sport-specific default team icons (SVG, bundled assets, 23 sports)                                      | ✅ Done |
-| 12    | deleteTeam Cloud Function (full cascade delete, admin-only)                                             | ✅ Done |
-| 12    | eventTypePrefs respected in sendEventReminders Cloud Function                                           | ✅ Done |
-| 12    | mutedTeams respected in sendTeamNotification Cloud Function                                             | ✅ Done |
-| 13    | Weekly stats email (Cloud Function, every Monday 8am Toronto, Gmail/nodemailer)                         | ✅ Done |
-| 13    | App Stats admin screen (/admin/stats) — tappable cards: users, teams, events (30d)                      | ✅ Done |
-| 13    | getAppStats Cloud Function (systemAdmin-only callable, returns counts + detail lists)                   | ✅ Done |
-| 13    | firebase-functions SDK upgraded 4.9.0 → 7.2.5                                                           | ✅ Done |
-| 14    | Flutter Web version — platform guards, landing page, Firebase Hosting                                   | ✅ Done |
-| 14    | Google Sign-In on web (signInWithPopup replaces google_sign_in deprecated signIn)                       | ✅ Done |
-| 14    | Apple Sign-In on web (sign_in_with_apple redirect flow, Services ID: com.sportsrostering.app.signin)    | ✅ Done |
-| 14    | Stripe "Remove Ads" for web — createStripeCheckout + stripeWebhook Cloud Functions                      | ✅ Done |
-| 14    | Rewarded ad gate on web → Stripe checkout (auto-lineup, auto-balance)                                   | ✅ Done |
-| 14    | AdSense banner live (publisher: ca-pub-5119215558360251, slot: 8822412340, HtmlElementView)             | ✅ Done |
-| 14    | Firebase App Check reCAPTCHA v3 on web (site key: 6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8)             | ✅ Done |
-| 14    | Firebase Analytics GA4 measurement ID G-QCX3G9KSPC added to firebase_options.dart web block             | ✅ Done |
-| 14    | Marketing landing page at `/` (hero, features grid, App Store/Play Store badges)                        | ✅ Done |
-| 14    | Web favicon + PWA icons updated to app whistle icon                                                     | ✅ Done |
-| 14    | Google + Apple Sign-In added to register screen (matches login screen)                                  | ✅ Done |
-| 14    | Stripe price ID price_1TftI8Lc7EXpUmQL7nnnZlIy configured in functions/index.js                         | ✅ Done |
-| 14    | share_plus upgraded ^12 → ^13 (API fix — code already used v13 API); package_info_plus ^9 → ^10         | ✅ Done |
-| 14    | SEO: Open Graph tags, Twitter Card, canonical URL, Apple Smart App Banner (id6761060200)                | ✅ Done |
-| 14    | SEO: robots.txt + sitemap.xml added to web/                                                             | ✅ Done |
-| 14    | manifest.json: name, description, theme_color fixed; functions/node_modules gitignored                  | ✅ Done |
-| 14    | Onboarding screen (/onboarding) — shown to new users with no teams; Create/Join CTAs                    | ✅ Done |
-| 14    | Team join deep-link: ?from=/join/:teamId param threads through login/register → bounces back            | ✅ Done |
-| 14    | Web push notifications: firebase-messaging-sw.js + FCM web token registration (VAPID set)               | ✅ Done |
-| 14    | Help link in landing page footer made accessible to unauthenticated users                               | ✅ Done |
-| 14    | Email notifications via nodemailer: event reminders (push fallback) + spare requests (all spares)       | ✅ Done |
-| 14    | App Store URL fixed in landing screen (id6761060200); App Store badge links live                        | ✅ Done |
-| 14    | Email notifications opt-out toggle (emailNotificationsEnabled) in Profile → Notifications               | ✅ Done |
-| 14    | Google Search Console verification meta tag added; sitemap.xml submitted (pending GSC re-crawl)         | ✅ Done |
-| 14    | firebase.json: Content-Type headers for sitemap.xml (application/xml) and robots.txt (text/plain)       | ✅ Done |
-| 15    | RouterNotifier + refreshListenable pattern — GoRouter no longer recreates on Firestore user doc updates | ✅ Done |
-| 15    | Scroll position preserved on Profile, TeamDetail, EventDetail, TeamAnnouncements screens                | ✅ Done |
-| 15    | iOS SPM conflict fix: flutter.config.enable-swift-package-manager: false (google_mobile_ads CocoaPods)  | ✅ Done |
-| 15    | Email notifications opt-out (emailNotificationsEnabled) — toggle in Profile → Notifications             | ✅ Done |
+| Phase | Feature                                                                                                          | Status  |
+| ----- | ---------------------------------------------------------------------------------------------------------------- | ------- |
+| 0     | Project scaffold, pubspec, Firebase wiring                                                                       | ✅ Done |
+| 1     | Auth (Firebase email/password)                                                                                   | ✅ Done |
+| 1     | Teams CRUD                                                                                                       | ✅ Done |
+| 1     | Events / Availability                                                                                            | ✅ Done |
+| 1     | Rankings (admin-only)                                                                                            | ✅ Done |
+| 1     | Manual lineup builder                                                                                            | ✅ Done |
+| 1     | Drop-in sign-ups                                                                                                 | ✅ Done |
+| 1     | AdMob + Remove Ads IAP                                                                                           | ✅ Done |
+| 2     | firebase_messaging + Crashlytics                                                                                 | ✅ Done |
+| 2     | Push notifications (FCM token → Firestore, permission request)                                                   | ✅ Done |
+| 2     | Auto-balanced drop-in teams                                                                                      | ✅ Done |
+| 2     | Rewarded ads (gates auto-generate lineup + auto-balance boat seating)                                            | ✅ Done |
+| 3     | Player position preferences (per-team, flexible categories)                                                      | ✅ Done |
+| 3     | Advanced lineup generator (ranking + preference matching)                                                        | ✅ Done |
+| 3     | PDF/CSV export (lineup PDF, boat seating PDF, availability CSV)                                                  | ✅ Done |
+| 4     | Multi-admin (co-coach) support                                                                                   | ✅ Done |
+| 4     | Dragon Boating + boat balance seating screen                                                                     | ✅ Done |
+| 4     | Player weight field + kg/lbs toggle                                                                              | ✅ Done |
+| 4     | Team logo upload (Firebase Storage)                                                                              | ✅ Done |
+| 4     | Admin push notifications to team (Cloud Function)                                                                | ✅ Done |
+| 4     | Foreground FCM display via flutter_local_notifications                                                           | ✅ Done |
+| 4     | App icon (whistle), splash screen, app name "Sport Rosters"                                                      | ✅ Done |
+| 4     | 21-sport roster with positions + preference categories                                                           | ✅ Done |
+| 5     | Sub-teams (snake draft, goalie pre-assign, tab UI in lineup screen)                                              | ✅ Done |
+| 6     | Server-side IAP validation — iOS + Android enforced via Cloud Function                                           | ✅ Done |
+| 6     | Sign in with Apple (App Store requirement when Google Sign-In offered)                                           | ✅ Done |
+| 6     | Team logo upload secured via Cloud Function proxy (admin-verified)                                               | ✅ Done |
+| 6     | CircleAvatar radii scale with system text size (accessibility)                                                   | ✅ Done |
+| 6     | Biometric authentication (Face ID / Touch ID / Fingerprint)                                                      | ✅ Done |
+| 6     | Cloud Functions runtime upgraded to Node.js 22                                                                   | ✅ Done |
+| 7     | Spares list (team-level standby players, admin notifies when roster short)                                       | ✅ Done |
+| 8     | Email verification gate (email/password accounts only)                                                           | ✅ Done |
+| 8     | Firebase Analytics + GoRouter screen tracking                                                                    | ✅ Done |
+| 8     | Firebase App Check (Cloud Functions enforcement)                                                                 | ✅ Done |
+| 8     | Player attendance history screen                                                                                 | ✅ Done |
+| 8     | Change password (email/password accounts, Profile screen)                                                        | ✅ Done |
+| 8     | Accessibility screen (in-app + website)                                                                          | ✅ Done |
+| 9     | GDPR/PIPEDA data export (`exportUserData` Cloud Function + Profile screen UI)                                    | ✅ Done |
+| 9     | Recurring events (weekly/biweekly, batch-created with shared recurrenceGroupId)                                  | ✅ Done |
+| 9     | Game results (admin logs score + opponent after a game; shown on event detail)                                   | ✅ Done |
+| 9     | Team announcements feed (coach posts, all members read, pin support)                                             | ✅ Done |
+| 10    | Event cancellation UX (soft-cancel with orange banner; single or whole series)                                   | ✅ Done |
+| 10    | Announce + notify in one step (optional push toggle when posting)                                                | ✅ Done |
+| 10    | Recurring series date shift (delta applied to all events; reminder flags cleared)                                | ✅ Done |
+| 10    | Spare self-removal (player leaves spares pool from team detail screen)                                           | ✅ Done |
+| 11    | Player lineup position card on event detail screen                                                               | ✅ Done |
+| 11    | Notification preferences per event type (game/practice/drop-in) in Profile                                       | ✅ Done |
+| 11    | Event capacity hard-cap (maxPlayers enforced; EventFullException shown to player)                                | ✅ Done |
+| 11    | Team hide/unhide (eye toggle in AppBar; hidden teams collapsed in Teams list)                                    | ✅ Done |
+| 11    | Team archive/restore (admin ⋮ menu; archived teams hidden but not deleted)                                       | ✅ Done |
+| 11    | Sports in Firestore (Sport model, SportRepository, sportsProvider with AppConfig fallback)                       | ✅ Done |
+| 11    | Sports admin screen (/admin/sports) for system admins                                                            | ✅ Done |
+| 11    | LineupGenerator decoupled from AppConfig (sportCategories passed as parameter)                                   | ✅ Done |
+| 11    | QR code team join via MobileScanner in Join Team dialog                                                          | ✅ Done |
+| 11    | AppBar consolidated (team detail: 10+ icons → Events + QR + ⋮ overflow)                                          | ✅ Done |
+| 11    | R8 minification enabled (isMinifyEnabled + isShrinkResources + proguard-rules.pro)                               | ✅ Done |
+| 11    | dSYM upload to Crashlytics in Codemagic post-build step                                                          | ✅ Done |
+| 11    | Help screen fully updated to reflect all current features                                                        | ✅ Done |
+| 12    | Sport-specific default team icons (SVG, bundled assets, 23 sports)                                               | ✅ Done |
+| 12    | deleteTeam Cloud Function (full cascade delete, admin-only)                                                      | ✅ Done |
+| 12    | eventTypePrefs respected in sendEventReminders Cloud Function                                                    | ✅ Done |
+| 12    | mutedTeams respected in sendTeamNotification Cloud Function                                                      | ✅ Done |
+| 13    | Weekly stats email (Cloud Function, every Monday 8am Toronto, Gmail/nodemailer)                                  | ✅ Done |
+| 13    | App Stats admin screen (/admin/stats) — tappable cards: users, teams, events (30d)                               | ✅ Done |
+| 13    | getAppStats Cloud Function (systemAdmin-only callable, returns counts + detail lists)                            | ✅ Done |
+| 13    | firebase-functions SDK upgraded 4.9.0 → 7.2.5                                                                    | ✅ Done |
+| 14    | Flutter Web version — platform guards, landing page, Firebase Hosting                                            | ✅ Done |
+| 14    | Google Sign-In on web (signInWithPopup replaces google_sign_in deprecated signIn)                                | ✅ Done |
+| 14    | Apple Sign-In on web (sign_in_with_apple redirect flow, Services ID: com.sportsrostering.app.signin)             | ✅ Done |
+| 14    | Stripe "Remove Ads" for web — createStripeCheckout + stripeWebhook Cloud Functions                               | ✅ Done |
+| 14    | Rewarded ad gate on web → Stripe checkout (auto-lineup, auto-balance)                                            | ✅ Done |
+| 14    | AdSense banner live (publisher: ca-pub-5119215558360251, slot: 8822412340, HtmlElementView)                      | ✅ Done |
+| 14    | Firebase App Check reCAPTCHA v3 on web (site key: 6LdnoBItAAAAABeaZ5ouFtb4SouLyjZ_lWw__CP8)                      | ✅ Done |
+| 14    | Firebase Analytics GA4 measurement ID G-QCX3G9KSPC added to firebase_options.dart web block                      | ✅ Done |
+| 14    | Marketing landing page at `/` (hero, features grid, App Store/Play Store badges)                                 | ✅ Done |
+| 14    | Web favicon + PWA icons updated to app whistle icon                                                              | ✅ Done |
+| 14    | Google + Apple Sign-In added to register screen (matches login screen)                                           | ✅ Done |
+| 14    | Stripe price ID price_1TftI8Lc7EXpUmQL7nnnZlIy configured in functions/index.js                                  | ✅ Done |
+| 14    | share_plus upgraded ^12 → ^13 (API fix — code already used v13 API); package_info_plus ^9 → ^10                  | ✅ Done |
+| 14    | SEO: Open Graph tags, Twitter Card, canonical URL, Apple Smart App Banner (id6761060200)                         | ✅ Done |
+| 14    | SEO: robots.txt + sitemap.xml added to web/                                                                      | ✅ Done |
+| 14    | manifest.json: name, description, theme_color fixed; functions/node_modules gitignored                           | ✅ Done |
+| 14    | Onboarding screen (/onboarding) — shown to new users with no teams; Create/Join CTAs                             | ✅ Done |
+| 14    | Team join deep-link: ?from=/join/:teamId param threads through login/register → bounces back                     | ✅ Done |
+| 14    | Web push notifications: firebase-messaging-sw.js + FCM web token registration (VAPID set)                        | ✅ Done |
+| 14    | Help link in landing page footer made accessible to unauthenticated users                                        | ✅ Done |
+| 14    | Email notifications via nodemailer: event reminders (push fallback) + spare requests (all spares)                | ✅ Done |
+| 14    | App Store URL fixed in landing screen (id6761060200); App Store badge links live                                 | ✅ Done |
+| 14    | Email notifications opt-out toggle (emailNotificationsEnabled) in Profile → Notifications                        | ✅ Done |
+| 14    | Google Search Console verification meta tag added; sitemap.xml submitted (pending GSC re-crawl)                  | ✅ Done |
+| 14    | firebase.json: Content-Type headers for sitemap.xml (application/xml) and robots.txt (text/plain)                | ✅ Done |
+| 15    | RouterNotifier + refreshListenable pattern — GoRouter no longer recreates on Firestore user doc updates          | ✅ Done |
+| 15    | Scroll position preserved on Profile, TeamDetail, EventDetail, TeamAnnouncements screens                         | ✅ Done |
+| 15    | iOS SPM conflict fix: flutter.config.enable-swift-package-manager: false (google_mobile_ads CocoaPods)           | ✅ Done |
+| 15    | Email notifications opt-out (emailNotificationsEnabled) — toggle in Profile → Notifications                      | ✅ Done |
+| 16    | LineupInputResolver extracted (pure eligibility logic) + interfaces for the 3 LineupGenerator feeder repos (#21) | ✅ Done |
 
 ## Current Production Versions
 
