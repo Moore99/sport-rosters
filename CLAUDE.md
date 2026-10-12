@@ -603,3 +603,17 @@ firebase deploy --only hosting
 | IAP restore not working                       | Check network — Apple requires active connection for restore requests                                                                                          |
 | Places API "invalid key" or "not authorized"  | Key must have "No application restrictions" (not Android app) — `google_places_flutter` uses REST, not Android SDK. Restrict by API only (Places API).         |
 | R8 minification issues                        | `proguard-rules.pro` in `android/app/`. Crashlytics Gradle plugin auto-uploads mapping. If classes missing at runtime, add `-keep` rules to proguard-rules.pro |
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in this repo's GitHub Issues (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
