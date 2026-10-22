@@ -342,6 +342,17 @@ sideload-test the unsigned package on this machine; run it in a real terminal, n
 
 ---
 
+## Android Gradle: Kotlin plugin migration (2026-10-22)
+
+AGP 9 drops support for applying the Kotlin Gradle Plugin (KGP) and builds Kotlin itself ("built-in Kotlin"). Flutter 3.44 still allows KGP for now, but a future Flutter version will fail builds that apply it ([Flutter guide](https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers)). The app's own Gradle files are migrated:
+
+- `android/app/build.gradle.kts`: no `id("kotlin-android")` and no `kotlinOptions`; instead a top-level `kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }`. It must match `compileOptions` (Java 17), or Gradle stops with an inconsistent-JVM-target error.
+- `android/settings.gradle.kts` still declares `org.jetbrains.kotlin.android` with `apply false`: plugins that apply KGP need it on the classpath.
+- `android/gradle.properties`: `android.builtInKotlin=false` and `android.newDsl=false`. Keep `builtInKotlin=false` until Flutter is 3.47 or later **and** no plugin applies KGP. Each build lists the holdouts ("Your app uses the following plugins that apply Kotlin Gradle Plugin (KGP): ..."); on 2026-10-22: `cloud_functions`, `firebase_analytics`, `firebase_app_check`, `firebase_storage`, `in_app_review`, `mobile_scanner`, `sign_in_with_apple`. When that list is empty, set `android.builtInKotlin=true` and do a release build.
+- AGP is already 9.x, so the remaining step is only the flag above.
+
+Verified 2026-10-22 with `flutter build appbundle --release` (signed with the upload key).
+
 ## Version Management
 
 **Single source of truth: `version.txt`** at repo root (e.g., `1.0.3`).
