@@ -185,6 +185,10 @@ class _TeamCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uid = ref.watch(currentUserProvider)?.uid ?? '';
+    // The list is a one-off read; watch the team doc so a new logo or name
+    // shows without a restart.
+    final team =
+        ref.watch(teamProvider(this.team.teamId)).valueOrNull ?? this.team;
 
     final sportColor = AppConfig.sportColor(team.sport);
     return Card(
