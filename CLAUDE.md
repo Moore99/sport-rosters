@@ -585,6 +585,11 @@ firebase deploy --only hosting
 - Google Sign-In working on Play Store installs as of 1.0.4 (8)
 - iOS Google Sign-In fix (missing `CFBundleURLTypes` URL scheme) applied in 1.0.3 ✅
 
+### Android targetSdk
+
+- `targetSdk` defaults to **36**, which Google Play requires (it rejected 1.3.4 (56) built at 35).
+- Samsung Galaxy Store rejected SDK 36 binaries in Aug 2026 ("no device for which the registered binary can be sold"). For a Galaxy build, set `TARGET_SDK=35` in the environment (`$env:TARGET_SDK = "35"` in PowerShell) before `flutter build`, and clear it afterwards. Drop the override once Samsung accepts 36.
+
 ### Android minSdk
 
 - Set to `maxOf(flutter.minSdkVersion, 23)` in `android/app/build.gradle.kts`
