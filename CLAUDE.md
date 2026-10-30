@@ -353,6 +353,14 @@ AGP 9 drops support for applying the Kotlin Gradle Plugin (KGP) and builds Kotli
 
 Verified 2026-10-22 with `flutter build appbundle --release` (signed with the upload key).
 
+### Status 2026-10-30
+
+- **Urgency: low.** Flutter 3.47.9 stable and 3.50 beta still only warn, and from 3.47 only on AGP 9+. What will force it is AGP 10, where built-in Kotlin can no longer be turned off, plus a future Flutter release that drops KGP support (flutter/flutter#184837, no release named). `android.builtInKotlin=true` needs Flutter 3.47 or later.
+- **How Flutter decides:** it searches the text of each plugin's `android/build.gradle(.kts)` (`FlutterPluginUtils.kt`). A Groovy `apply plugin: 'kotlin-android'` is flagged even inside an `if`, so plugins that apply KGP only when AGP < 9 or `builtInKotlin=false` (FlutterFire, pdfx, app_badge_plus) stay in the warning but won't break `builtInKotlin=true`. Only a plugin that applies KGP unconditionally breaks it.
+- **Done:** `sign_in_with_apple` 6.1.4 → 8.2.0 and `mobile_scanner` 7.4.0 → 7.4.2 (#25); neither applies KGP any more. These were verified with a debug build and unit tests only, so **test Apple sign-in (Android and iOS) and the QR scanner in the next release build**. 7.0 and 8.0 had breaking changes, but the app only checks `AuthorizationErrorCode.canceled`, which is unaffected.
+- **Still flagged:** `cloud_functions`, `firebase_analytics`, `firebase_app_check` and `firebase_storage` apply KGP conditionally, so they're harmless, and FlutterFire will remove the apply when it raises its minimum Flutter (firebase/flutterfire#18355). Upgrading to FlutterFire 5 doesn't clear them and adds `firebase_auth` 7 to the list. `in_app_review` 2.0.12 (the latest) applies KGP unconditionally and is the one real blocker: watch britannio/in_app_review#191.
+- **Next:** Flutter 3.47+ and an `in_app_review` fix → `android.builtInKotlin=true` and a release build.
+
 ## Version Management
 
 **Single source of truth: `version.txt`** at repo root (e.g., `1.0.3`).
