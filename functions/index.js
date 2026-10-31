@@ -29,6 +29,51 @@ const gmailAppPassword = defineSecret("GMAIL_APP_PASSWORD");
 const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
 const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
+// ── Push tokens ──────────────────────────────────────────────────────────────
+// A user can be signed in on several devices: each device's FCM token is in
+// users/{uid}.fcmTokens. fcmToken is the single-token field written by app
+// versions before 1.3.5; read both until those versions are gone.
+function userTokens(data) {
+  const tokens = new Set(data?.fcmTokens ?? []);
+  if (data?.fcmToken) tokens.add(data.fcmToken);
+  return [...tokens];
+}
+
+const STALE_TOKEN_CODES = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+]);
+
+// Logs every failed token (last 8 characters only) and removes the ones FCM
+// reports as unregistered or invalid from every user that holds them.
+async function handleSendFailures(fnName, tokens, response) {
+  const db = getFirestore();
+  const stale = [];
+  response.responses.forEach((r, idx) => {
+    if (r.success) return;
+    const code = r.error?.code ?? "unknown";
+    console.warn(`${fnName}: token …${tokens[idx].slice(-8)} failed: ${code}`);
+    if (STALE_TOKEN_CODES.has(code)) stale.push(tokens[idx]);
+  });
+  for (const token of stale) {
+    const [inList, legacy] = await Promise.all([
+      db.collection("users").where("fcmTokens", "array-contains", token).get(),
+      db.collection("users").where("fcmToken", "==", token).get(),
+    ]);
+    const batch = db.batch();
+    inList.docs.forEach((d) =>
+      batch.update(d.ref, { fcmTokens: FieldValue.arrayRemove(token) }),
+    );
+    legacy.docs.forEach((d) =>
+      batch.update(d.ref, { fcmToken: FieldValue.delete() }),
+    );
+    await batch.commit();
+    console.log(
+      `${fnName}: removed stale token …${token.slice(-8)} from ${inList.size} token list(s), ${legacy.size} legacy field(s)`,
+    );
+  }
+}
+
 /**
  * deleteTeam — permanent team deletion cascade (admin only).
  *
@@ -289,7 +334,7 @@ exports.previewTeam = onCall(
  *   availabilityRecords  — all event RSVP responses
  *   dropInParticipations — drop-in sessions the user signed up for
  *
- * Sensitive internal fields (fcmToken, adFree) are excluded.
+ * Sensitive internal fields (fcmToken, fcmTokens, adFree) are excluded.
  * Must be called by the authenticated user requesting their own data.
  */
 // enforceAppCheck: false — firebase_app_check has no Windows desktop plugin;
@@ -599,12 +644,12 @@ exports.sendTeamNotification = onCall(
         .get()
         .then((s) => {
           const data = s.data();
-          if (data?.notificationsEnabled === false) return null;
-          if ((data?.mutedTeams ?? []).includes(teamId)) return null;
-          return data?.fcmToken;
+          if (data?.notificationsEnabled === false) return [];
+          if ((data?.mutedTeams ?? []).includes(teamId)) return [];
+          return userTokens(data);
         }),
     );
-    const allTokens = (await Promise.all(tokenPromises)).filter(Boolean);
+    const allTokens = [...new Set((await Promise.all(tokenPromises)).flat())];
 
     if (allTokens.length === 0) return { sent: 0 };
 
@@ -625,33 +670,7 @@ exports.sendTeamNotification = onCall(
         apns: { payload: { aps: { sound: "default" } } },
       });
       sent += response.successCount;
-
-      // Remove stale tokens (registration-not-registered)
-      const staleTokens = [];
-      response.responses.forEach((r, idx) => {
-        if (
-          !r.success &&
-          (r.error?.code === "messaging/registration-token-not-registered" ||
-            r.error?.code === "messaging/invalid-registration-token")
-        ) {
-          staleTokens.push(batch[idx]);
-        }
-      });
-      if (staleTokens.length > 0) {
-        const staleBatch = db.batch();
-        for (const token of staleTokens) {
-          // Find which user has this token and clear it
-          const userSnap = await db
-            .collection("users")
-            .where("fcmToken", "==", token)
-            .limit(1)
-            .get();
-          userSnap.docs.forEach((d) =>
-            staleBatch.update(d.ref, { fcmToken: FieldValue.delete() }),
-          );
-        }
-        await staleBatch.commit();
-      }
+      await handleSendFailures("sendTeamNotification", batch, response);
     }
 
     // Persist notification to Firestore for in-app inbox
@@ -781,9 +800,9 @@ exports.sendEventReminders = onSchedule(
       // Helper: send to a group of UIDs, then clean up any stale FCM tokens
       async function sendToGroup(uids, title, body) {
         if (uids.length === 0) return;
-        const tokens = uids
-          .map((uid) => userDataByUid[uid]?.fcmToken)
-          .filter(Boolean);
+        const tokens = [
+          ...new Set(uids.flatMap((uid) => userTokens(userDataByUid[uid]))),
+        ];
         if (tokens.length === 0) return;
 
         const BATCH = 500;
@@ -797,32 +816,7 @@ exports.sendEventReminders = onSchedule(
             apns: { payload: { aps: { sound: "default" } } },
           });
 
-          // Remove stale tokens so they don't accumulate on user docs
-          const staleTokens = [];
-          response.responses.forEach((r, idx) => {
-            if (
-              !r.success &&
-              (r.error?.code ===
-                "messaging/registration-token-not-registered" ||
-                r.error?.code === "messaging/invalid-registration-token")
-            ) {
-              staleTokens.push(batchTokens[idx]);
-            }
-          });
-          if (staleTokens.length > 0) {
-            const staleBatch = db.batch();
-            for (const token of staleTokens) {
-              const userSnap = await db
-                .collection("users")
-                .where("fcmToken", "==", token)
-                .limit(1)
-                .get();
-              userSnap.docs.forEach((d) =>
-                staleBatch.update(d.ref, { fcmToken: FieldValue.delete() }),
-              );
-            }
-            await staleBatch.commit();
-          }
+          await handleSendFailures("sendEventReminders", batchTokens, response);
         }
       }
 
@@ -830,7 +824,7 @@ exports.sendEventReminders = onSchedule(
       async function sendReminderEmailToGroup(uids, title, body) {
         const recipients = uids.filter((uid) => {
           const u = userDataByUid[uid];
-          if (u?.fcmToken) return false; // has push token — push handles it
+          if (userTokens(u).length > 0) return false; // push handles it
           if (u?.emailNotificationsEnabled === false) return false;
           return true;
         });
@@ -1090,12 +1084,13 @@ exports.onAvailabilityChanged = onDocumentUpdated(
           .get()
           .then((s) => {
             const d = s.data();
-            if (!d?.fcmToken) return null;
-            if (d.notificationsEnabled === false) return null;
-            return d.fcmToken;
+            if (d?.notificationsEnabled === false) return [];
+            return userTokens(d);
           }),
       );
-    const adminTokens = (await Promise.all(adminTokenPromises)).filter(Boolean);
+    const adminTokens = [
+      ...new Set((await Promise.all(adminTokenPromises)).flat()),
+    ];
     if (adminTokens.length === 0) return;
 
     const label = eventData.type
@@ -1109,7 +1104,7 @@ exports.onAvailabilityChanged = onDocumentUpdated(
       timeZone,
     });
 
-    await getMessaging().sendEachForMulticast({
+    const response = await getMessaging().sendEachForMulticast({
       tokens: adminTokens,
       notification: {
         title: `${userName} cancelled`,
@@ -1119,6 +1114,7 @@ exports.onAvailabilityChanged = onDocumentUpdated(
       android: { priority: "high" },
       apns: { payload: { aps: { sound: "default" } } },
     });
+    await handleSendFailures("onAvailabilityChanged", adminTokens, response);
   },
 );
 
@@ -1194,7 +1190,7 @@ exports.notifySpares = onCall(
       if (userSnap.exists) spareUsers.push({ uid: doc.id, ...userSnap.data() });
     }
 
-    const tokens = spareUsers.map((u) => u.fcmToken).filter(Boolean);
+    const tokens = [...new Set(spareUsers.flatMap((u) => userTokens(u)))];
 
     const eventDateObj = new Date(eventDate);
     const dateStr = eventDateObj.toLocaleDateString("en-US", {
@@ -1225,6 +1221,7 @@ exports.notifySpares = onCall(
           apns: { payload: { aps: { sound: "default" } } },
         });
         sent += response.successCount;
+        await handleSendFailures("notifySpares", batch, response);
       }
     }
 
@@ -1566,12 +1563,12 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
 
     for (const uid of promoted) {
       const userSnap = await db.collection("users").doc(uid).get();
-      const fcmToken = userSnap.data()?.fcmToken;
-      if (!fcmToken) continue;
+      const tokens = userTokens(userSnap.data());
+      if (tokens.length === 0) continue;
 
       try {
-        await getMessaging().send({
-          token: fcmToken,
+        const response = await getMessaging().sendEachForMulticast({
+          tokens,
           notification: {
             title: "You're in!",
             body: timeStr
@@ -1582,8 +1579,9 @@ exports.notifyWaitlistPromotion = onDocumentUpdated(
           android: { priority: "high" },
           apns: { payload: { aps: { sound: "default" } } },
         });
-      } catch (_) {
-        // Stale token — ignore, token cleanup handled by sendTeamNotification
+        await handleSendFailures("notifyWaitlistPromotion", tokens, response);
+      } catch (e) {
+        console.warn(`notifyWaitlistPromotion: send to ${uid} failed: ${e}`);
       }
     }
   },

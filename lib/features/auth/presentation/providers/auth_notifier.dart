@@ -269,8 +269,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     // team notifications to whoever signs in next on the same device.
     final uid = _auth.currentUser?.uid;
     if (uid != null) {
+      String? token;
       try {
-        await _users.clearFcmToken(uid);
+        token = await FirebaseMessaging.instance.getToken();
+      } catch (_) {
+        // No token on this platform (e.g. web without permission).
+      }
+      try {
+        await _users.clearFcmToken(uid, token);
         await FirebaseMessaging.instance.deleteToken();
       } catch (_) {
         // Non-fatal — proceed with sign-out regardless.

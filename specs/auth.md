@@ -21,20 +21,21 @@ Handles user identity: registration, login, session management, and access gates
 
 **Firebase Auth** holds credentials. `users/{userId}` holds app data.
 
-| Field                  | Type           | Notes                                          |
-| ---------------------- | -------------- | ---------------------------------------------- |
-| `name`                 | String         | Display name                                   |
-| `email`                | String         |                                                |
-| `phone`                | String?        | Optional; explicit consent                     |
-| `photoUrl`             | String?        | Optional; explicit consent                     |
-| `fcmToken`             | String?        | Set on login, cleared on sign-out              |
-| `role`                 | String         | `'player'` \| `'teamAdmin'` \| `'systemAdmin'` |
-| `adFree`               | bool           | IAP entitlement                                |
-| `deleted`              | bool           | Soft-delete flag for GDPR cascade              |
-| `createdAt`            | Timestamp      |                                                |
-| `notificationsEnabled` | bool           | User-level FCM opt-out                         |
-| `mutedTeams`           | List\<String\> | Team IDs where notifications muted             |
-| `weightKg`             | double?        | Dragon boat balance; player-editable           |
+| Field                  | Type           | Notes                                                                        |
+| ---------------------- | -------------- | ---------------------------------------------------------------------------- |
+| `name`                 | String         | Display name                                                                 |
+| `email`                | String         |                                                                              |
+| `phone`                | String?        | Optional; explicit consent                                                   |
+| `photoUrl`             | String?        | Optional; explicit consent                                                   |
+| `fcmTokens`            | List<String>   | One FCM token per signed-in device; this device's removed on sign-out        |
+| `fcmToken`             | String?        | Legacy single token (last device); still written, read alongside `fcmTokens` |
+| `role`                 | String         | `'player'` \| `'teamAdmin'` \| `'systemAdmin'`                               |
+| `adFree`               | bool           | IAP entitlement                                                              |
+| `deleted`              | bool           | Soft-delete flag for GDPR cascade                                            |
+| `createdAt`            | Timestamp      |                                                                              |
+| `notificationsEnabled` | bool           | User-level FCM opt-out                                                       |
+| `mutedTeams`           | List\<String\> | Team IDs where notifications muted                                           |
+| `weightKg`             | double?        | Dragon boat balance; player-editable                                         |
 
 ## Firestore Rules
 
