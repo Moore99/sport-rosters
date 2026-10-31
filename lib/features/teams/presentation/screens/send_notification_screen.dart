@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,7 +46,7 @@ class _SendNotificationScreenState
         'title': _titleCtrl.text.trim(),
         'body': _bodyCtrl.text.trim(),
         if (widget.eventId != null) 'eventId': widget.eventId,
-      });
+      }).timeout(const Duration(seconds: 30));
 
       final sent = (result as Map)['sent'] ?? 0;
       if (mounted) {
@@ -56,14 +58,21 @@ class _SendNotificationScreenState
         Navigator.of(context).pop();
       }
     } on FirebaseFunctionsException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.message}')),
-        );
-      }
+      _showError(e.message ?? e.code);
+    } on TimeoutException {
+      _showError('No response from the server. Check your connection.');
+    } catch (e) {
+      _showError('$e');
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $message')),
+    );
   }
 
   @override

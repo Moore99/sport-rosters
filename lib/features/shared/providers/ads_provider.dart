@@ -119,6 +119,13 @@ class IapNotifier extends StateNotifier<IapStatus> {
     final response = await InAppPurchase.instance
         .queryProductDetails({AppConfig.removeAdsSku});
 
+    // Play/App Store errors also come back as an empty product list; report
+    // the store's own message so "not found" isn't blamed for every failure.
+    if (response.error != null) {
+      state = IapStatus(IapState.error,
+          'Store error: ${response.error!.message} (${response.error!.code})');
+      return;
+    }
     if (response.notFoundIDs.isNotEmpty || response.productDetails.isEmpty) {
       state = const IapStatus(
           IapState.error, 'Product not found. Try again later.');
