@@ -1,22 +1,34 @@
 name: Lint / Format Check
 
+# Runs on the self-hosted Windows runner on the owner's PC
+# (L:\actions-runner-sport-rosters): GitHub-hosted minutes for private repos
+# are blocked by the account's spending limit, and this repo goes private
+# once the policy pages have moved (#24). Tools are called by absolute path.
 on:
   push:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64]
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6.0.3
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2.23.0
-        with:
-          channel: stable
+
+      # The dart-format hook calls `dart` by name.
+      - name: Flutter on PATH
+        run: Add-Content -Path $env:GITHUB_PATH -Value "C:\dev\flutter\flutter\bin" -Encoding Ascii
+
       - name: Install Flutter dependencies
-        run: flutter pub get
-      - name: Install pre-commit
-        run: pip install pre-commit
+        run: C:\dev\flutter\flutter\bin\flutter.bat pub get
+
       - name: Run pre-commit hooks
-        run: pre-commit run --all-files
+        run: C:\Users\John\AppData\Local\Python\pythoncore-3.14-64\python.exe -m pre_commit run --all-files --show-diff-on-failure --color=always
