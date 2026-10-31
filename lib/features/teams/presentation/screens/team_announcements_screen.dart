@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -197,14 +200,27 @@ class _TeamAnnouncementsScreenState
                     createdAt: DateTime.now(),
                   ));
                   if (notifyTeam) {
+                    // The announcement is saved either way; say whether the
+                    // push went out so the admin isn't left assuming it did.
+                    String message;
                     try {
-                      await AppFunctions.call('sendTeamNotification', data: {
-                        'teamId': widget.teamId,
-                        'title': title,
-                        'body': body
-                      });
-                    } catch (_) {
-                      // Notification failure is non-fatal — announcement is saved
+                      final result = await AppFunctions.call(
+                          'sendTeamNotification',
+                          data: {
+                            'teamId': widget.teamId,
+                            'title': title,
+                            'body': body
+                          }).timeout(const Duration(seconds: 30));
+                      final sent = (result as Map?)?['sent'] ?? 0;
+                      message = 'Announcement posted. Notification sent to '
+                          '$sent member${sent == 1 ? '' : 's'}.';
+                    } catch (e) {
+                      message = 'Announcement posted, but the notification '
+                          'could not be sent: ${_describeError(e)}';
+                    }
+                    if (mounted) {
+                      ScaffoldMessenger.of(this.context)
+                          .showSnackBar(SnackBar(content: Text(message)));
                     }
                   }
                 }
@@ -255,6 +271,13 @@ class _TeamAnnouncementsScreenState
 }
 
 // ── Announcement card ──────────────────────────────────────────────────────────
+
+String _describeError(Object e) => switch (e) {
+      FirebaseFunctionsException(:final message, :final code) =>
+        message ?? code,
+      TimeoutException() => 'no response from the server',
+      _ => '$e',
+    };
 
 class _AnnouncementCard extends StatelessWidget {
   final Announcement announcement;
