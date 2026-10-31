@@ -24,7 +24,7 @@ class TermsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Last updated: March 2026',
+                    'Last updated: October 2026',
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
@@ -135,7 +135,7 @@ Team admins are responsible for the appropriate use of administrative features w
 
             _buildSection(
               'Contact Information',
-              'For questions about these Terms, please contact us:\n\nEmail: privacy@nuclear-motd.com',
+              'For questions about these Terms, please contact us:\n\nEmail: support@kernkraftconsult.com',
             ),
 
             const SizedBox(height: 32),

@@ -357,7 +357,7 @@ Verified 2026-10-22 with `flutter build appbundle --release` (signed with the up
 
 - **Urgency: low.** Flutter 3.47.9 stable and 3.50 beta still only warn, and from 3.47 only on AGP 9+. What will force it is AGP 10, where built-in Kotlin can no longer be turned off, plus a future Flutter release that drops KGP support (flutter/flutter#184837, no release named). `android.builtInKotlin=true` needs Flutter 3.47 or later.
 - **How Flutter decides:** it searches the text of each plugin's `android/build.gradle(.kts)` (`FlutterPluginUtils.kt`). A Groovy `apply plugin: 'kotlin-android'` is flagged even inside an `if`, so plugins that apply KGP only when AGP < 9 or `builtInKotlin=false` (FlutterFire, pdfx, app_badge_plus) stay in the warning but won't break `builtInKotlin=true`. Only a plugin that applies KGP unconditionally breaks it.
-- **Done:** `sign_in_with_apple` 6.1.4 → 8.2.0 and `mobile_scanner` 7.4.0 → 7.4.2 (#25); neither applies KGP any more. These were verified with a debug build and unit tests only, so **test Apple sign-in (Android and iOS) and the QR scanner in the next release build**. 7.0 and 8.0 had breaking changes, but the app only checks `AuthorizationErrorCode.canceled`, which is unaffected.
+- **Done:** `sign_in_with_apple` 6.1.4 → 8.2.0 and `mobile_scanner` 7.4.0 → 7.4.2 (#25); neither applies KGP any more. These were verified with a debug build and unit tests only, so **test Apple sign-in (iOS and web; Android has no Apple button by design) and the QR scanner in the next release build** (QR scanner verified on Android 1.3.4 (57), 2026-10-30). 7.0 and 8.0 had breaking changes, but the app only checks `AuthorizationErrorCode.canceled`, which is unaffected.
 - **Still flagged:** `cloud_functions`, `firebase_analytics`, `firebase_app_check` and `firebase_storage` apply KGP conditionally, so they're harmless, and FlutterFire will remove the apply when it raises its minimum Flutter (firebase/flutterfire#18355). Upgrading to FlutterFire 5 doesn't clear them and adds `firebase_auth` 7 to the list. `in_app_review` 2.0.12 (the latest) applies KGP unconditionally and is the one real blocker: watch britannio/in_app_review#191.
 - **Next:** Flutter 3.47+ and an `in_app_review` fix → `android.builtInKotlin=true` and a release build.
 
@@ -535,11 +535,11 @@ Android AdMob app ID is already in `AndroidManifest.xml` ✅ (test ID — swap b
 
 ## Current Production Versions
 
-| Platform               | Version | Build | Status                                   |
-| ---------------------- | ------- | ----- | ---------------------------------------- |
-| Android (Play Store)   | 1.3.1   | 50    | Live — pending upload                    |
-| iOS (App Store)        | 1.3.1   | 50    | Codemagic pending                        |
-| Web (Firebase Hosting) | 1.3.1   | —     | Live at https://sports-rostering.web.app |
+| Platform               | Version | Build | Status                                            |
+| ---------------------- | ------- | ----- | ------------------------------------------------- |
+| Android (Play Store)   | 1.3.3   | 55    | Live; 1.3.4 (57) in Internal testing (2026-10-30) |
+| iOS (App Store)        | 1.3.1   | 50    | Codemagic pending                                 |
+| Web (Firebase Hosting) | 1.3.1   | —     | Live at https://sports-rostering.web.app          |
 
 ## Web Build & Deploy
 
@@ -557,15 +557,16 @@ firebase deploy --only hosting
 
 ## Store URLs
 
-| Page                     | URL                                                            |
-| ------------------------ | -------------------------------------------------------------- |
-| Web App                  | https://sports-rostering.web.app                               |
-| Privacy Policy (Android) | https://moore99.github.io/sport-rosters/privacy                |
-| Privacy Policy (iOS)     | https://nuclear-motd.com/privacy (combined policy, still live) |
-| Terms of Service         | https://moore99.github.io/sport-rosters/terms                  |
-| Delete Account           | https://moore99.github.io/sport-rosters/delete-account         |
+| Page             | URL                                                         |
+| ---------------- | ----------------------------------------------------------- |
+| Web App          | https://sports-rostering.web.app                            |
+| Support          | https://kernkraftconsult.com/sportrostering/support/        |
+| Privacy Policy   | https://kernkraftconsult.com/sportrostering/privacy/        |
+| Terms of Service | https://kernkraftconsult.com/sportrostering/terms/          |
+| Accessibility    | https://kernkraftconsult.com/sportrostering/accessibility/  |
+| Delete Account   | https://kernkraftconsult.com/sportrostering/delete-account/ |
 
-**Note:** Android pages are served from GitHub Pages (`docs/` folder, `moore99/sport-rosters` repo). iOS uses the nuclear-motd.com combined privacy policy. The nuclear-motd.com/sports-rostering/* paths are dead (lost in Docker migration — do not use).
+**Note:** since 2026-10-30 these pages are static files in `Moore99/kernkraft-website` (`sportrostering/`), deployed to kernkraftconsult.com. Use them for every store (Play, App Store, Microsoft, Galaxy). The old `moore99.github.io/sport-rosters/...` (this repo's `docs/`) and `moore99.github.io/sport-rosters-site/...` URLs redirect there through permanent stubs in `Moore99/moore99.github.io`, because older app versions link to them. Keep the in-app Privacy and Terms screens (`lib/features/shared/screens/`) in step with the website text. The nuclear-motd.com/sports-rostering/* paths are dead — do not use.
 
 ---
 

@@ -24,7 +24,7 @@ class PrivacyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Last updated: March 2026',
+                    'Last updated: October 2026',
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
@@ -49,7 +49,11 @@ class PrivacyScreen extends StatelessWidget {
 
 • Push Notification Token: If you grant permission, a device token used to deliver push notifications.
 
-• Usage Data: Basic information about how you interact with the App, used to improve the service.''',
+• Weight (optional): Used only to balance dragon boat seating charts. It is visible to your team's admins and never shown publicly.
+
+• Crash Reports: If the App crashes, Firebase Crashlytics records technical details (device model, operating system version, app version and the error), used only to fix problems.
+
+• Usage Data: Firebase Analytics records basic information about how you interact with the App, such as screens viewed, used to improve the service.''',
             ),
 
             _buildSection(
@@ -104,7 +108,7 @@ We do not share your data with third parties except as required by law or to ope
 • Portability: Request transfer of your data
 • Objection: Object to certain processing of your data
 
-To exercise these rights, contact us at privacy@nuclear-motd.com''',
+To exercise these rights, contact us at support@kernkraftconsult.com''',
             ),
 
             _buildSection(
@@ -141,7 +145,7 @@ To exercise these rights, contact us at privacy@nuclear-motd.com''',
               'Contact Us',
               '''If you have questions about this Privacy Policy, please contact us:
 
-Email: privacy@nuclear-motd.com''',
+Email: support@kernkraftconsult.com''',
             ),
 
             const SizedBox(height: 32),

@@ -23,7 +23,7 @@ class AccessibilityScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Last updated: April 2026',
+                    'Last updated: October 2026',
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                 ],
@@ -83,7 +83,7 @@ class AccessibilityScreen extends StatelessWidget {
               context,
               'Feedback',
               'If you encounter an accessibility barrier or have a suggestion, please contact '
-                  'us at admin@nuclear-motd.com. We take all accessibility feedback seriously '
+                  'us at support@kernkraftconsult.com. We take all accessibility feedback seriously '
                   'and aim to respond within 5 business days.',
             ),
             const SizedBox(height: 16),

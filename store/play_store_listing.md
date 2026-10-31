@@ -4,14 +4,14 @@
 
 ## App Details
 
-| Field              | Value                                                                        |
-| ------------------ | ---------------------------------------------------------------------------- |
-| App name           | Sports Rostering                                                             |
-| Package name       | com.sportsrostering.app                                                      |
-| Developer          | Kernkraft Consulting Inc.                                                    |
-| Category           | Sports                                                                       |
-| Content rating     | Everyone                                                                     |
-| Privacy policy URL | https://nuclear-motd.com/privacy (or host a dedicated page — see note below) |
+| Field              | Value                                                |
+| ------------------ | ---------------------------------------------------- |
+| App name           | Sports Rostering                                     |
+| Package name       | com.sportsrostering.app                              |
+| Developer          | Kernkraft Consulting Inc.                            |
+| Category           | Sports                                               |
+| Content rating     | Everyone                                             |
+| Privacy policy URL | https://kernkraftconsult.com/sportrostering/privacy/ |
 
 ---
 
@@ -162,8 +162,6 @@ Pre-populate a test team in Firebase with a few events and availability response
 
 Play Store requires a **publicly accessible URL** for the privacy policy — it cannot be in-app only.
 
-**Easiest option:** Add a `/sports-rostering-privacy` page to nuclear-motd.com hosting the privacy policy text from `privacy_screen.dart`.
-
-**Alternative:** Use a free static host (GitHub Pages, Netlify) with a simple HTML page.
+It is hosted at https://kernkraftconsult.com/sportrostering/privacy/ (static page in `Moore99/kernkraft-website`, `sportrostering/privacy/index.html`). Keep its text in step with `privacy_screen.dart`.
 
 The in-app Privacy screen satisfies PIPEDA/GDPR display requirements; the external URL is for Play Store submission only.
