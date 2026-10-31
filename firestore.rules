@@ -18,6 +18,14 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'systemAdmin';
     }
 
+    // role and adFree are privileged: role decides isSystemAdmin(), and adFree is
+    // granted only by the purchase functions (validateIap, stripeWebhook) through
+    // the Admin SDK. A user may not set or change either on their own profile.
+    function keepsPrivilegedUserFields() {
+      return request.resource.data.get('role', 'player') == resource.data.get('role', 'player') &&
+        request.resource.data.get('adFree', false) == resource.data.get('adFree', false);
+    }
+
     function isTeamAdmin(teamId) {
       return isSignedIn() &&
         request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.admins;
@@ -39,8 +47,10 @@ service cloud.firestore {
       // in drop-in lists, availability views, and roster displays.
       // Sensitive data (rankings, notes) is in a separate protected subcollection.
       allow read: if isSignedIn();
-      allow create: if isSelf(userId);
-      allow update: if isSelf(userId) || isSystemAdmin() ||
+      allow create: if isSelf(userId) &&
+        request.resource.data.get('role', 'player') == 'player' &&
+        request.resource.data.get('adFree', false) == false;
+      allow update: if (isSelf(userId) && keepsPrivilegedUserFields()) || isSystemAdmin() ||
         // Team admins need to update a player's teams array on approve/remove
         (isSignedIn() &&
          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teams']));
