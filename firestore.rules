@@ -26,6 +26,17 @@ service cloud.firestore {
         request.resource.data.get('adFree', false) == resource.data.get('adFree', false);
     }
 
+    // Another user may change someone's teams list only to add or remove one
+    // team they are an admin of: approveRequest and removePlayer in
+    // team_repository.dart. The team doc's players list is updated in the
+    // same batch.
+    function changesOnlyOwnTeam() {
+      let before = resource.data.get('teams', []);
+      let after = request.resource.data.get('teams', []);
+      let changed = after.removeAll(before).concat(before.removeAll(after));
+      return changed.size() == 1 && isTeamAdmin(changed[0]);
+    }
+
     function isTeamAdmin(teamId) {
       return isSignedIn() &&
         request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.admins;
@@ -53,7 +64,8 @@ service cloud.firestore {
       allow update: if (isSelf(userId) && keepsPrivilegedUserFields()) || isSystemAdmin() ||
         // Team admins need to update a player's teams array on approve/remove
         (isSignedIn() &&
-         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teams']));
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teams']) &&
+         changesOnlyOwnTeam());
       allow delete: if isSelf(userId) || isSystemAdmin();
 
       // Note: availability is stored under events/{eventId}/availability/{userId}
