@@ -14,7 +14,7 @@
 | Store ID                   | 9NMWGL6X028C                                         |
 | Category                   | Sports                                               |
 | Age rating                 | PEGI 3 / Everyone (matches Play Store rating)        |
-| Privacy policy URL         | https://nuclear-motd.com/privacy                     |
+| Privacy policy URL         | https://kernkraftconsult.com/sportrostering/privacy/ |
 
 ---
 

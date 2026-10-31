@@ -64,14 +64,14 @@ All steps use batch writes or `FieldValue.arrayRemove` for atomicity within each
 
 ## Legal Screens
 
-| Screen           | Route             | URL                                                    |
-| ---------------- | ----------------- | ------------------------------------------------------ |
-| Privacy Policy   | `/privacy`        | https://moore99.github.io/sport-rosters/privacy        |
-| Terms of Service | `/terms`          | https://moore99.github.io/sport-rosters/terms          |
-| Delete Account   | `/delete-account` | https://moore99.github.io/sport-rosters/delete-account |
-| Accessibility    | `/accessibility`  | In-app screen                                          |
+| Screen           | Route             | URL                                                         |
+| ---------------- | ----------------- | ----------------------------------------------------------- |
+| Privacy Policy   | `/privacy`        | https://kernkraftconsult.com/sportrostering/privacy/        |
+| Terms of Service | `/terms`          | https://kernkraftconsult.com/sportrostering/terms/          |
+| Delete Account   | `/delete-account` | https://kernkraftconsult.com/sportrostering/delete-account/ |
+| Accessibility    | `/accessibility`  | In-app screen                                               |
 
-Android pages served from GitHub Pages (`docs/` folder, `moore99/sport-rosters` repo). iOS uses the nuclear-motd.com combined privacy policy (still live). The nuclear-motd.com/sports-rostering/* paths are dead — do not link to them.
+The web pages are static files in `Moore99/kernkraft-website` (`sportrostering/`), used by every store since 2026-10-30. The old github.io URLs redirect there. The nuclear-motd.com/sports-rostering/* paths are dead — do not link to them.
 
 ## Key Decisions
 
