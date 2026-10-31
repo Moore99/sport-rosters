@@ -49,13 +49,30 @@ class UserRepository {
   }
 
   /// Saves the FCM push token — called on app start after permission granted.
+  /// fcmTokens holds one token per signed-in device. fcmToken (single
+  /// field) is still written for Cloud Functions deployed before the list
+  /// existed; the functions read both.
   Future<void> updateFcmToken(String userId, String token) =>
-      _users.doc(userId).update({'fcmToken': token});
+      _users.doc(userId).update({
+        'fcmToken': token,
+        'fcmTokens': FieldValue.arrayUnion([token]),
+      });
 
   /// Removes the FCM token on sign-out so stale tokens don't deliver
   /// notifications to the wrong user on shared devices.
-  Future<void> clearFcmToken(String userId) =>
-      _users.doc(userId).update({'fcmToken': FieldValue.delete()});
+  Future<void> clearFcmToken(String userId, String? token) async {
+    final ref = _users.doc(userId);
+    final updates = <String, dynamic>{
+      if (token != null) 'fcmTokens': FieldValue.arrayRemove([token]),
+    };
+    // Only clear the single-token field if it belongs to this device, so
+    // signing out here doesn't stop the user's other devices.
+    final current = (await ref.get()).data()?['fcmToken'];
+    if (token == null || current == token) {
+      updates['fcmToken'] = FieldValue.delete();
+    }
+    await ref.update(updates);
+  }
 
   /// Toggles whether push notifications are sent to this user.
   Future<void> updateNotificationsEnabled(String userId, bool enabled) =>

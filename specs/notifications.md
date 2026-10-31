@@ -35,7 +35,7 @@ Players who opted out globally (`notificationsEnabled = false`) or muted a speci
 
 ### FCM Token
 
-Stored at `users/{uid}.fcmToken`. Set on login via `UserRepository.updateFcmToken()`. Cleared on sign-out via `UserRepository.clearFcmToken()`. Stale tokens are cleaned up opportunistically after each multicast send.
+Stored per device in `users/{uid}.fcmTokens` (array), so every device a user is signed in on gets pushes. `UserRepository.updateFcmToken()` adds the device's token on app start and on token refresh; it also writes the legacy single field `fcmToken`, which app versions before 1.3.5 and older function deploys use. `UserRepository.clearFcmToken()` removes only this device's token on sign-out. The functions read both fields (`userTokens()` in `functions/index.js`). After each send, `handleSendFailures()` logs every failed token (last 8 characters) with its error code, and removes tokens FCM reports as unregistered or invalid from every user holding them.
 
 ### In-App Inbox
 

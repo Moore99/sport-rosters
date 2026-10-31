@@ -19,7 +19,7 @@ Satisfies Canadian (PIPEDA) and European (GDPR) requirements for user data: righ
 
 Cloud Function returns a JSON object with:
 
-- `profile` — name, email, phone, weightKg (excludes `fcmToken`, `adFree`)
+- `profile` — name, email, phone, weightKg (excludes `fcmToken`, `fcmTokens`, `adFree`)
 - `teams` — team memberships with role (player/admin)
 - `availabilityRecords` — all event RSVPs (eventId, teamId, response, updatedAt)
 - `dropInParticipations` — drop-in sessions joined (sessionId, eventId, teamId)
@@ -49,7 +49,7 @@ All steps use batch writes or `FieldValue.arrayRemove` for atomicity within each
 
 - `phone` and `photoUrl` — optional fields, collected only on explicit user action (separate UI flows, not part of registration).
 - `weightKg` — optional, user-entered. Used only for Dragon Boating balance.
-- `fcmToken` — necessary for push notifications; cleared on sign-out.
+- `fcmTokens` / `fcmToken` — necessary for push notifications; the device's token is removed on sign-out.
 - No personal data logged to Crashlytics.
 
 ## Consent
